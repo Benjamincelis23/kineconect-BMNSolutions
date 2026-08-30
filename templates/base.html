@@ -1,0 +1,384 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Kineconnect{% endblock %} · Portal Clínico</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        :root {
+            --bg-sidebar: #0f2b48;
+            --bg-sidebar-hover: #1e3a5f;
+            --bg-sidebar-active: #0284c7;
+            --bg-main: #f8fafc;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --white: #ffffff;
+            --primary: #0284c7;
+            --sidebar-width-expanded: 260px;
+            --sidebar-width-collapsed: 72px;
+            --transition-speed: 0.25s;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            display: flex;
+            height: 100vh;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            overflow: hidden;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: var(--sidebar-width-expanded);
+            background-color: var(--bg-sidebar);
+            color: var(--white);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            flex-shrink: 0;
+            transition: width var(--transition-speed) ease;
+            position: relative;
+            z-index: 50;
+        }
+
+        .sidebar.collapsed {
+            width: var(--sidebar-width-collapsed);
+        }
+
+        /* HEADER SIDEBAR & TOGGLE */
+        .sidebar-header {
+            padding: 1.25rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            min-height: 65px;
+        }
+
+        .brand-text {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #38bdf8;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .sidebar.collapsed .brand-text {
+            display: none;
+        }
+
+        .toggle-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #ffffff;
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+
+        .toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* BUSCADOR DE SECCIONES */
+        .sidebar-search-container {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar.collapsed .sidebar-search-container {
+            display: none;
+        }
+
+        .sidebar-search-input {
+            width: 100%;
+            background: #1e3a5f;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            color: #ffffff;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .sidebar-search-input::placeholder {
+            color: #94a3b8;
+        }
+
+        .sidebar-search-input:focus {
+            border-color: #38bdf8;
+        }
+
+        /* NAVEGACIÓN */
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            padding: 0.75rem 0;
+            gap: 0.25rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.85rem 1.25rem;
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 0.925rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .nav-item:hover {
+            background-color: var(--bg-sidebar-hover);
+            color: var(--white);
+        }
+
+        .nav-item.active {
+            background-color: var(--bg-sidebar-active);
+            color: var(--white);
+            font-weight: 600;
+        }
+
+        .nav-icon {
+            font-size: 1.25rem;
+            min-width: 28px;
+            text-align: center;
+        }
+
+        .sidebar.collapsed .nav-label {
+            display: none;
+        }
+
+        .sidebar.collapsed .nav-item {
+            justify-content: center;
+            padding: 0.85rem 0;
+        }
+
+        /* FOOTER DE LA SIDEBAR */
+        .sidebar-footer {
+            padding: 1.25rem 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .btn-logout {
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            transition: color 0.2s ease;
+        }
+
+        .btn-logout:hover {
+            color: #f87171;
+        }
+
+        .sidebar.collapsed .btn-logout span {
+            display: none;
+        }
+
+        /* CONTENIDO PRINCIPAL */
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            background-color: var(--bg-main);
+        }
+
+        .top-header {
+            background-color: var(--white);
+            padding: 1.25rem 2rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .top-header h1 {
+            font-size: 1.35rem;
+            color: #0f172a;
+            font-weight: 700;
+        }
+
+        .user-badge {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .content-container {
+            padding: 2rem;
+            flex: 1;
+        }
+
+        /* ALERTAS */
+        .alert {
+            padding: 0.85rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        .alert-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .alert-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR INTERACTIVA -->
+    <aside class="sidebar" id="app-sidebar">
+        <div>
+            <!-- Header con Toggle -->
+            <div class="sidebar-header">
+                <div class="brand-text">
+                    Kine<span style="color: #ffffff;">connect</span>
+                </div>
+                <button type="button" class="toggle-btn" id="sidebar-toggle" title="Contraer / Expandir menú">
+                    ☰
+                </button>
+            </div>
+
+            <!-- Buscador Rápido de Módulos -->
+            <div class="sidebar-search-container">
+                <input 
+                    type="text" 
+                    id="sidebar-search" 
+                    class="sidebar-search-input" 
+                    placeholder="🔍 Buscar módulo..." 
+                    autocomplete="off"
+                >
+            </div>
+
+            <!-- Enlaces de Navegación -->
+            <nav class="sidebar-nav" id="sidebar-menu">
+                <!-- 0. Inicio -->
+                <a href="{% url 'dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" data-name="inicio hub home">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-label">Inicio</span>
+                </a>
+
+                <!-- 1. Panel de Seguimiento -->
+                <a href="{% url 'seguimiento_list' %}" class="nav-item {% if request.resolver_match.url_name == 'seguimiento_list' %}active{% endif %}" data-name="panel seguimiento dolor adherencia metricas">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-label">Panel de seguimiento</span>
+                </a>
+
+                <!-- 2. Pacientes -->
+                <a href="{% url 'pacientes_list' %}" class="nav-item {% if request.resolver_match.url_name == 'pacientes_list' or request.resolver_match.url_name == 'paciente_create' %}active{% endif %}" data-name="pacientes fichas usuarios registro">
+                    <span class="nav-icon">👤</span>
+                    <span class="nav-label">Pacientes</span>
+                </a>
+
+                <!-- 3. Catálogo de Ejercicios -->
+                <a href="{% url 'catalogo_muscular' %}" class="nav-item {% if request.resolver_match.url_name == 'catalogo_muscular' %}active{% endif %}" data-name="catalogo ejercicios mapa muscular zonas multimedia">
+                    <span class="nav-icon">📚</span>
+                    <span class="nav-label">Catálogo de ejercicios</span>
+                </a>
+
+                <!-- 4. Asignar Pauta -->
+                <a href="{% url 'pauta_create' %}" class="nav-item {% if request.resolver_match.url_name == 'pauta_create' %}active{% endif %}" data-name="asignar pauta crear prescripcion rutina">
+                    <span class="nav-icon">➕</span>
+                    <span class="nav-label">Asignar pauta</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Footer / Cerrar Sesión -->
+        <div class="sidebar-footer">
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-logout" title="Cerrar sesión">
+                    <span class="nav-icon">🚪</span>
+                    <span>Cerrar sesión</span>
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <!-- ÁREA DE CONTENIDO PRINCIPAL -->
+    <div class="main-wrapper">
+        <header class="top-header">
+            <h1>{% block header %}Panel Clínico{% endblock %}</h1>
+            <div class="user-badge">
+                {{ request.user.get_full_name|default:request.user.username }} &bull; Kinesiólogo/a
+            </div>
+        </header>
+
+        <main class="content-container">
+            {% if messages %}
+                <div class="messages">
+                    {% for msg in messages %}
+                        <div class="alert {% if msg.tags == 'error' %}alert-error{% else %}alert-success{% endif %}">
+                            {{ msg }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- SCRIPT DE INTERACTIVIDAD -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const sidebar = document.getElementById('app-sidebar');
+            const toggleBtn = document.getElementById('sidebar-toggle');
+            const searchInput = document.getElementById('sidebar-search');
+            const navItems = document.querySelectorAll('#sidebar-menu .nav-item');
+
+            // 1. Restaurar preferencia de usuario (localStorage)
+            const isCollapsed = localStorage.getItem('kine_sidebar_collapsed') === 'true';
+            if (isCollapsed) {
+                sidebar.classList.add('collapsed');
+            }
+
+            // 2. Toggle expandir / contraer
+            toggleBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('collapsed');
+                const collapsed = sidebar.classList.contains('collapsed');
+                localStorage.setItem('kine_sidebar_collapsed', collapsed);
+            });
+
+            // 3. Filtrado rápido en tiempo real dentro de la sidebar
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase().trim();
+                navItems.forEach(item => {
+                    const searchData = item.getAttribute('data-name') || '';
+                    const labelText = item.querySelector('.nav-label').textContent.toLowerCase();
+                    if (labelText.includes(query) || searchData.includes(query)) {
+                        item.style.display = 'flex';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ingresar · Kineconect</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="brand">Kine<span>connect</span></div>
+      <p class="subtitle">Portal web para kinesiólogos</p>
+
+      {% if form.errors %}
+        <ul class="messages">
+          <li class="error">Usuario o contraseña incorrectos.</li>
+        </ul>
+      {% endif %}
+
+      <form method="post">
+        {% csrf_token %}
+        <div class="field">
+          <label for="id_username">Usuario</label>
+          <input type="text" name="username" id="id_username" autofocus required>
+        </div>
+        <div class="field">
+          <label for="id_password">Contraseña</label>
+          <input type="password" name="password" id="id_password" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Ingresar</button>
+        <input type="hidden" name="next" value="{{ next }}">
+      </form>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Pacientes{% endblock %}
+{% block header %}Pacientes{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2>Mis pacientes</h2>
+    <p>Pacientes registrados y asignados a tu cuenta.</p>
+  </div>
+  <a href="{% url 'paciente_create' %}" class="btn btn-primary">+ Nuevo paciente</a>
+</div>
+
+
+<div class="card">
+  {% if pacientes %}
+  <table>
+    <thead>
+      <tr>
+        <th>RUT</th>
+        <th>Nombre</th>
+        <th>Usuario</th>
+        <th>Correo</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for perfil in pacientes %}
+      <tr>
+        <td>{{ perfil.rut }}</td>
+        <td>{{ perfil.user.get_full_name }}</td>
+        <td>{{ perfil.user.username }}</td>
+        <td>{{ perfil.user.email|default:"—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">
+    <p>Aún no tienes pacientes registrados.</p>
+    <a href="{% url 'paciente_create' %}" class="btn btn-primary">Registrar el primero</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+<div class="page-header">
+    <div>
+        <h2>Mis Pacientes</h2>
+        <p>Listado de pacientes vinculados a su consulta.</p>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+        <a href="{% url 'pauta_create' %}" class="btn btn-secondary">Prescribir Pauta</a>
+        <a href="{% url 'paciente_create' %}" class="btn btn-primary">+ Nuevo Paciente</a>
+    </div>
+</div>

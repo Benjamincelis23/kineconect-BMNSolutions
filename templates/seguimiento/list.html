@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Panel de seguimiento{% endblock %}
+{% block header %}Panel de seguimiento{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2>Seguimiento de pautas activas</h2>
+    <p>Últimos reportes de tus pacientes. Se marca alerta cuando el dolor reportado es {{ umbral }} o mayor (escala 1–10).</p>
+  </div>
+</div>
+
+{% if total_alertas > 0 %}
+<div class="alert-banner">
+  ⚠ {{ total_alertas }} paciente{{ total_alertas|pluralize:"s" }} con reporte de dolor elevado. Revisa su pauta.
+</div>
+{% endif %}
+
+<div class="card">
+  {% if filas %}
+  <table>
+    <thead>
+      <tr>
+        <th>Paciente</th>
+        <th>Ejercicio</th>
+        <th>Series x Rep.</th>
+        <th>Último reporte</th>
+        <th>Dolor</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for fila in filas %}
+      <tr>
+        <td>{{ fila.pauta.paciente.get_full_name }}</td>
+        <td>{{ fila.pauta.ejercicio.nombre }}</td>
+        <td>{{ fila.pauta.series }} x {{ fila.pauta.repeticiones }}</td>
+        <td>
+          {% if fila.feedback %}
+            {{ fila.feedback.fecha_ejecucion|date:"d-m-Y H:i" }}
+          {% else %}
+            Sin reportes aún
+          {% endif %}
+        </td>
+        <td>
+          {% if fila.feedback %}
+            {{ fila.feedback.escala_dolor }} / 10
+          {% else %}
+            —
+          {% endif %}
+        </td>
+        <td>
+          {% if fila.alerta %}
+            <span class="badge badge-alerta">Alerta de dolor</span>
+          {% elif fila.feedback %}
+            <span class="badge badge-ok">Sin novedades</span>
+          {% else %}
+            <span class="badge badge-neutro">Pendiente</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">
+    <p>No hay pautas activas asignadas todavía.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

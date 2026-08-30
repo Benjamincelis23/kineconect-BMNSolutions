@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Nuevo paciente{% endblock %}
+{% block header %}Pacientes{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2>Registrar nuevo paciente</h2>
+    <p>El paciente usará el usuario y contraseña para ingresar a la app móvil.</p>
+  </div>
+  <a href="{% url 'pacientes_list' %}" class="btn btn-secondary">Volver</a>
+</div>
+
+<div class="card">
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-grid">
+      <div class="field full">
+        <label for="{{ form.rut.id_for_label }}">RUT</label>
+        {{ form.rut }}
+        {{ form.rut.errors }}
+      </div>
+      <div class="field">
+        <label for="{{ form.nombres.id_for_label }}">Nombres</label>
+        {{ form.nombres }}
+        {{ form.nombres.errors }}
+      </div>
+      <div class="field">
+        <label for="{{ form.apellidos.id_for_label }}">Apellidos</label>
+        {{ form.apellidos }}
+        {{ form.apellidos.errors }}
+      </div>
+      <div class="field full">
+        <label for="{{ form.email.id_for_label }}">Correo (opcional)</label>
+        {{ form.email }}
+        {{ form.email.errors }}
+      </div>
+      <div class="field">
+        <label for="{{ form.username.id_for_label }}">Usuario de acceso</label>
+        {{ form.username }}
+        <p class="help-text">{{ form.username.help_text }}</p>
+        {{ form.username.errors }}
+      </div>
+      <div class="field">
+        <label for="{{ form.password.id_for_label }}">Contraseña temporal</label>
+        {{ form.password }}
+        {{ form.password.errors }}
+      </div>
+      <div class="full" style="margin-top: 8px;">
+        <button type="submit" class="btn btn-primary">Guardar paciente</button>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

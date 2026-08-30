@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Selector de Ejercicios - Kineconect{% endblock %}
+{% block header %}Selector de Ejercicios{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h2 style="margin: 0; color: #0f172a; font-size: 1.5rem; font-weight: 700;">Catálogo de Ejercicios</h2>
+        <p style="margin: 0.25rem 0 0 0; color: #64748b; font-size: 0.95rem;">Busca, filtra y agrega ejercicios a la pauta que estás armando.</p>
+    </div>
+    <a href="{% url 'carrito_ver' %}" id="btn-ver-carrito" class="btn" style="background: #0284c7; color: white; padding: 0.6rem 1.25rem; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.9rem;">
+        🛒 Ver pauta (<span id="carrito-contador">{{ total_carrito }}</span>)
+    </a>
+</div>
+
+<form method="get" style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+    <input
+        type="text" name="q" value="{{ query }}"
+        placeholder="Buscar ejercicio por nombre..."
+        style="flex: 1; min-width: 220px; padding: 0.65rem 1rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem;">
+
+    <select name="zona" style="padding: 0.65rem 1rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem;">
+        <option value="">Todas las zonas</option>
+        {% for zona in zonas %}
+            <option value="{{ zona }}" {% if zona == zona_activa %}selected{% endif %}>{{ zona }}</option>
+        {% endfor %}
+    </select>
+
+    <button type="submit" class="btn" style="background: #0f172a; color: white; padding: 0.65rem 1.5rem; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">
+        Buscar
+    </button>
+    {% if query or zona_activa %}
+        <a href="{% url 'selector_ejercicios' %}" style="align-self: center; color: #64748b; font-size: 0.9rem;">Limpiar filtros</a>
+    {% endif %}
+</form>
+
+{% if not ejercicios %}
+    <p style="color: #64748b;">No se encontraron ejercicios con esos filtros.</p>
+{% endif %}
+
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.25rem;">
+    {% for ejercicio in ejercicios %}
+    <div class="card" data-id="{{ ejercicio.id }}" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column;">
+        <div style="width: 100%; height: 160px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+            {% if ejercicio.gif_url %}
+                <img src="{{ ejercicio.gif_url }}" alt="{{ ejercicio.nombre }}" style="width: 100%; height: 100%; object-fit: cover;">
+            {% elif ejercicio.imagen %}
+                <img src="{{ ejercicio.imagen.url }}" alt="{{ ejercicio.nombre }}" style="width: 100%; height: 100%; object-fit: cover;">
+            {% else %}
+                <span style="color: #94a3b8; font-size: 0.85rem;">Sin imagen</span>
+            {% endif %}
+        </div>
+        <div style="padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; flex: 1;">
+            <span style="background: #e0f2fe; color: #0369a1; font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.6rem; border-radius: 9999px; text-transform: uppercase; align-self: flex-start;">
+                {{ ejercicio.zona_cuerpo }}
+            </span>
+            <h3 style="margin: 0; font-size: 1.05rem; color: #0f172a;">{{ ejercicio.nombre }}</h3>
+            <p style="margin: 0; font-size: 0.85rem; color: #64748b; flex: 1;">{{ ejercicio.descripcion|truncatewords:18 }}</p>
+
+            <button
+                type="button"
+                class="btn-agregar-carrito"
+                data-id="{{ ejercicio.id }}"
+                data-url="{% url 'carrito_agregar' ejercicio.id %}"
+                style="margin-top: 0.5rem; padding: 0.55rem; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;
+                       {% if ejercicio.id|stringformat:'s' in ids_en_carrito %}background: #16a34a; color: white;{% else %}background: #0284c7; color: white;{% endif %}">
+                {% if ejercicio.id|stringformat:'s' in ids_en_carrito %}✓ Agregado{% else %}+ Agregar a la pauta{% endif %}
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+document.querySelectorAll('.btn-agregar-carrito').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        fetch(btn.dataset.url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.ok) {
+                btn.textContent = '✓ Agregado';
+                btn.style.background = '#16a34a';
+                document.getElementById('carrito-contador').textContent = data.total;
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
