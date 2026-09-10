@@ -4,7 +4,7 @@ Nombre del proyecto: KineConect
 
 Descripción: Plataforma web orientada a la kinesiología para la gestión y prescripción de ejercicios mediante un mapa anatómico interactivo en SVG, selector de zonas corporales y carrito de ejercicios personalizados.
 
-Tecnologías utilizadas: Python, Django, HTML5, CSS3, JavaScript (SVG interactivo), Git/GitHub.
+Tecnologías utilizadas: Python, Django, HTML5, CSS3, JavaScript (SVG interactivo), PostgreSQL, Git/GitHub.
 
 Instrucciones para ejecutar el proyecto localmente:
 1. Clonar el repositorio:
