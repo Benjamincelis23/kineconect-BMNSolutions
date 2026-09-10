@@ -28,7 +28,7 @@ Integrantes del equipo con sus roles:
 * Matías Saez - Backend Developer & Data Lead
 
 Metodología de trabajo del equipo:
-* Metodología ágil: Scrum / Kanban apoyado en el seguimiento de tareas e iteraciones por sprint.
+* Metodología ágil: Scrum apoyado en el seguimiento de tareas e iteraciones por sprint.
 
 Arquitectura de la solución:
 * Arquitectura basada en el patrón MTV (Model-Template-View) provisto por Django, desacoplando la lógica de datos, plantillas HTML/JS interactivas y controladores de endpoints para el selector de ejercicios.
