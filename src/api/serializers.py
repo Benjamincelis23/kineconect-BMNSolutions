@@ -31,7 +31,7 @@ class PacienteRegistroSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Este RUT ya se encuentra registrado en el sistema.")
         return rut_valido
 
-    def create(self, validated_data):
+    def create(self, validated_data): 
         rut = validated_data.pop('rut')
         kinesiologo = self.context['request'].user
 

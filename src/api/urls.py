@@ -6,7 +6,6 @@ from . import views
 # 1. Instanciación y registro de rutas en el Router de Django REST Framework
 router = DefaultRouter()
 router.register(r'api/v1/ejercicios', views.EjercicioViewSet, basename='api_ejercicios')
-router.register(r'api/v1/pacientes', views.PacienteViewSet, basename='api_pacientes')
 
 # 2. Lista principal de URLs (Vistas HTML de Django + Endpoints de la API)
 urlpatterns = [
