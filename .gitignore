@@ -13,3 +13,5 @@ __pycache__/
 # Configuraciones locales
 .vscode/
 .env
+# Archivos multimedia subidos por usuarios (NUEVO)
+src/media/
