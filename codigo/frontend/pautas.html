@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pautas y Monitoreo de Dolor - KineConect</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand">Kine<span>Conect</span></div>
+            <nav>
+                <a href="/inicio.html" id="nav-dashboard">Dashboard</a>
+                <a href="/crear_pauta.html" id="nav-crear-pauta">Mapa Anatómico</a>
+                <a href="/ejercicios.html" id="nav-ejercicios">Catálogo de Ejercicios</a>
+                <a href="/pautas.html" id="nav-pautas" class="active">Pautas y Dolor</a>
+                <a href="/pacientes.html" id="nav-pacientes">Gestión de Pacientes</a>
+            </nav>
+            <div class="sidebar-footer">
+                <button type="button" class="btn-logout" id="btn-cerrar-sesion" onclick="api.logout()">
+                    Cerrar Sesión
+                </button>
+            </div>
+        </aside>
+
+        <main class="main">
+            <header class="topbar">
+                <h1>Monitoreo Clínico y Pautas de Tratamiento</h1>
+                <div class="user-tag" id="user-display">Usuario Conectado</div>
+            </header>
+
+            <div class="content">
+                <div class="page-header">
+                    <div>
+                        <h2>Monitoreo de Dolor y Rutinas</h2>
+                        <p>Visualiza y evalúa la escala de dolor (EVA) que tus pacientes reportan desde la aplicación
+                            móvil.</p>
+                    </div>
+                    <a href="/crear_pauta.html" class="btn btn-primary">+ Nueva Pauta (Mapa Anatómico)</a>
+                </div>
+
+                <div style="margin-bottom: 32px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h3 style="margin: 0; color: var(--azul-900);">📊 Evaluaciones de Dolor Recibidas (App Móvil)
+                        </h3>
+                        <button class="btn btn-secondary" onclick="cargarFeedbacks()"
+                            style="font-size: 0.82rem; padding: 6px 12px;">
+                            🔄 Actualizar Reportes
+                        </button>
+                    </div>
+
+                    <div id="contenedor-alertas-criticas" style="display: none;"></div>
+
+                    <div class="card">
+                        <div id="loading-feedback" class="empty-state">
+                            <p>Cargando reportes de dolor recibidos desde la app móvil...</p>
+                        </div>
+
+                        <table id="tabla-feedback" style="display: none;">
+                            <thead>
+                                <tr>
+                                    <th>Fecha Reporte</th>
+                                    <th>Pauta Asignada</th>
+                                    <th>Escala de Dolor (EVA)</th>
+                                    <th>Adherencia</th>
+                                    <th>Observaciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-feedback"></tbody>
+                        </table>
+
+                        <div id="sin-feedback" class="empty-state" style="display: none;">
+                            <p>Aún no se han recibido reportes de dolor. Cuando los pacientes completen su rutina en la
+                                app móvil, sus registros aparecerán aquí automáticamente.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div style="margin-bottom: 12px;">
+                        <h3 style="margin: 0; color: var(--azul-900);">📋 Pautas de Ejercicios Prescritas</h3>
+                    </div>
+
+                    <div id="loading-pautas" class="empty-state card">
+                        <p>Cargando pautas kinesiológicas...</p>
+                    </div>
+
+                    <div id="lista-pautas" style="display: flex; flex-direction: column; gap: 18px;"></div>
+
+                    <div id="no-pautas" class="empty-state card" style="display: none;">
+                        <p>No hay pautas de tratamiento registradas actualmente. ¡Prescribe la primera desde el <a
+                                href="/crear_pauta.html" style="color: var(--azul-500); font-weight: 600;">Mapa
+                                Anatómico</a>!</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Cliente API de Frontend -->
+    <script src="/js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!api.isAuthenticated()) {
+                window.location.href = '/index.html';
+                return;
+            }
+            const user = api.getUser();
+            const userTag = document.getElementById('user-display');
+            if (user && userTag) {
+                userTag.textContent = user.nombre_completo || user.username || 'Usuario';
+            }
+        });
+    </script>
+    <!-- Tu archivo de JS para pautas -->
+    <script src="/js/pautas.js"></script>
+</body>
+
+</html>

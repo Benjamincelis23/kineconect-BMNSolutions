@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo de Ejercicios - KineConect</title>
+    <!-- Ruta absoluta a los estilos servidos por Vite -->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <div class="app-shell">
+        <!-- Sidebar de Navegación -->
+        <aside class="sidebar">
+            <div class="brand">Kine<span>Conect</span></div>
+            <nav>
+                <a href="/inicio.html" id="nav-dashboard">Dashboard</a>
+                <a href="/crear_pauta.html" id="nav-crear-pauta">Mapa Anatómico</a>
+                <!-- Agregamos la clase 'active' manualmente a la sección actual -->
+                <a href="/ejercicios.html" id="nav-ejercicios" class="active">Catálogo de Ejercicios</a>
+                <a href="/pautas.html" id="nav-pautas">Pautas y Dolor</a>
+                <a href="/pacientes.html" id="nav-pacientes">Gestión de Pacientes</a>
+            </nav>
+            <div class="sidebar-footer">
+                <button type="button" class="btn-logout" id="btn-cerrar-sesion" onclick="api.logout()">
+                    Cerrar Sesión
+                </button>
+            </div>
+        </aside>
+
+        <!-- Contenido Principal -->
+        <main class="main">
+            <header class="topbar">
+                <h1>Catálogo Muscular y Ejercicios</h1>
+                <div class="user-tag" id="user-display">Usuario Conectado</div>
+            </header>
+
+            <div class="content">
+                <div class="page-header">
+                    <div>
+                        <h2>Ejercicios Kinesiológicos</h2>
+                        <p>Consulta el catálogo filtrando por zona anatómica.</p>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-secondary filter-btn" data-zona="">Todos</button>
+                        <button class="btn btn-secondary filter-btn" data-zona="cuello">Cuello</button>
+                        <button class="btn btn-secondary filter-btn" data-zona="hombro">Hombro</button>
+                        <button class="btn btn-secondary filter-btn" data-zona="espalda">Espalda</button>
+                        <button class="btn btn-secondary filter-btn" data-zona="rodilla">Rodilla</button>
+                    </div>
+                </div>
+
+                <!-- Estado de carga -->
+                <div id="loading" class="empty-state" style="display: block;">
+                    <p>Cargando ejercicios desde la API...</p>
+                </div>
+
+                <!-- Mensaje de error si falla la petición -->
+                <ul class="messages" id="error-messages" style="display: none;">
+                    <li class="error" id="error-text"></li>
+                </ul>
+
+                <!-- Contenedor dinámico de tarjetas de ejercicios -->
+                <div id="ejercicios-grid"
+                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+                </div>
+
+                <div id="no-data" class="empty-state card" style="display: none;">
+                    <p>No se encontraron ejercicios para la zona seleccionada.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Cliente API de Frontend servido por Vite -->
+    <script src="/js/api.js"></script>
+    <script>
+        // Lógica de autenticación de la página
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!api.isAuthenticated()) {
+                window.location.href = '/index.html';
+                return;
+            }
+            const user = api.getUser();
+            const userTag = document.getElementById('user-display');
+            if (user && userTag) {
+                userTag.textContent = user.nombre_completo || user.username || 'Usuario';
+            }
+        });
+    </script>
+    <script>
+        let zonaActual = '';
+
+        async function cargarEjercicios(zona = '') {
+            const loading = document.getElementById('loading');
+            const grid = document.getElementById('ejercicios-grid');
+            const noData = document.getElementById('no-data');
+            const errorMsg = document.getElementById('error-messages');
+            const errorText = document.getElementById('error-text');
+
+            loading.style.display = 'block';
+            grid.innerHTML = '';
+            noData.style.display = 'none';
+            errorMsg.style.display = 'none';
+
+            try {
+                // Formateamos correctamente el parámetro para la API
+                const queryParam = zona ? `?zona=${zona}` : '';
+                let ejercicios = await api.getEjercicios(queryParam);
+
+                // Protección: Si Django devuelve paginación o un objeto extraño
+                if (!Array.isArray(ejercicios)) {
+                    if (ejercicios.results) {
+                        ejercicios = ejercicios.results;
+                    } else {
+                        throw new Error("Formato de datos incorrecto desde la API.");
+                    }
+                }
+
+                loading.style.display = 'none';
+
+                if (!ejercicios || ejercicios.length === 0) {
+                    noData.style.display = 'block';
+                    return;
+                }
+
+                // Renderizado dinámico
+                ejercicios.forEach(ej => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.style.display = 'flex';
+                    card.style.flexDirection = 'column';
+                    card.style.justifyContent = 'space-between';
+
+                    // Validamos si la URL ya viene completa (http...) o si necesitamos agregarle el puerto de Django
+                    const urlImagen = ej.imagen && ej.imagen.startsWith('http')
+                        ? ej.imagen
+                        : (ej.imagen ? `http://127.0.0.1:8000${ej.imagen}` : null);
+
+                    const imagenHtml = urlImagen
+                        ? `<img src="${urlImagen}" alt="${ej.nombre}" style="width: 100%; height: 160px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">`
+                        : `<div style="width: 100%; height: 100px; background: #e8f2f8; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #1c5d8c; font-weight: 600; margin-bottom: 12px;">Sin Imagen</div>`;
+
+                    card.innerHTML = `
+                      <div>
+                        ${imagenHtml}
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                          <h3 style="margin: 0; font-size: 1.1rem; color: var(--azul-900);">${ej.nombre}</h3>
+                          <span class="badge badge-neutro">${ej.zona_cuerpo || 'General'}</span>
+                        </div>
+                        <p style="color: var(--gris-600); font-size: 0.88rem; line-height: 1.4; margin-bottom: 14px;">
+                          ${ej.descripcion || 'Sin descripción detallada.'}
+                        </p>
+                      </div>
+                      <div>
+                        ${ej.video_url ? `<a href="${ej.video_url}" target="_blank" class="btn btn-secondary" style="width: 100%; text-align: center; margin-top: 8px;">Ver Video Demostrativo</a>` : ''}
+                      </div>
+                    `;
+                    grid.appendChild(card);
+                });
+
+            } catch (err) {
+                loading.style.display = 'none';
+                errorMsg.style.display = 'block';
+                errorText.textContent = `Error al cargar ejercicios: ${err.message}`;
+            }
+        }
+
+        // Configuración de botones de filtro
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.replace('btn-primary', 'btn-secondary'));
+                e.target.classList.replace('btn-secondary', 'btn-primary');
+                zonaActual = e.target.getAttribute('data-zona');
+                cargarEjercicios(zonaActual);
+            });
+        });
+
+        // IMPORTANTE: Esto es lo que "enciende" la página al entrar
+        document.addEventListener('DOMContentLoaded', () => {
+            const todosBtn = document.querySelector('.filter-btn[data-zona=""]');
+            if (todosBtn) todosBtn.classList.replace('btn-secondary', 'btn-primary');
+
+            // LLamada inicial a la API
+            cargarEjercicios('');
+        });
+    </script>
+</body>
+
+</html>

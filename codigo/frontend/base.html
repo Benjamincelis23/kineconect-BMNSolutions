@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- El título cambiará en cada página (ej: Iniciar Sesión, Pacientes) -->
+    <title>KineConect</title>
+    <!-- Ruta absoluta a los estilos servidos por Vite -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- Aquí puedes añadir CSS específico de cada página si lo necesitas -->
+</head>
+
+<body>
+    <div class="app-shell">
+        <!-- Sidebar de Navegación -->
+        <aside class="sidebar">
+            <div class="brand">Kine<span>Conect</span></div>
+            <nav>
+                <!-- Las rutas ahora apuntan a los archivos físicos .html -->
+                <a href="/inicio.html" id="nav-dashboard">Dashboard</a>
+                <a href="/crear_pauta.html" id="nav-crear-pauta">Mapa Anatómico</a>
+                <a href="/ejercicios.html" id="nav-ejercicios">Catálogo de Ejercicios</a>
+                <a href="/pautas.html" id="nav-pautas">Pautas y Dolor</a>
+                <a href="/pacientes.html" id="nav-pacientes">Gestión de Pacientes</a>
+            </nav>
+            <div class="sidebar-footer">
+                <button type="button" class="btn-logout" id="btn-cerrar-sesion" onclick="api.logout()">
+                    Cerrar Sesión
+                </button>
+            </div>
+        </aside>
+
+        <!-- Contenido Principal -->
+        <main class="main">
+            <header class="topbar">
+                <!-- Este título cambiará en cada página -->
+                <h1>Panel Principal</h1>
+                <div class="user-tag" id="user-display">Usuario Conectado</div>
+            </header>
+
+            <div class="content">
+                <!-- ========================================== -->
+                <!-- AQUÍ VA EL CONTENIDO ESPECÍFICO DE LA PÁGINA -->
+                <!-- (Por ejemplo, el mapa anatómico o las tarjetas del inicio) -->
+                <!-- ========================================== -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Cliente API de Frontend servido por Vite -->
+    <script src="/js/api.js"></script>
+    <script>
+        // Lógica común de autenticación para todas las páginas protegidas
+        document.addEventListener('DOMContentLoaded', () => {
+            // Nota: debes asegurarte de que isAuthenticated() y getUser() 
+            // existan en tu archivo api.js
+            if (!api.isAuthenticated()) {
+                window.location.href = '/index.html'; // Redirige al login (.html)
+                return;
+            }
+            const user = api.getUser();
+            const userTag = document.getElementById('user-display');
+            if (user && userTag) {
+                userTag.textContent = user.nombre_completo || user.username || 'Usuario';
+            }
+        });
+    </script>
+
+    <!-- Aquí irán los scripts específicos de cada página (ej: pacientes.js) -->
+</body>
+
+</html>

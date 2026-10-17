@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Pacientes - KineConect</title>
+    <!-- Ruta absoluta a los estilos servidos por Vite -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- Opcional: Si necesitas estilos específicos, enlázalos aquí con ruta absoluta -->
+    <!-- <link rel="stylesheet" href="/css/pacientes.css"> -->
+</head>
+
+<body>
+    <div class="app-shell">
+        <!-- Sidebar de Navegación -->
+        <aside class="sidebar">
+            <div class="brand">Kine<span>Conect</span></div>
+            <nav>
+                <a href="/inicio.html" id="nav-dashboard">Dashboard</a>
+                <a href="/crear_pauta.html" id="nav-crear-pauta">Mapa Anatómico</a>
+                <a href="/ejercicios.html" id="nav-ejercicios">Catálogo de Ejercicios</a>
+                <a href="/pautas.html" id="nav-pautas">Pautas y Dolor</a>
+                <!-- Agregamos la clase 'active' manualmente a la sección actual -->
+                <a href="/pacientes.html" id="nav-pacientes" class="active">Gestión de Pacientes</a>
+            </nav>
+            <div class="sidebar-footer">
+                <button type="button" class="btn-logout" id="btn-cerrar-sesion" onclick="api.logout()">
+                    Cerrar Sesión
+                </button>
+            </div>
+        </aside>
+
+        <!-- Contenido Principal -->
+        <main class="main">
+            <header class="topbar">
+                <h1>Pacientes Asignados</h1>
+                <div class="user-tag" id="user-display">Usuario Conectado</div>
+            </header>
+
+            <div class="content">
+                <div class="page-header">
+                    <div>
+                        <h2>Mis Pacientes</h2>
+                        <p>Listado de pacientes vinculados a tu cuenta de Kinesiólogo.</p>
+                    </div>
+                    <button class="btn btn-primary" id="btn-toggle-form" onclick="toggleFormulario()">
+                        + Registrar Nuevo Paciente
+                    </button>
+                </div>
+
+                <!-- Formulario para Registrar Paciente (Oculto por defecto) -->
+                <div id="seccion-registro" class="card" style="display: none; margin-bottom: 28px;">
+                    <h3 style="margin-top: 0; margin-bottom: 16px;">Nuevo Paciente</h3>
+
+                    <ul class="messages" id="registro-messages" style="display: none;">
+                        <li id="registro-msg-item"></li>
+                    </ul>
+
+                    <form id="form-registrar-paciente" class="form-grid">
+                        <div class="field">
+                            <label for="first_name">Nombre *</label>
+                            <input type="text" id="first_name" required placeholder="ej: Juan">
+                        </div>
+
+                        <div class="field">
+                            <label for="last_name">Apellido *</label>
+                            <input type="text" id="last_name" required placeholder="ej: Pérez">
+                        </div>
+
+                        <div class="field">
+                            <label for="rut">RUT chileno (sin puntos con guión) *</label>
+                            <input type="text" id="rut" required placeholder="12345678-9">
+                            <div class="help-text">Formato: 12345678-9 o 12345678-K</div>
+                        </div>
+
+                        <div class="field">
+                            <label for="email">Correo Electrónico</label>
+                            <input type="email" id="email" placeholder="paciente@correo.cl">
+                            <div class="help-text">Se enviará la clave temporal si ingresas un correo.</div>
+                        </div>
+
+                        <div class="full" style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button type="submit" class="btn btn-primary" id="btn-guardar-paciente">Guardar y Vincular
+                                Paciente</button>
+                            <button type="button" class="btn btn-secondary"
+                                onclick="toggleFormulario()">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Tabla de Pacientes -->
+                <div class="card">
+                    <div id="loading-pacientes" class="empty-state">
+                        <p>Consultando lista de pacientes a la API...</p>
+                    </div>
+
+                    <table id="tabla-pacientes" style="display: none;">
+                        <thead>
+                            <tr>
+                                <th>Nombre Completo</th>
+                                <th>RUT</th>
+                                <th>Correo Electrónico</th>
+                                <th>Rol</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-pacientes">
+                        </tbody>
+                    </table>
+
+                    <div id="no-pacientes" class="empty-state" style="display: none;">
+                        <p>Aún no tienes pacientes asignados. ¡Registra uno con el botón superior!</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Cliente API de Frontend servido por Vite -->
+    <script src="/js/api.js"></script>
+    <script>
+        // Lógica de autenticación de la página
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!api.isAuthenticated()) {
+                window.location.href = '/index.html';
+                return;
+            }
+            const user = api.getUser();
+            const userTag = document.getElementById('user-display');
+            if (user && userTag) {
+                userTag.textContent = user.nombre_completo || user.username || 'Usuario';
+            }
+        });
+    </script>
+
+    <!-- Enlazamos el archivo JavaScript con la lógica de pacientes -->
+    <script src="/js/pacientes.js"></script>
+</body>
+
+</html>

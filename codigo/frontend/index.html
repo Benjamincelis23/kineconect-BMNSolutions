@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - KineConect</title>
+    <!-- Ruta absoluta a los estilos servidos por Vite -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- LIBRERÍA DE ICONOS PROFESIONALES (Boxicons) -->
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+</head>
+
+<body>
+    <!-- Contenedor específico para centrar el Login -->
+    <div class="login-wrap">
+        <div class="login-card">
+            <div class="brand">Kine<span>Conect</span></div>
+            <div class="subtitle">Ingreso a la plataforma kinesiológica</div>
+
+            <!-- Caja de Mensajes -->
+            <ul class="messages" id="login-messages" style="display: none;">
+                <li class="error" id="login-error-text"></li>
+            </ul>
+
+            <form id="login-form">
+                <div class="field">
+                    <label for="username"><i class='bx bx-user' style="margin-right: 5px;"></i>Usuario / RUT (sin puntos
+                        ni guión)</label>
+                    <input type="text" id="username" name="username" placeholder="ej: 123456789 o admin" required
+                        autofocus>
+                </div>
+
+                <div class="field">
+                    <label for="password"><i class='bx bx-lock-alt' style="margin-right: 5px;"></i>Contraseña</label>
+                    <input type="password" id="password" name="password" placeholder="Tu contraseña" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="btn-login"
+                    style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class='bx bx-log-in-circle'></i> Iniciar Sesión
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Ruta corregida para cargar el script de la API -->
+    <script src="/js/api.js"></script>
+    <script>
+        const form = document.getElementById('login-form');
+        const msgBox = document.getElementById('login-messages');
+        const errText = document.getElementById('login-error-text');
+        const btnSubmit = document.getElementById('btn-login');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Evitamos que la página se recargue
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Verificando...";
+            msgBox.style.display = 'none';
+
+            try {
+                // Petición POST asíncrona hacia Django usando fetch
+                await api.login(username, password);
+
+                // IMPORTANTE: Redirigimos al archivo físico
+                window.location.href = '/inicio.html';
+            } catch (error) {
+                msgBox.style.display = 'block';
+                errText.innerHTML = `<i class='bx bx-error-circle'></i> ${error.message || 'Error al iniciar sesión. Revisa tus credenciales.'}`;
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = "<i class='bx bx-log-in-circle'></i> Iniciar Sesión";
+            }
+        });
+    </script>
+</body>
+
+</html>

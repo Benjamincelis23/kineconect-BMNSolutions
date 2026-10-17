@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Pacientes - KineConect</title>
+    <!-- Estilos y librería de iconos -->
+    <link rel="stylesheet" href="/css/style.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+</head>
+
+<body>
+    <!-- Este es el único esqueleto que necesitas, el JS (layout.js) dibujará los menús automáticamente -->
+    <div class="app-shell">
+        <main class="main">
+            <div class="content">
+
+                <!-- ENCABEZADO DE PACIENTES -->
+                <div class="page-header"
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+                    <div>
+                        <h2>Mis Pacientes</h2>
+                        <p>Listado de pacientes vinculados a tu cuenta de Kinesiólogo.</p>
+                    </div>
+                    <button class="btn btn-primary" id="btn-toggle-form" onclick="toggleFormulario()">
+                        <i class='bx bx-user-plus'></i> Registrar Nuevo Paciente
+                    </button>
+                </div>
+
+                <!-- FORMULARIO DE REGISTRO (Oculto) -->
+                <div id="seccion-registro" class="card" style="display: none; margin-bottom: 28px;">
+                    <h3 style="margin-top: 0; margin-bottom: 16px;">Nuevo Paciente</h3>
+
+                    <ul class="messages" id="registro-messages" style="display: none;">
+                        <li id="registro-msg-item"></li>
+                    </ul>
+
+                    <form id="form-registrar-paciente" class="form-grid">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <div class="field">
+                                <label for="first_name">Nombre *</label>
+                                <input type="text" id="first_name" required placeholder="ej: Juan">
+                            </div>
+                            <div class="field">
+                                <label for="last_name">Apellido *</label>
+                                <input type="text" id="last_name" required placeholder="ej: Pérez">
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <div class="field">
+                                <label for="rut">RUT chileno (sin puntos con guión) *</label>
+                                <input type="text" id="rut" required placeholder="12345678-9">
+                                <div class="help-text">Formato: 12345678-9 o 12345678-K</div>
+                            </div>
+                            <div class="field">
+                                <label for="email">Correo Electrónico</label>
+                                <input type="email" id="email" placeholder="paciente@correo.cl">
+                                <div class="help-text">Se enviará la clave temporal si ingresas un correo.</div>
+                            </div>
+                        </div>
+
+                        <div class="full" style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button type="submit" class="btn btn-primary" id="btn-guardar-paciente">Guardar y
+                                Vincular</button>
+                            <button type="button" class="btn btn-secondary"
+                                onclick="toggleFormulario()">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- TABLA DE RESULTADOS -->
+                <div class="card">
+                    <!-- Animación de carga -->
+                    <div id="loading-pacientes" class="empty-state">
+                        <i class='bx bx-loader-alt bx-spin' style="font-size: 2rem; color: var(--primary);"></i>
+                        <p style="margin-top: 10px;">Consultando lista de pacientes a la API...</p>
+                    </div>
+
+                    <!-- Tabla -->
+                    <table id="tabla-pacientes" style="display: none;">
+                        <thead>
+                            <tr>
+                                <th>Nombre Completo</th>
+                                <th>RUT</th>
+                                <th>Correo Electrónico</th>
+                                <th>Rol</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-pacientes">
+                        </tbody>
+                    </table>
+
+                    <!-- Mensaje si no hay pacientes -->
+                    <div id="no-pacientes" class="empty-state" style="display: none;">
+                        <i class='bx bx-user-x' style="font-size: 3rem; color: var(--text-muted);"></i>
+                        <p style="margin-top: 10px;">Aún no tienes pacientes asignados.</p>
+                    </div>
+
+                    <!-- Mensaje de Error API -->
+                    <div id="error-pacientes" class="empty-state" style="display: none;">
+                        <i class='bx bx-error-circle' style="font-size: 3rem; color: var(--rojo-500);"></i>
+                        <p id="error-text" style="color: var(--rojo-500); font-weight: 600; margin-top: 10px;"></p>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts Esenciales -->
+    <script src="/js/api.js"></script>
+    <script src="/js/layout.js"></script> <!-- Dibuja los menús y el modo oscuro -->
+
+    <!-- Lógica Exclusiva de Pacientes -->
+    <script>
+        function toggleFormulario() {
+            const sec = document.getElementById('seccion-registro');
+            sec.style.display = (sec.style.display === 'none') ? 'block' : 'none';
+        }
+
+        async function cargarPacientes() {
+            const loading = document.getElementById('loading-pacientes');
+            const tabla = document.getElementById('tabla-pacientes');
+            const tbody = document.getElementById('tbody-pacientes');
+            const noData = document.getElementById('no-pacientes');
+            const errorDiv = document.getElementById('error-pacientes');
+            const errorText = document.getElementById('error-text');
+
+            loading.style.display = 'block';
+            tabla.style.display = 'none';
+            noData.style.display = 'none';
+            errorDiv.style.display = 'none';
+            tbody.innerHTML = '';
+
+            try {
+                let pacientes = await api.getMisPacientes();
+
+                // Validación de datos
+                if (!Array.isArray(pacientes)) {
+                    if (pacientes && pacientes.results) {
+                        pacientes = pacientes.results;
+                    } else if (pacientes && typeof pacientes === 'object') {
+                        pacientes = [pacientes];
+                    } else {
+                        throw new Error("El servidor devolvió un formato no válido.");
+                    }
+                }
+
+                loading.style.display = 'none';
+
+                if (!pacientes || pacientes.length === 0) {
+                    noData.style.display = 'block';
+                    return;
+                }
+
+                tabla.style.display = 'table';
+
+                // Llenar tabla
+                pacientes.forEach(p => {
+                    const tr = document.createElement('tr');
+                    const nombre = p.nombre_completo || (p.user ? `${p.user.first_name} ${p.user.last_name}` : 'Paciente');
+                    const correo = p.email || (p.user ? p.user.email : 'Sin correo');
+
+                    tr.innerHTML = `
+                        <td><strong>${nombre}</strong></td>
+                        <td>${p.rut || 'N/A'}</td>
+                        <td>${correo}</td>
+                        <td><span class="badge badge-ok">${p.rol || 'Paciente'}</span></td>
+                        <td>
+                            <a href="/pautas.html" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 5px;">
+                                <i class='bx bx-line-chart'></i> Ver Pautas
+                            </a>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+            } catch (err) {
+                loading.style.display = 'none';
+                errorDiv.style.display = 'block';
+                // Mostramos exactamente por qué falló el fetch
+                errorText.textContent = `Hubo un error de conexión: ${err.message}`;
+            }
+        }
+
+        // Llamar a la API en cuanto cargue la página
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarPacientes();
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prescribir Rutina - Mapa Anatómico - KineConect</title>
+    <!-- Ruta absoluta a los estilos globales -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- Enlazamos el archivo CSS específico de esta vista -->
+    <link rel="stylesheet" href="/css/crear_pauta.css">
+</head>
+
+<body>
+    <div class="app-shell">
+        <!-- Sidebar de Navegación -->
+        <aside class="sidebar">
+            <div class="brand">Kine<span>Conect</span></div>
+            <nav>
+                <a href="/inicio.html" id="nav-dashboard">Dashboard</a>
+                <!-- Agregamos la clase 'active' manualmente a la sección actual -->
+                <a href="/crear_pauta.html" id="nav-crear-pauta" class="active">Mapa Anatómico</a>
+                <a href="/ejercicios.html" id="nav-ejercicios">Catálogo de Ejercicios</a>
+                <a href="/pautas.html" id="nav-pautas">Pautas y Dolor</a>
+                <a href="/pacientes.html" id="nav-pacientes">Gestión de Pacientes</a>
+            </nav>
+            <div class="sidebar-footer">
+                <button type="button" class="btn-logout" id="btn-cerrar-sesion" onclick="api.logout()">
+                    Cerrar Sesión
+                </button>
+            </div>
+        </aside>
+
+        <!-- Contenido Principal -->
+        <main class="main">
+            <header class="topbar">
+                <h1>Prescripción con Mapa Anatómico Biomecánico</h1>
+                <div class="user-tag" id="user-display">Usuario Conectado</div>
+            </header>
+
+            <div class="content">
+
+                <div class="page-header">
+                    <div>
+                        <h2>Prescripción y Carrito de Ejercicios</h2>
+                        <p>Metodología biomecánica funcional (Empuje, Tracción, Core y Piernas) con mapa anatómico
+                            interactivo.</p>
+                    </div>
+                </div>
+
+                <!-- ========================================================= -->
+                <!-- AQUÍ DEBES PEGAR TODO EL CÓDIGO HTML DEL MAPA SVG Y EL CARRITO -->
+                <!-- (El que estaba originalmente en tu archivo, que sacamos por espacio) -->
+                <!-- ========================================================= -->
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Cliente API de Frontend servido por Vite -->
+    <script src="/js/api.js"></script>
+    <script>
+        // Lógica de autenticación de la página
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!api.isAuthenticated()) {
+                window.location.href = '/index.html';
+                return;
+            }
+            const user = api.getUser();
+            const userTag = document.getElementById('user-display');
+            if (user && userTag) {
+                userTag.textContent = user.nombre_completo || user.username || 'Usuario';
+            }
+        });
+
+        // Variables globales (Reemplazo manual del tag de Django para que tu script externo funcione)
+        const URIs = {
+            pautas: "/pautas.html"
+        };
+    </script>
+
+    <!-- Enlazamos el archivo JavaScript con la lógica de esta vista -->
+    <script src="/js/crear_pauta.js"></script>
+</body>
+
+</html>
