@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - KineConnect</title>
+    <!-- Hoja de estilos y Boxicons -->
+    <link rel="stylesheet" href="public/css/style.css">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('KineConnect_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+</head>
+
+<body>
+    <!-- Botón de Modo Oscuro en Login -->
+    <div style="position: absolute; top: 16px; right: 16px; z-index: 50;">
+        <button id="btn-toggle-theme" class="btn btn-secondary btn-sm" title="Cambiar Tema"
+            onclick="toggleThemeLogin()">
+            <i class='bx bx-moon' style="font-size: 1.15rem;"></i>
+        </button>
+    </div>
+
+    <div class="login-wrap">
+        <div class="login-card">
+            <div class="brand">Kine<span>Connect</span></div>
+            <div class="subtitle">Ingreso a la plataforma kinesiológica</div>
+
+            <!-- Caja de Mensajes de Error -->
+            <ul class="messages is-hidden" id="login-messages">
+                <li class="error" id="login-error-text"></li>
+            </ul>
+
+            <form id="login-form">
+                <div class="field">
+                    <label for="username">
+                        <i class='bx bx-user' style="margin-right: 5px;"></i>Usuario / RUT (sin puntos ni guión)
+                    </label>
+                    <input type="text" id="username" name="username" placeholder="ej: 11700900K o admin" required
+                        autofocus>
+                </div>
+
+                <div class="field">
+                    <label for="password">
+                        <i class='bx bx-lock-alt' style="margin-right: 5px;"></i>Contraseña
+                    </label>
+                    <input type="password" id="password" name="password" placeholder="Tu contraseña" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="btn-login" style="width: 100%; margin-top: 10px;">
+                    <i class='bx bx-log-in-circle'></i> Iniciar Sesión
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script de comunicación con la API -->
+    <script src="public/js/api.js"></script>
+
+    <!-- Controlador del envío de formulario y tema -->
+    <script>
+        function actualizarIconoLogin(theme) {
+            const btn = document.getElementById('btn-toggle-theme');
+            if (!btn) return;
+            btn.innerHTML = theme === 'dark'
+                ? "<i class='bx bx-sun' style='font-size: 1.15rem; color: #fbbf24;'></i>"
+                : "<i class='bx bx-moon' style='font-size: 1.15rem;'></i>";
+            btn.setAttribute('title', theme === 'dark' ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro');
+        }
+
+        function toggleThemeLogin() {
+            const current = document.documentElement.getAttribute('data-theme') || 'light';
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('KineConnect_theme', next);
+            actualizarIconoLogin(next);
+        }
+
+        actualizarIconoLogin(document.documentElement.getAttribute('data-theme') || 'light');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Si ya hay sesión activa, redirigir directo al dashboard
+            if (typeof api !== 'undefined' && api.isAuthenticated()) {
+                window.location.href = 'inicio.html';
+                return;
+            }
+
+            const form = document.getElementById('login-form');
+            const msgBox = document.getElementById('login-messages');
+            const errText = document.getElementById('login-error-text');
+            const btnSubmit = document.getElementById('btn-login');
+
+            if (!form) return;
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const usernameInput = document.getElementById('username');
+                const passwordInput = document.getElementById('password');
+
+                const username = usernameInput ? usernameInput.value.trim() : '';
+                const password = passwordInput ? passwordInput.value : '';
+
+                if (!username || !password) return;
+
+                if (btnSubmit) {
+                    btnSubmit.disabled = true;
+                    btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Verificando...";
+                }
+                if (msgBox) {
+                    msgBox.classList.add('is-hidden');
+                    msgBox.style.display = 'none';
+                }
+
+                try {
+                    await api.login(username, password);
+                    window.location.href = 'inicio.html';
+                } catch (error) {
+                    console.error('[Login] Error:', error);
+                    if (msgBox && errText) {
+                        msgBox.classList.remove('is-hidden');
+                        msgBox.style.display = 'block';
+                        errText.innerHTML = `<i class='bx bx-error-circle'></i> ${error.message || 'Error al iniciar sesión. Revisa tus credenciales.'}`;
+                    }
+                } finally {
+                    if (btnSubmit) {
+                        btnSubmit.disabled = false;
+                        btnSubmit.innerHTML = "<i class='bx bx-log-in-circle'></i> Iniciar Sesión";
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

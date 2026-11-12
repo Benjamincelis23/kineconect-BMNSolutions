@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prescribir Rutina - Mapa Anatómico - KineConnect</title>
+    <!-- Estilos unificados y Boxicons -->
+    <link rel="stylesheet" href="public/css/style.css">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-shell">
+        <!-- Sidebar de Navegación -->
+        <!-- layout.js inyecta el sidebar automáticamente -->
+
+        <main class="main">
+            <!-- layout.js inyecta el topbar con botón de modo oscuro automáticamente -->
+
+            <div class="content">
+                <!-- Encabezado de la página -->
+                <div class="page-header">
+                    <div>
+                        <h2>Prescripción y Carrito de Ejercicios</h2>
+                        <p>Metodología biomecánica funcional (Empuje, Tracción, Core y Piernas) con mapa anatómico
+                            interactivo.</p>
+                    </div>
+                </div>
+
+                <!-- Barra Superior de Metodología Biomecánica y Selectores -->
+                <div class="card biomecanico-toolbar">
+                    <div class="biomecanico-toolbar-inner"
+                        style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; justify-content: space-between;">
+
+                        <!-- Filtros Biomecánicos -->
+                        <div class="biomecanico-group-wrapper">
+                            <span class="biomecanico-label"><i class='bx bx-filter-alt'></i> Patrón Funcional:</span>
+                            <div class="biomecanico-pills-list">
+                                <button type="button" class="filtro-biomecanico-pill activo-todos" data-patron="todos">
+                                    Todos
+                                </button>
+                                <button type="button" class="filtro-biomecanico-pill" data-patron="empuje">
+                                    <i class='bx bx-chevrons-up'></i> Empuje
+                                </button>
+                                <button type="button" class="filtro-biomecanico-pill" data-patron="traccion">
+                                    <i class='bx bx-chevrons-down'></i> Tracción
+                                </button>
+                                <button type="button" class="filtro-biomecanico-pill" data-patron="core">
+                                    <i class='bx bx-shield-quarter'></i> Core
+                                </button>
+                                <button type="button" class="filtro-biomecanico-pill" data-patron="piernas">
+                                    <i class='bx bx-run'></i> Piernas
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Bloque de Selectores: Plantilla Rápida y Paciente Destinatario -->
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+
+                            <!-- 1. NUEVO: Selector de Protocolo/Plantilla Predefinida -->
+                            <div class="field" style="margin: 0; min-width: 240px;">
+                                <label for="select-plantilla-predefinida"
+                                    style="font-size: 0.8rem; font-weight: 700; color: #0284c7;">
+                                    <i class='bx bx-bookmark-alt'></i> Cargar Protocolo Rápido:
+                                </label>
+                                <select id="select-plantilla-predefinida" style="border-color: #7dd3fc;">
+                                    <option value="">-- Sin plantilla (Prescripción manual) --</option>
+                                </select>
+                            </div>
+
+                            <!-- Selector de Paciente Destinatario -->
+                            <div class="field" style="margin: 0; min-width: 250px;">
+                                <label for="select-paciente-pauta"
+                                    style="font-size: 0.8rem; font-weight: 700; color: var(--azul-900);">
+                                    <i class='bx bx-user-pin'></i> Asignar a Paciente *:
+                                </label>
+                                <select id="select-paciente-pauta" required>
+                                    <option value="">-- Seleccionar Paciente --</option>
+                                </select>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Grid Principal de 3 Columnas: Mapa Anatómico | Catálogo | Carrito -->
+                <div class="pauta-builder-grid">
+
+                    <!-- Columna 1: Tarjeta del Mapa Anatómico SVG -->
+                    <div class="card mapa-card">
+                        <div class="vista-segmented-control">
+                            <button type="button" class="btn-vista-toggle activo" id="btn-vista-frontal"
+                                onclick="cambiarVistaAnatomica('frontal')">
+                                Vista Frontal
+                            </button>
+                            <button type="button" class="btn-vista-toggle inactivo" id="btn-vista-dorsal"
+                                onclick="cambiarVistaAnatomica('dorsal')">
+                                Vista Posterior
+                            </button>
+                        </div>
+
+                        <div class="anatomico-indicador">
+                            <span class="anatomico-indicador-sub">Región Seleccionada</span>
+                            <div class="anatomico-indicador-main">
+                                <span class="label-zona-activa-txt" id="txt-zona-seleccionada">Cuerpo Completo</span>
+                                <button type="button" class="btn btn-secondary btn-sm" id="btn-reset-zona"
+                                    onclick="resetFiltroZona()">
+                                    Limpiar
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Lienzo del Modelo Anatómico Interactivo -->
+                        <div class="mapa-svg-container" id="svg-map-wrapper">
+                            <svg viewBox="0 0 200 400" id="svg-anatomia"
+                                style="width: 100%; max-height: 420px; display: block;">
+                                <!-- Silueta Base Frontal -->
+                                <g id="grupo-frontal">
+                                    <circle cx="100" cy="30" r="18" class="anatomia-base" />
+                                    <rect x="94" y="48" width="12" height="12" class="anatomia-base" />
+
+                                    <path id="zona-hombros" data-zona="hombros" data-patron="empuje"
+                                        class="anatomia-zona grupo-empuje"
+                                        d="M72,56 C62,58 58,66 58,76 L68,76 C70,68 76,64 78,60 Z M128,56 C138,58 142,66 142,76 L132,76 C130,68 124,64 122,60 Z" />
+                                    <path id="zona-brazos" data-zona="brazos" data-patron="traccion"
+                                        class="anatomia-zona grupo-traccion"
+                                        d="M58,78 L54,120 L66,120 L68,78 Z M132,78 L134,120 L146,120 L142,78 Z" />
+                                    <path id="zona-pecho" data-zona="pecho" data-patron="empuje"
+                                        class="anatomia-zona grupo-empuje"
+                                        d="M74,62 L126,62 L120,95 L100,98 L80,95 Z" />
+                                    <path id="zona-core" data-zona="core" data-patron="core"
+                                        class="anatomia-zona grupo-core" d="M82,100 L118,100 L114,142 L86,142 Z" />
+                                    <path id="zona-cadera" data-zona="cadera" data-patron="piernas"
+                                        class="anatomia-zona grupo-piernas" d="M80,144 L120,144 L124,168 L76,168 Z" />
+                                    <path id="zona-cuadriceps" data-zona="cuadriceps" data-patron="piernas"
+                                        class="anatomia-zona grupo-piernas"
+                                        d="M76,172 L97,172 L95,248 L74,248 Z M103,172 L124,172 L126,248 L105,248 Z" />
+                                    <path id="zona-pantorrillas" data-zona="pantorrillas" data-patron="piernas"
+                                        class="anatomia-zona grupo-piernas"
+                                        d="M75,254 L94,254 L91,330 L78,330 Z M106,254 L125,254 L122,330 L109,330 Z" />
+                                </g>
+
+                                <!-- Silueta Dorsal -->
+                                <g id="grupo-dorsal" style="display: none;">
+                                    <circle cx="100" cy="30" r="18" class="anatomia-base" />
+                                    <path id="zona-espalda" data-zona="espalda" data-patron="traccion"
+                                        class="anatomia-zona grupo-traccion"
+                                        d="M72,58 L128,58 L122,110 L100,116 L78,110 Z" />
+                                    <path id="zona-lumbar" data-zona="lumbar" data-patron="core"
+                                        class="anatomia-zona grupo-core" d="M82,118 L118,118 L114,146 L86,146 Z" />
+                                    <path id="zona-gluteos" data-zona="gluteos" data-patron="piernas"
+                                        class="anatomia-zona grupo-piernas" d="M78,148 L122,148 L126,176 L74,176 Z" />
+                                    <path id="zona-isquiotibiales" data-zona="isquiotibiales" data-patron="piernas"
+                                        class="anatomia-zona grupo-piernas"
+                                        d="M76,180 L97,180 L94,250 L73,250 Z M103,180 L124,180 L127,250 L106,250 Z" />
+                                    <path id="zona-gemelos" data-zona="gemelos" data-patron="piernas"
+                                        class="anatomia-zona grupo-piernas"
+                                        d="M74,256 L94,256 L90,332 L77,332 Z M106,256 L126,256 L123,332 L110,332 Z" />
+                                </g>
+                            </svg>
+                            <div id="tooltip-anatomico"></div>
+                        </div>
+                    </div>
+
+                    <!-- Columna 2: Catálogo de Ejercicios Disponibles -->
+                    <div class="card">
+                        <div class="page-header" style="margin-bottom: 16px;">
+                            <div>
+                                <h3 style="margin: 0; color: var(--azul-900); font-size: 1.15rem;">Ejercicios
+                                    Disponibles</h3>
+                                <p style="margin: 0; font-size: 0.84rem; color: var(--gris-600);">Haz clic en "+
+                                    Añadir" para sumarlo a la prescripción.</p>
+                            </div>
+                        </div>
+
+                        <!-- Buscador rápido por texto -->
+                        <div class="field" style="margin-bottom: 14px;">
+                            <input type="text" id="input-buscar-ejercicio"
+                                placeholder="Buscar ejercicio por nombre o músculo..." />
+                        </div>
+
+                        <!-- Estado de Carga -->
+                        <div id="loading-ejercicios" class="empty-state">
+                            <i class='bx bx-loader-alt bx-spin loading-icon'></i>
+                            <p class="loading-text">Cargando catálogo desde la API...</p>
+                        </div>
+
+                        <!-- Lista de Ejercicios Filtrados -->
+                        <div class="ejercicios-disponibles-list" id="lista-ejercicios-disponibles"
+                            style="display: none;"></div>
+
+                        <!-- Estado Vacío -->
+                        <div id="no-ejercicios" class="empty-state" style="display: none;">
+                            <i class='bx bx-dumbbell empty-icon'></i>
+                            <p class="empty-text">No se encontraron ejercicios para los filtros seleccionados.</p>
+                        </div>
+                    </div>
+
+                    <!-- Columna 3: Carrito de Prescripción (Pauta Builder) -->
+                    <div class="card carrito-card">
+                        <h3 class="carrito-header">
+                            <span><i class='bx bx-cart'></i> Carrito Pauta</span>
+                            <span class="badge badge-ok" id="badge-total-items">0 Ejercicios</span>
+                        </h3>
+
+                        <!-- Formulario de Guardado de Pauta -->
+                        <form id="form-guardar-pauta" style="margin-top: 14px;">
+                            <div class="field" style="margin-bottom: 10px;">
+                                <label for="pauta-nombre">Nombre de la Pauta *</label>
+                                <input type="text" id="pauta-nombre" required
+                                    placeholder="ej: Rehabilitación Hombro Fase 1" />
+                            </div>
+
+                            <div class="field" style="margin-bottom: 14px;">
+                                <label for="pauta-descripcion">Objetivo / Instrucciones</label>
+                                <textarea id="pauta-descripcion" rows="2"
+                                    placeholder="Indicaciones para el paciente..."></textarea>
+                            </div>
+
+                            <!-- Lista de Ítems en el Carrito con Dosificación -->
+                            <div class="field">
+                                <label>Ejercicios Seleccionados</label>
+                                <div id="carrito-items-container"
+                                    style="display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto; margin-bottom: 12px;">
+                                    <div class="empty-state" id="carrito-vacio-msg" style="padding: 16px;">
+                                        <p style="margin: 0; font-size: 0.85rem;">El carrito está vacío. Selecciona
+                                            ejercicios de la lista central.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Checkbox de Modo Plantilla Maestra -->
+                            <div class="field"
+                                style="margin-bottom: 14px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 10px 12px;">
+                                <label
+                                    style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0; font-size: 0.88rem; color: #0369a1; font-weight: 600;">
+                                    <input type="checkbox" id="check-solo-plantilla"
+                                        style="width: 17px; height: 17px; cursor: pointer; accent-color: #0284c7;">
+                                    <span>Guardar exclusivamente como Plantilla Maestra</span>
+                                </label>
+                                <small
+                                    style="display: block; color: #0284c7; opacity: 0.85; font-size: 0.75rem; margin-top: 4px; padding-left: 25px;">
+                                    No requiere seleccionar paciente. Se guardará en tus protocolos predefinidos para
+                                    reutilizarla cuando quieras.
+                                </small>
+                            </div>
+
+                            <!-- Botón de Envío -->
+                            <button type="submit" class="btn btn-primary" id="btn-confirmar-pauta" style="width: 100%;"
+                                disabled>
+                                <i class='bx bx-save'></i> Guardar y Asignar Pauta
+                            </button>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts Esenciales -->
+    <script src="public/js/api.js"></script>
+    <script src="public/js/layout.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof api !== 'undefined' && !api.isAuthenticated()) {
+                window.location.href = 'index.html';
+                return;
+            }
+            if (typeof api !== 'undefined' && api.getUser) {
+                const user = api.getUser();
+                const userTag = document.getElementById('user-display');
+                if (user && userTag) {
+                    userTag.innerHTML = `<i class='bx bx-user-circle'></i> ${user.nombre_completo || user.username || 'Kinesiólogo'}`;
+                }
+            }
+        });
+    </script>
+    <!-- Script principal con la lógica interactiva del mapa, prescripción y plantillas -->
+    <script src="public/js/crear_pautas.js"></script>
+
+    <!-- Modal de Previsualización Multimedia -->
+    <div id="modal-multimedia" class="modal-overlay" style="display: none;">
+        <div class="modal-card" style="max-width: 650px; width: 90%; padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 id="modal-multimedia-titulo" style="margin: 0; color: var(--azul-900);">Demostración</h3>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="cerrarModalMultimedia()">
+                    <i class='bx bx-x' style="font-size: 1.4rem;"></i>
+                </button>
+            </div>
+            <div id="modal-multimedia-contenedor"
+                style="width: 100%; min-height: 250px; display: flex; justify-content: center; align-items: center; background: #000; border-radius: 8px; overflow: hidden;">
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

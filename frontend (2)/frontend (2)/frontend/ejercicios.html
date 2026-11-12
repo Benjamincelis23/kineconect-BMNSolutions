@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo Muscular y Ejercicios - KineConnect</title>
+    <!-- Estilos unificados y Boxicons -->
+    <link rel="stylesheet" href="public/css/style.css">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-shell">
+
+        <!-- Contenido Principal -->
+        <main class="main">
+
+
+            <div class="content">
+
+                <!-- Encabezado de la página -->
+                <div class="page-header">
+                    <div>
+                        <h2>Catálogo Muscular y Ejercicios</h2>
+                        <p>Consulta, filtra y gestiona la biblioteca biomecánica de ejercicios terapéuticos.</p>
+                    </div>
+                    <a href="crear_pauta.html" class="btn btn-primary">
+                        <i class='bx bx-body'></i> Ir a Prescribir Pauta
+                    </a>
+                </div>
+
+                <!-- Filtros por Zona Anatómica y Buscador -->
+                <div class="card" style="margin-bottom: 24px; padding: 16px 20px;">
+                    <div
+                        style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <span style="font-size: 0.85rem; font-weight: 700; color: var(--azul-900);">
+                                <i class='bx bx-filter'></i> Zona Anatómica:
+                            </span>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="filtros-zonas-container">
+                                <button type="button" class="filtro-biomecanico-pill activo-todos"
+                                    onclick="filtrarPorZona('todos', this)">Todos</button>
+                                <button type="button" class="filtro-biomecanico-pill"
+                                    onclick="filtrarPorZona('cuello', this)">Cuello</button>
+                                <button type="button" class="filtro-biomecanico-pill"
+                                    onclick="filtrarPorZona('hombro', this)">Hombro</button>
+                                <button type="button" class="filtro-biomecanico-pill"
+                                    onclick="filtrarPorZona('espalda', this)">Espalda</button>
+                                <button type="button" class="filtro-biomecanico-pill"
+                                    onclick="filtrarPorZona('core', this)">Core</button>
+                                <button type="button" class="filtro-biomecanico-pill"
+                                    onclick="filtrarPorZona('piernas', this)">Piernas</button>
+                                <button type="button" class="filtro-biomecanico-pill"
+                                    onclick="filtrarPorZona('rodilla', this)">Rodilla</button>
+                            </div>
+                        </div>
+
+                        <!-- Barra de Búsqueda de Texto -->
+                        <div class="field" style="margin: 0; min-width: 260px;">
+                            <input type="text" id="input-buscar-catalogo"
+                                placeholder="Buscar por nombre de ejercicio..." oninput="filtrarPorTexto()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lista / Cuadrícula de Ejercicios -->
+                <div class="card">
+                    <!-- Estado de Carga -->
+                    <div id="loading-ejercicios" class="empty-state">
+                        <i class='bx bx-loader-alt bx-spin loading-icon'></i>
+                        <p class="loading-text">Cargando catálogo biomecánico...</p>
+                    </div>
+
+                    <!-- Grid de Tarjetas de Ejercicios -->
+                    <div id="grid-catalogo-ejercicios"
+                        style="display: none; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px;">
+                    </div>
+
+                    <!-- Estado Vacío -->
+                    <div id="no-ejercicios" class="empty-state" style="display: none;">
+                        <i class='bx bx-dumbbell empty-icon'></i>
+                        <p class="empty-text">No se encontraron ejercicios con los filtros seleccionados.</p>
+                    </div>
+
+                    <!-- Estado de Error -->
+                    <div id="error-ejercicios" class="empty-state" style="display: none;">
+                        <i class='bx bx-error-circle error-icon'></i>
+                        <p id="error-text" class="error-msg-text"></p>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts Esenciales -->
+    <script src="public/js/api.js"></script>
+    <script src="public/js/layout.js"></script>
+
+    <!-- Lógica de Consulta y Filtrado del Catálogo -->
+    <script>
+        let catalogoCompleto = [];
+        let zonaFiltroActual = 'todos';
+
+        async function cargarCatalogo() {
+            const loading = document.getElementById('loading-ejercicios');
+            const grid = document.getElementById('grid-catalogo-ejercicios');
+            const noData = document.getElementById('no-ejercicios');
+            const errorDiv = document.getElementById('error-ejercicios');
+            const errorText = document.getElementById('error-text');
+
+            loading.style.display = 'block';
+            grid.style.display = 'none';
+            noData.style.display = 'none';
+            errorDiv.style.display = 'none';
+
+            try {
+                let respuesta = await api.getEjercicios();
+
+                if (respuesta && respuesta.results) {
+                    catalogoCompleto = respuesta.results;
+                } else if (Array.isArray(respuesta)) {
+                    catalogoCompleto = respuesta;
+                } else {
+                    catalogoCompleto = respuesta ? [respuesta] : [];
+                }
+
+                loading.style.display = 'none';
+
+                if (catalogoCompleto.length === 0) {
+                    noData.style.display = 'block';
+                    return;
+                }
+
+                renderizarCatalogo(catalogoCompleto);
+
+            } catch (err) {
+                loading.style.display = 'none';
+                errorDiv.style.display = 'block';
+                errorText.textContent = `Error al cargar ejercicios: ${err.message}`;
+            }
+        }
+
+        function renderizarCatalogo(lista) {
+            const grid = document.getElementById('grid-catalogo-ejercicios');
+            const noData = document.getElementById('no-ejercicios');
+
+            grid.innerHTML = '';
+
+            if (lista.length === 0) {
+                grid.style.display = 'none';
+                noData.style.display = 'block';
+                return;
+            }
+
+            noData.style.display = 'none';
+            grid.style.display = 'grid';
+
+            lista.forEach(item => {
+                const nombre = item.nombre || item.titulo || 'Ejercicio Sin Nombre';
+                const zona = item.zona_cuerpo || item.grupo_muscular || 'General';
+                const patron = item.patron_movimiento || item.patron || 'Terapéutico';
+                const descripcion = item.descripcion || 'Sin descripción disponible para este ejercicio terapéutico.';
+
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.style.cssText = 'padding: 18px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--gris-200);';
+
+                card.innerHTML = `
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 10px;">
+                            <h3 style="margin: 0; font-size: 1.05rem; color: var(--azul-900); font-weight: 700;">${nombre}</h3>
+                            <span class="badge badge-ok">${patron}</span>
+                        </div>
+                        <span class="badge badge-neutro" style="margin-bottom: 12px;">${zona}</span>
+                        <p style="font-size: 0.86rem; color: var(--gris-600); margin: 0; line-height: 1.4;">
+                            ${descripcion}
+                        </p>
+                    </div>
+                    <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--gris-100); display: flex; justify-content: space-between; align-items: center;">
+                        ${item.video_url ? `<a href="${item.video_url}" target="_blank" class="btn btn-secondary btn-sm"><i class='bx bx-video'></i> Video</a>` : '<span></span>'}
+                        <a href="crear_pauta.html" class="btn btn-secondary btn-sm">
+                            <i class='bx bx-plus-circle'></i> Prescribir
+                        </a>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function filtrarPorZona(zona, botonElemento) {
+            zonaFiltroActual = zona;
+
+            const botones = document.querySelectorAll('#filtros-zonas-container .filtro-biomecanico-pill');
+            botones.forEach(btn => btn.className = 'filtro-biomecanico-pill');
+            if (botonElemento) botonElemento.classList.add('activo-todos');
+
+            aplicarFiltros();
+        }
+
+        function filtrarPorTexto() {
+            aplicarFiltros();
+        }
+
+        function aplicarFiltros() {
+            const inputTexto = document.getElementById('input-buscar-catalogo');
+            const termino = inputTexto ? inputTexto.value.trim().toLowerCase() : '';
+
+            const filtrados = catalogoCompleto.filter(item => {
+                const nombre = (item.nombre || item.titulo || '').toLowerCase();
+                const grupo = (item.zona_cuerpo || item.grupo_muscular || '').toLowerCase();
+                const patron = (item.patron_movimiento || item.patron || '').toLowerCase();
+
+                const coincideZona = (zonaFiltroActual === 'todos') || grupo.includes(zonaFiltroActual.toLowerCase());
+                const coincideTexto = !termino || nombre.includes(termino) || grupo.includes(termino) || patron.includes(termino);
+
+                return coincideZona && coincideTexto;
+            });
+
+            renderizarCatalogo(filtrados);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof api !== 'undefined' && !api.isAuthenticated()) {
+                window.location.href = 'index.html';
+                return;
+            }
+            cargarCatalogo();
+        });
+    </script>
+</body>
+
+</html>
