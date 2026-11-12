@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - KineConnect</title>
+    <!-- Estilos unificados y Boxicons -->
+    <link rel="stylesheet" href="public/css/style.css">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-shell">
+        <!-- layout.js inyecta el sidebar aquí -->
+
+        <!-- Contenido Principal -->
+        <main class="main">
+            <!-- layout.js inyecta el topbar aquí -->
+
+            <div class="content">
+
+                <!-- ENCABEZADO -->
+                <div class="page-header">
+                    <div>
+                        <h2>Panel Principal</h2>
+                        <p>Bienvenido al sistema kinesiológico KineConnect. Resumen de actividad clínica.</p>
+                    </div>
+                    <a href="crear_pauta.html" class="btn btn-primary">
+                        <i class='bx bx-plus-circle'></i> Nueva Prescripción
+                    </a>
+                </div>
+
+                <!-- TARJETAS DE MÉTRICAS RÁPIDAS -->
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                    <div class="card" style="display: flex; align-items: center; gap: 16px;">
+                        <div
+                            style="width: 50px; height: 50px; border-radius: var(--radius-md); background: var(--azul-100); color: var(--azul-700); display: flex; align-items: center; justify-content: center; font-size: 1.6rem;">
+                            <i class='bx bx-group'></i>
+                        </div>
+                        <div>
+                            <span style="font-size: 0.85rem; color: var(--gris-600); font-weight: 600;">Mis
+                                Pacientes</span>
+                            <h3 id="stat-pacientes" style="margin: 0; font-size: 1.5rem; color: var(--azul-900);">--
+                            </h3>
+                        </div>
+                    </div>
+
+                    <div class="card" style="display: flex; align-items: center; gap: 16px;">
+                        <div
+                            style="width: 50px; height: 50px; border-radius: var(--radius-md); background: var(--verde-100); color: var(--verde-600); display: flex; align-items: center; justify-content: center; font-size: 1.6rem;">
+                            <i class='bx bx-dumbbell'></i>
+                        </div>
+                        <div>
+                            <span style="font-size: 0.85rem; color: var(--gris-600); font-weight: 600;">Ejercicios
+                                Activos</span>
+                            <h3 id="stat-ejercicios" style="margin: 0; font-size: 1.5rem; color: var(--azul-900);">--
+                            </h3>
+                        </div>
+                    </div>
+
+                    <div class="card" style="display: flex; align-items: center; gap: 16px;">
+                        <div
+                            style="width: 50px; height: 50px; border-radius: var(--radius-md); background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.6rem;">
+                            <i class='bx bx-clipboard'></i>
+                        </div>
+                        <div>
+                            <span style="font-size: 0.85rem; color: var(--gris-600); font-weight: 600;">Pautas
+                                Creadas</span>
+                            <h3 id="stat-pautas" style="margin: 0; font-size: 1.5rem; color: var(--azul-900);">--</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ACCESOS RÁPIDOS A MÓDULOS -->
+                <h3 style="margin-bottom: 16px; color: var(--azul-900);">Módulos del Sistema</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+
+                    <a href="crear_pauta.html" class="card"
+                        style="text-decoration: none; color: inherit; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                <i class='bx bx-body' style="font-size: 1.4rem; color: var(--azul-600);"></i>
+                                <h4 style="margin: 0; font-size: 1.1rem; color: var(--azul-900);">Mapa Anatómico</h4>
+                            </div>
+                            <p style="margin: 0; font-size: 0.88rem; color: var(--gris-600);">
+                                Prescribe rutinas seleccionando grupos musculares y patrones biomecánicos funcionales.
+                            </p>
+                        </div>
+                        <span
+                            style="margin-top: 16px; font-size: 0.82rem; font-weight: 700; color: var(--azul-600); display: inline-flex; align-items: center; gap: 4px;">
+                            Prescribir ahora <i class='bx bx-right-arrow-alt'></i>
+                        </span>
+                    </a>
+
+                    <a href="pacientes.html" class="card"
+                        style="text-decoration: none; color: inherit; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                <i class='bx bx-group' style="font-size: 1.4rem; color: var(--azul-600);"></i>
+                                <h4 style="margin: 0; font-size: 1.1rem; color: var(--azul-900);">Gestión de Pacientes
+                                </h4>
+                            </div>
+                            <p style="margin: 0; font-size: 0.88rem; color: var(--gris-600);">
+                                Consulta la lista de pacientes, revisa sus historiales y registra nuevos usuarios en la
+                                plataforma.
+                            </p>
+                        </div>
+                        <span
+                            style="margin-top: 16px; font-size: 0.82rem; font-weight: 700; color: var(--azul-600); display: inline-flex; align-items: center; gap: 4px;">
+                            Ver pacientes <i class='bx bx-right-arrow-alt'></i>
+                        </span>
+                    </a>
+
+                    <a href="ejercicios.html" class="card"
+                        style="text-decoration: none; color: inherit; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                <i class='bx bx-dumbbell' style="font-size: 1.4rem; color: var(--azul-600);"></i>
+                                <h4 style="margin: 0; font-size: 1.1rem; color: var(--azul-900);">Catálogo de Ejercicios
+                                </h4>
+                            </div>
+                            <p style="margin: 0; font-size: 0.88rem; color: var(--gris-600);">
+                                Explora la base de ejercicios clasificados por zona anatómica y mecánica de movimiento.
+                            </p>
+                        </div>
+                        <span
+                            style="margin-top: 16px; font-size: 0.82rem; font-weight: 700; color: var(--azul-600); display: inline-flex; align-items: center; gap: 4px;">
+                            Explorar catálogo <i class='bx bx-right-arrow-alt'></i>
+                        </span>
+                    </a>
+
+                    <a href="pautas.html" class="card"
+                        style="text-decoration: none; color: inherit; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                <i class='bx bx-clipboard' style="font-size: 1.4rem; color: var(--azul-600);"></i>
+                                <h4 style="margin: 0; font-size: 1.1rem; color: var(--azul-900);">Pautas y Dolor</h4>
+                            </div>
+                            <p style="margin: 0; font-size: 0.88rem; color: var(--gris-600);">
+                                Revisa el seguimiento de dolor percibido (EVA) y el cumplimiento de las sesiones
+                                prescritas.
+                            </p>
+                        </div>
+                        <span
+                            style="margin-top: 16px; font-size: 0.82rem; font-weight: 700; color: var(--azul-600); display: inline-flex; align-items: center; gap: 4px;">
+                            Ver seguimiento <i class='bx bx-right-arrow-alt'></i>
+                        </span>
+                    </a>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts Esenciales -->
+    <script src="public/js/api.js"></script>
+    <script src="public/js/layout.js"></script>
+
+    <!-- Consulta de métricas para el Dashboard -->
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (typeof api !== 'undefined' && !api.isAuthenticated()) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            try {
+                const [pacientes, ejercicios, pautas] = await Promise.allSettled([
+                    api.getMisPacientes(),
+                    api.getEjercicios(),
+                    api.getPautas ? api.getPautas() : Promise.resolve([])
+                ]);
+
+                if (pacientes.status === 'fulfilled') {
+                    const dataP = pacientes.value?.results || pacientes.value || [];
+                    document.getElementById('stat-pacientes').textContent = Array.isArray(dataP) ? dataP.length : 0;
+                }
+
+                if (ejercicios.status === 'fulfilled') {
+                    const dataE = ejercicios.value?.results || ejercicios.value || [];
+                    document.getElementById('stat-ejercicios').textContent = Array.isArray(dataE) ? dataE.length : 0;
+                }
+
+                if (pautas.status === 'fulfilled') {
+                    const dataR = pautas.value?.results || pautas.value || [];
+                    document.getElementById('stat-pautas').textContent = Array.isArray(dataR) ? dataR.length : 0;
+                }
+            } catch (err) {
+                console.error('Error cargando métricas:', err);
+            }
+        });
+    </script>
+</body>
+
+</html>

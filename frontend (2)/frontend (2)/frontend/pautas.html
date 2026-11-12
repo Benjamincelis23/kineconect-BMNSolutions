@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoreo de Dolor y Rutinas - KineConnect</title>
+    <link rel="stylesheet" href="public/css/style.css">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-shell">
+        <main class="main">
+            <div class="content">
+
+                <!-- ENCABEZADO -->
+                <div class="page-header" style="flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <h2>Monitoreo de Dolor y Rutinas</h2>
+                        <p>Visualiza y evalúa la escala de dolor (EVA) que tus pacientes reportan desde la aplicación
+                            móvil.</p>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="btn btn-secondary" onclick="cargarTodo()">
+                            <i class='bx bx-refresh'></i> Actualizar Reportes
+                        </button>
+                        <a href="crear_pauta.html" class="btn btn-primary">
+                            <i class='bx bx-plus'></i> Nueva Pauta (Mapa Anatómico)
+                        </a>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 1: EVALUACIONES DE DOLOR -->
+                <div class="card" style="margin-bottom: 24px;">
+                    <h3
+                        style="margin-top: 0; margin-bottom: 12px; font-size: 1.05rem; color: var(--azul-900); display: flex; align-items: center; gap: 8px;">
+                        <i class='bx bx-pulse' style="color: var(--rojo-500);"></i> Evaluaciones de Dolor Recibidas (App
+                        Móvil)
+                    </h3>
+
+                    <div id="loading-feedback" class="empty-state">
+                        <i class='bx bx-loader-alt bx-spin loading-icon'></i>
+                        <p class="loading-text">Cargando reportes de dolor...</p>
+                    </div>
+
+                    <div id="container-tabla-feedback" class="is-hidden">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Fecha Ejecución</th>
+                                    <th>Pauta ID</th>
+                                    <th>Completado</th>
+                                    <th>Escala Dolor (EVA)</th>
+                                    <th>Comentarios del Paciente</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-feedback"></tbody>
+                        </table>
+                    </div>
+
+                    <div id="no-feedback" class="empty-state is-hidden">
+                        <i class='bx bx-check-circle'
+                            style="font-size: 2.2rem; color: var(--verde-500); margin-bottom: 8px;"></i>
+                        <p class="empty-text" style="margin: 0; font-size: 0.9rem;">No hay reportes de dolor recientes
+                            registrados por pacientes.</p>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 2: PAUTAS DE EJERCICIOS PRESCRITAS -->
+                <div class="card">
+                    <h3
+                        style="margin-top: 0; margin-bottom: 12px; font-size: 1.05rem; color: var(--azul-900); display: flex; align-items: center; gap: 8px;">
+                        <i class='bx bx-folder' style="color: var(--azul-600);"></i> Pautas de Ejercicios Prescritas
+                    </h3>
+
+                    <div id="loading-pautas" class="empty-state">
+                        <i class='bx bx-loader-alt bx-spin loading-icon'></i>
+                        <p class="loading-text">Cargando pautas de tratamiento...</p>
+                    </div>
+
+                    <!-- Tabla que aparecerá cuando haya pautas creadas -->
+                    <div id="container-tabla-pautas" class="is-hidden">
+                        <table id="tabla-pautas">
+                            <thead>
+                                <tr>
+                                    <th>Título de la Pauta</th>
+                                    <th>Paciente Asignado</th>
+                                    <th>Ejercicios</th>
+                                    <th>Fecha Creación</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-pautas"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- Estado vacío cuando no hay pautas -->
+                    <div id="no-pautas" class="empty-state is-hidden">
+                        <i class='bx bx-folder-open'
+                            style="font-size: 2.2rem; color: var(--gris-400); margin-bottom: 8px;"></i>
+                        <p class="empty-text" style="margin: 0; font-size: 0.9rem;">Aún no se han prescrito pautas de
+                            tratamiento.</p>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts Esenciales -->
+    <script src="public/js/api.js"></script>
+    <script src="public/js/layout.js"></script>
+
+    <script>
+        async function cargarTodo() {
+            const loadingPautas = document.getElementById('loading-pautas');
+            const containerPautas = document.getElementById('container-tabla-pautas');
+            const tbodyPautas = document.getElementById('tbody-pautas');
+            const noPautas = document.getElementById('no-pautas');
+
+            if (loadingPautas) loadingPautas.classList.remove('is-hidden');
+            if (containerPautas) containerPautas.classList.add('is-hidden');
+            if (noPautas) noPautas.classList.add('is-hidden');
+
+            try {
+                let pautas = await api.getPautas();
+                const listaPautas = Array.isArray(pautas) ? pautas : (pautas?.results || []);
+
+                if (loadingPautas) loadingPautas.classList.add('is-hidden');
+
+                if (listaPautas.length === 0) {
+                    if (noPautas) noPautas.classList.remove('is-hidden');
+                } else {
+                    if (containerPautas) containerPautas.classList.remove('is-hidden');
+                    if (tbodyPautas) {
+                        tbodyPautas.innerHTML = '';
+                        listaPautas.forEach(p => {
+                            const cant = p.ejercicios_detalle ? p.ejercicios_detalle.length : 0;
+                            const fecha = p.creado_en ? new Date(p.creado_en).toLocaleDateString('es-CL') : 'Reciente';
+
+                            // Si es plantilla, lo destacamos visualmente
+                            const esPlantilla = p.es_plantilla === true;
+                            const pacienteBadge = esPlantilla
+                                ? '<span class="badge" style="background-color: #e0f2fe; color: #0369a1; font-weight: 600;"><i class="bx bx-bookmark-alt"></i> Plantilla Maestra</span>'
+                                : (p.paciente_nombre || 'Paciente');
+
+                            const tituloIcon = esPlantilla ? "<i class='bx bx-book-content' style='color: #0284c7; margin-right: 4px;'></i>" : "";
+
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+        <td><strong>${tituloIcon}${p.titulo || 'Sin Título'}</strong></td>
+        <td>${pacienteBadge}</td>
+        <td><span class="badge badge-neutro">${cant} ejercicios</span></td>
+        <td>${fecha}</td>
+        <td><span class="badge badge-ok">${p.activo !== false ? 'ACTIVA' : 'INACTIVA'}</span></td>
+    `;
+                            tbodyPautas.appendChild(tr);
+                        });
+                    }
+                }
+            } catch (e) {
+                if (loadingPautas) loadingPautas.classList.add('is-hidden');
+                if (noPautas) noPautas.classList.remove('is-hidden');
+                console.error("Error al cargar pautas:", e);
+            }
+
+            const loadingFeed = document.getElementById('loading-feedback');
+            const containerFeed = document.getElementById('container-tabla-feedback');
+            const tbodyFeed = document.getElementById('tbody-feedback');
+            const noFeed = document.getElementById('no-feedback');
+
+            if (loadingFeed) loadingFeed.classList.remove('is-hidden');
+            if (containerFeed) containerFeed.classList.add('is-hidden');
+            if (noFeed) noFeed.classList.add('is-hidden');
+
+            try {
+                let feeds = await api.getReportesDolor();
+                const listaFeed = Array.isArray(feeds) ? feeds : (feeds?.results || []);
+
+                if (loadingFeed) loadingFeed.classList.add('is-hidden');
+
+                if (listaFeed.length === 0) {
+                    if (noFeed) noFeed.classList.remove('is-hidden');
+                } else {
+                    if (containerFeed) containerFeed.classList.remove('is-hidden');
+                    if (tbodyFeed) {
+                        tbodyFeed.innerHTML = '';
+                        listaFeed.forEach(f => {
+                            const dolor = f.escala_dolor ?? 0;
+                            const badgeColor = dolor >= 6 ? 'badge-alerta' : (dolor >= 4 ? 'badge-neutro' : 'badge-ok');
+                            const completado = f.completado ? '<span class="badge badge-ok">SÍ</span>' : '<span class="badge badge-alerta">NO</span>';
+                            const fecha = f.fecha_ejecucion ? new Date(f.fecha_ejecucion).toLocaleString('es-CL') : 'N/A';
+
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td>${fecha}</td>
+                                <td>#${f.pauta || 'N/A'}</td>
+                                <td>${completado}</td>
+                                <td><span class="badge ${badgeColor}">EVA: ${dolor} / 10</span></td>
+                                <td>${f.comentario || '<em>Sin comentarios</em>'}</td>
+                            `;
+                            tbodyFeed.appendChild(tr);
+                        });
+                    }
+                }
+            } catch (e) {
+                if (loadingFeed) loadingFeed.classList.add('is-hidden');
+                if (noFeed) noFeed.classList.remove('is-hidden');
+                console.error("Error al cargar feedback de dolor:", e);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof api !== 'undefined' && !api.isAuthenticated()) {
+                window.location.href = 'index.html';
+                return;
+            }
+            cargarTodo();
+        });
+    </script>
+</body>
+
+</html>

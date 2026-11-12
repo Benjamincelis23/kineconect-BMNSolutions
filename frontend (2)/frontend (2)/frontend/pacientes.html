@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Pacientes - KineConnect</title>
+    <link rel="stylesheet" href="public/css/style.css">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-shell">
+        <main class="main">
+            <div class="content">
+
+                <!-- ENCABEZADO -->
+                <div class="page-header header-pacientes">
+                    <div>
+                        <h2>Gestión de Pacientes</h2>
+                        <p>Listado y registro de pacientes vinculados a tu cuenta de Kinesiólogo.</p>
+                    </div>
+                    <button type="button" class="btn btn-primary" id="btn-toggle-form" onclick="toggleFormulario()">
+                        <i class='bx bx-user-plus'></i> Registrar Nuevo Paciente
+                    </button>
+                </div>
+
+                <!-- FORMULARIO DE REGISTRO (Ocultable) -->
+                <div id="seccion-registro" class="card seccion-registro-card is-hidden" style="display: none;">
+                    <div class="registro-card-header">
+                        <h3 class="titulo-nuevo-paciente">Registrar Nuevo Paciente</h3>
+                        <p class="subtitulo-nuevo-paciente">Ingresa los datos personales. Se generará un usuario y clave
+                            temporal automáticamente.</p>
+                    </div>
+
+                    <ul class="messages is-hidden" id="registro-messages">
+                        <li id="registro-msg-item"></li>
+                    </ul>
+
+                    <form id="form-registrar-paciente">
+                        <div class="form-paciente-grid">
+                            <div class="field">
+                                <label for="first_name">Nombre *</label>
+                                <input type="text" id="first_name" required placeholder="ej: Juan">
+                            </div>
+
+                            <div class="field">
+                                <label for="last_name">Apellido *</label>
+                                <input type="text" id="last_name" required placeholder="ej: Pérez">
+                            </div>
+
+                            <div class="field">
+                                <label for="rut">RUT Chileno (sin puntos y con guión) *</label>
+                                <input type="text" id="rut" required placeholder="ej: 11700900-K">
+                                <span class="help-text">Formato válido (ej: 11700900-K o 18934125-K)</span>
+                            </div>
+
+                            <div class="field">
+                                <label for="email">Correo Electrónico</label>
+                                <input type="email" id="email" placeholder="paciente@correo.cl">
+                                <span class="help-text">Se enviará la credencial de acceso si el correo es
+                                    válido.</span>
+                            </div>
+
+                            <div class="form-actions-full">
+                                <button type="submit" class="btn btn-primary" id="btn-guardar-paciente">
+                                    <i class='bx bx-save'></i> Guardar y Vincular
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="toggleFormulario()">
+                                    Cancelar
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- TABLA DE RESULTADOS -->
+                <div class="card">
+                    <div id="loading-pacientes" class="empty-state">
+                        <i class='bx bx-loader-alt bx-spin loading-icon'></i>
+                        <p class="loading-text">Consultando lista de pacientes a la API...</p>
+                    </div>
+
+                    <table id="tabla-pacientes" style="display: none;">
+                        <thead>
+                            <tr>
+                                <th>Nombre Completo</th>
+                                <th>RUT</th>
+                                <th>Correo Electrónico</th>
+                                <th>ESTADO DE ACTIVIDAD</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-pacientes"></tbody>
+                    </table>
+
+                    <div id="no-pacientes" class="empty-state" style="display: none;">
+                        <i class='bx bx-user-x empty-icon'></i>
+                        <p class="empty-text">Aún no tienes pacientes asignados.</p>
+                    </div>
+
+                    <div id="error-pacientes" class="empty-state" style="display: none;">
+                        <i class='bx bx-error-circle error-icon'></i>
+                        <p id="error-text" class="error-msg-text"></p>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- 1. PRIMERO se cargan las librerías base -->
+    <script src="public/js/api.js"></script>
+    <script src="public/js/layout.js"></script>
+
+    <!-- 2. DESPUÉS se ejecuta la lógica de la página -->
+    <script>
+        function toggleFormulario() {
+            const sec = document.getElementById('seccion-registro');
+            if (!sec) return;
+            const estaOculto = sec.classList.contains('is-hidden') || sec.style.display === 'none';
+            if (estaOculto) {
+                sec.classList.remove('is-hidden');
+                sec.style.display = 'block';
+                document.getElementById('first_name')?.focus();
+            } else {
+                sec.classList.add('is-hidden');
+                sec.style.display = 'none';
+            }
+        }
+
+        async function cargarPacientes() {
+            const loading = document.getElementById('loading-pacientes');
+            const tabla = document.getElementById('tabla-pacientes');
+            const tbody = document.getElementById('tbody-pacientes');
+            const noData = document.getElementById('no-pacientes');
+            const errorDiv = document.getElementById('error-pacientes');
+            const errorText = document.getElementById('error-text');
+
+            loading.style.display = 'block';
+            tabla.style.display = 'none';
+            noData.style.display = 'none';
+            errorDiv.style.display = 'none';
+            tbody.innerHTML = '';
+
+            try {
+                let respuesta = await api.getMisPacientes();
+                let pacientes = [];
+
+                if (Array.isArray(respuesta)) {
+                    pacientes = respuesta;
+                } else if (respuesta && Array.isArray(respuesta.results)) {
+                    pacientes = respuesta.results;
+                } else if (respuesta && typeof respuesta === 'object') {
+                    pacientes = [respuesta];
+                }
+
+                loading.style.display = 'none';
+
+                if (pacientes.length === 0) {
+                    noData.style.display = 'block';
+                    return;
+                }
+
+                tabla.style.display = 'table';
+
+                pacientes.forEach(p => {
+                    const tr = document.createElement('tr');
+                    const nombre = p.nombre_completo || (p.user && typeof p.user === 'object' ? `${p.user.first_name} ${p.user.last_name}`.trim() : '') || 'Paciente';
+                    const correo = p.email || (p.user && typeof p.user === 'object' ? p.user.email : 'Sin correo');
+                    const userId = p.user_id || ((p.user && typeof p.user === 'object') ? p.user.id : (p.user || p.id));
+
+                    tr.innerHTML = `
+                        <td><strong>${nombre}</strong></td>
+                        <td>${p.rut || 'N/A'}</td>
+                        <td>${correo}</td>
+                        <td><span class="badge badge-ok">${p.rol || 'PACIENTE'}</span></td>
+                        <td>
+                            <div style="display: flex; gap: 6px;">
+                                <a href="crear_pauta.html?paciente=${userId}" class="btn btn-secondary btn-sm" title="Prescribir Pauta">
+                                    <i class='bx bx-plus-circle'></i> Prescribir
+                                </a>
+                                <a href="pautas.html?paciente=${userId}&nombre=${encodeURIComponent(nombre)}" class="btn btn-secondary btn-sm" title="Ver Historial">
+                                    <i class='bx bx-line-chart'></i> Ver Pautas
+                                </a>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+            } catch (err) {
+                loading.style.display = 'none';
+                errorDiv.style.display = 'block';
+                errorText.textContent = `Error de conexión: ${err.message}`;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof api !== 'undefined' && !api.isAuthenticated()) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            cargarPacientes();
+
+            const formRegistro = document.getElementById('form-registrar-paciente');
+            const msgBox = document.getElementById('registro-messages');
+            const msgItem = document.getElementById('registro-msg-item');
+            const btnSubmit = document.getElementById('btn-guardar-paciente');
+
+            if (formRegistro) {
+                formRegistro.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+
+                    const rawRut = document.getElementById('rut').value;
+                    const rutLimpio = rawRut.replace(/\./g, '').trim().toUpperCase();
+
+                    const payload = {
+                        first_name: document.getElementById('first_name').value.trim(),
+                        last_name: document.getElementById('last_name').value.trim(),
+                        rut: rutLimpio,
+                        email: document.getElementById('email').value.trim()
+                    };
+
+                    btnSubmit.disabled = true;
+                    btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
+                    msgBox.classList.add('is-hidden');
+
+                    try {
+                        await api.registrarPaciente(payload);
+                        msgBox.className = 'messages is-ok';
+                        msgItem.textContent = '¡Paciente registrado y vinculado exitosamente!';
+                        msgBox.classList.remove('is-hidden');
+                        formRegistro.reset();
+
+                        setTimeout(() => {
+                            toggleFormulario();
+                            cargarPacientes();
+                        }, 1200);
+
+                    } catch (error) {
+                        msgBox.className = 'messages is-error';
+                        msgItem.textContent = error.message || 'Error al registrar el paciente.';
+                        msgBox.classList.remove('is-hidden');
+                    } finally {
+                        btnSubmit.disabled = false;
+                        btnSubmit.innerHTML = "<i class='bx bx-save'></i> Guardar y Vincular";
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>
