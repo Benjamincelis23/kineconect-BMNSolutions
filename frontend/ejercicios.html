@@ -15,52 +15,61 @@
 
         <!-- Contenido Principal -->
         <main class="main">
-
-
             <div class="content">
 
                 <!-- Encabezado de la página -->
                 <div class="page-header">
                     <div>
                         <h2>Catálogo Muscular y Ejercicios</h2>
-                        <p>Consulta, filtra y gestiona la biblioteca biomecánica de ejercicios terapéuticos.</p>
+                        <p>Consulta, filtra y gestiona la biblioteca biomecánica y clínica de ejercicios terapéuticos.</p>
                     </div>
                     <a href="crear_pauta.html" class="btn btn-primary">
                         <i class='bx bx-body'></i> Ir a Prescribir Pauta
                     </a>
                 </div>
 
-                <!-- Filtros por Zona Anatómica y Buscador -->
-                <div class="card" style="margin-bottom: 24px; padding: 16px 20px;">
-                    <div
-                        style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                <!-- Filtros por Zona Anatómica, Área Clínica y Buscador -->
+                <div class="card" style="margin-bottom: 24px; padding: 16px 20px; display: flex; flex-direction: column; gap: 14px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
                         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                             <span style="font-size: 0.85rem; font-weight: 700; color: var(--azul-900);">
-                                <i class='bx bx-filter'></i> Zona Anatómica:
+                                <i class='bx bx-body'></i> Zona Anatómica:
                             </span>
                             <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="filtros-zonas-container">
-                                <button type="button" class="filtro-biomecanico-pill activo-todos"
-                                    onclick="filtrarPorZona('todos', this)">Todos</button>
-                                <button type="button" class="filtro-biomecanico-pill"
-                                    onclick="filtrarPorZona('cuello', this)">Cuello</button>
-                                <button type="button" class="filtro-biomecanico-pill"
-                                    onclick="filtrarPorZona('hombro', this)">Hombro</button>
-                                <button type="button" class="filtro-biomecanico-pill"
-                                    onclick="filtrarPorZona('espalda', this)">Espalda</button>
-                                <button type="button" class="filtro-biomecanico-pill"
-                                    onclick="filtrarPorZona('core', this)">Core</button>
-                                <button type="button" class="filtro-biomecanico-pill"
-                                    onclick="filtrarPorZona('piernas', this)">Piernas</button>
-                                <button type="button" class="filtro-biomecanico-pill"
-                                    onclick="filtrarPorZona('rodilla', this)">Rodilla</button>
-                            </div>
+    <button type="button" class="filtro-biomecanico-pill activo-todos" onclick="filtrarPorZona('todos', this)">Todos</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('cuello', this)">Cuello</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('hombro', this)">Hombro</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('espalda', this)">Espalda</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('core', this)">Core</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('cadera', this)">Cadera / Glúteos</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('piernas', this)">Piernas</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('rodilla', this)">Rodilla</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('tobillo', this)">Tobillo / Pie</button>
+</div>
                         </div>
 
                         <!-- Barra de Búsqueda de Texto -->
                         <div class="field" style="margin: 0; min-width: 260px;">
                             <input type="text" id="input-buscar-catalogo"
-                                placeholder="Buscar por nombre de ejercicio..." oninput="filtrarPorTexto()">
+                                placeholder="Buscar por nombre, zona o condición..." oninput="filtrarPorTexto()">
                         </div>
+                    </div>
+
+                    <!-- Filtro por Área / Condición Clínica -->
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-top: 12px; border-top: 1px solid var(--gris-100);">
+                        <span style="font-size: 0.85rem; font-weight: 700; color: #0369a1;">
+                            <i class='bx bx-plus-medical'></i> Condición / Área Clínica:
+                        </span>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="filtros-clinicos-container">
+    <button type="button" class="filtro-biomecanico-pill activo-todos" onclick="filtrarPorArea('todos', this)">Todas</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorArea('general', this)">Rehabilitación General</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorArea('traumatologia', this)">Traumatología</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorArea('inmunologia', this)">Inmunología / VIH-SIDA</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorArea('neurologia', this)">Neurorehabilitación</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorArea('post_operatorio', this)">Post-Operatorio</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorArea('cardiorrespiratorio', this)">Cardiorrespiratorio</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorArea('geriatria', this)">Adulto Mayor</button>
+</div>
                     </div>
                 </div>
 
@@ -94,14 +103,108 @@
         </main>
     </div>
 
+    <!-- Modal Reproductor de Video -->
+    <div id="modal-video-ejercicio" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); z-index: 9999; align-items: center; justify-content: center; padding: 16px;">
+        <div class="card" style="width: 100%; max-width: 720px; padding: 20px; position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <h3 id="modal-video-titulo" style="margin: 0; color: var(--azul-900); font-size: 1.1rem;">Demostración</h3>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="cerrarModalVideo()">
+                    <i class='bx bx-x'></i> Cerrar
+                </button>
+            </div>
+            <video id="reproductor-ejercicio" controls playsinline style="width: 100%; max-height: 70vh; border-radius: 8px; background: #000;">
+                Tu navegador no soporta la reproducción de video MP4.
+            </video>
+        </div>
+    </div>
+
     <!-- Scripts Esenciales -->
     <script src="public/js/api.js"></script>
     <script src="public/js/layout.js"></script>
 
-    <!-- Lógica de Consulta y Filtrado del Catálogo -->
+<!-- Lógica de Consulta y Filtrado del Catálogo -->
     <script>
+        const BACKEND_ORIGIN = 'http://127.0.0.1:8000';
         let catalogoCompleto = [];
         let zonaFiltroActual = 'todos';
+        let areaFiltroActual = 'todos';
+
+        function normalizarTexto(txt) {
+            return String(txt ?? '')
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[-_]+/g, ' ')
+                .trim();
+        }
+
+        function obtenerAreasEjercicio(item) {
+            if (Array.isArray(item.area_clinica) && item.area_clinica.length > 0) {
+                return item.area_clinica.map(a => (typeof a === 'object' ? (a.nombre || '') : String(a)));
+            }
+            if (typeof item.area_clinica === 'string' && item.area_clinica.trim()) {
+                return [item.area_clinica];
+            }
+            return ['Rehabilitación General'];
+        }
+
+        function toggleAreasExtra(btn) {
+            const extra = btn.nextElementSibling;
+            if (!extra) return;
+            const oculto = extra.style.display === 'none';
+            extra.style.display = oculto ? 'contents' : 'none';
+            btn.textContent = oculto ? 'Ver menos' : btn.getAttribute('data-label');
+        }
+
+        function resolverUrlVideo(item) {
+            let rawUrl =
+                item.video ||
+                item.archivo_video ||
+                item.video_file ||
+                item.video_mp4 ||
+                item.url_multimedia ||
+                item.video_url ||
+                '';
+
+            if (!rawUrl && item && typeof item === 'object') {
+                const rutaDetectada = Object.values(item).find(
+                    v => typeof v === 'string' && /\.(mp4|webm|mov)($|\?)/i.test(v)
+                );
+                if (rutaDetectada) rawUrl = rutaDetectada;
+            }
+
+            if (!rawUrl) return '';
+            if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) return rawUrl;
+            return `${BACKEND_ORIGIN}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
+        }
+
+        function abrirModalVideo(boton) {
+            const titulo = boton.getAttribute('data-nombre') || 'Demostración';
+            const url = boton.getAttribute('data-video');
+            if (!url) return;
+
+            const modal = document.getElementById('modal-video-ejercicio');
+            const tituloEl = document.getElementById('modal-video-titulo');
+            const videoEl = document.getElementById('reproductor-ejercicio');
+
+            tituloEl.textContent = titulo;
+            videoEl.pause();
+            videoEl.src = url;
+            videoEl.load();
+
+            modal.style.display = 'flex';
+            videoEl.play().catch(() => {});
+        }
+
+        function cerrarModalVideo() {
+            const modal = document.getElementById('modal-video-ejercicio');
+            const videoEl = document.getElementById('reproductor-ejercicio');
+
+            videoEl.pause();
+            videoEl.removeAttribute('src');
+            videoEl.load();
+            modal.style.display = 'none';
+        }
 
         async function cargarCatalogo() {
             const loading = document.getElementById('loading-ejercicios');
@@ -157,11 +260,44 @@
             noData.style.display = 'none';
             grid.style.display = 'grid';
 
-            lista.forEach(item => {
+            const listaOrdenada = [...lista].sort((a, b) =>
+                (a.nombre || a.titulo || '').localeCompare(b.nombre || b.titulo || '', 'es')
+            );
+
+            listaOrdenada.forEach(item => {
                 const nombre = item.nombre || item.titulo || 'Ejercicio Sin Nombre';
                 const zona = item.zona_cuerpo || item.grupo_muscular || 'General';
                 const patron = item.patron_movimiento || item.patron || 'Terapéutico';
                 const descripcion = item.descripcion || 'Sin descripción disponible para este ejercicio terapéutico.';
+                const videoUrl = resolverUrlVideo(item);
+
+                let areas = [...obtenerAreasEjercicio(item)].sort((a, b) => a.localeCompare(b, 'es'));
+                if (areaFiltroActual !== 'todos') {
+                    const clave = normalizarTexto(areaFiltroActual);
+                    areas.sort((a, b) => (normalizarTexto(b).includes(clave) ? 1 : 0) - (normalizarTexto(a).includes(clave) ? 1 : 0));
+                }
+
+                const estiloBadge = 'background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;';
+                const visibles = areas.slice(0, 2);
+                const ocultas = areas.slice(2);
+
+                let areasHtml = visibles
+                    .map(area => `<span class="badge" style="${estiloBadge}"><i class='bx bx-plus-medical'></i> ${area}</span>`)
+                    .join('');
+
+                if (ocultas.length > 0) {
+                    const labelExtra = `+${ocultas.length} más`;
+                    areasHtml += `
+                        <button type="button" class="badge" data-label="${labelExtra}" onclick="toggleAreasExtra(this)"
+                            title="${ocultas.join(', ')}"
+                            style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; cursor: pointer;">
+                            ${labelExtra}
+                        </button>
+                        <span style="display: none;">
+                            ${ocultas.map(area => `<span class="badge" style="${estiloBadge}"><i class='bx bx-plus-medical'></i> ${area}</span>`).join('')}
+                        </span>
+                    `;
+                }
 
                 const card = document.createElement('div');
                 card.className = 'card';
@@ -170,16 +306,21 @@
                 card.innerHTML = `
                     <div>
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 10px;">
-                            <h3 style="margin: 0; font-size: 1.05rem; color: var(--azul-900); font-weight: 700;">${nombre}</h3>
-                            <span class="badge badge-ok">${patron}</span>
+    <h3 style="margin: 0; font-size: 1.05rem; color: var(--azul-900); font-weight: 700;">${nombre}</h3>
+    ${videoUrl ? `<span class="badge badge-ok">Con Video</span>` : ''}
+</div>
+                        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 12px;">
+                            <span class="badge badge-neutro"><i class='bx bx-body'></i> ${zona}</span>
+                            ${areasHtml}
                         </div>
-                        <span class="badge badge-neutro" style="margin-bottom: 12px;">${zona}</span>
                         <p style="font-size: 0.86rem; color: var(--gris-600); margin: 0; line-height: 1.4;">
                             ${descripcion}
                         </p>
                     </div>
                     <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--gris-100); display: flex; justify-content: space-between; align-items: center;">
-                        ${item.video_url ? `<a href="${item.video_url}" target="_blank" class="btn btn-secondary btn-sm"><i class='bx bx-video'></i> Video</a>` : '<span></span>'}
+                        ${videoUrl
+                            ? `<button type="button" class="btn btn-secondary btn-sm" data-nombre="${nombre.replace(/"/g, '&quot;')}" data-video="${videoUrl}" onclick="abrirModalVideo(this)"><i class='bx bx-video'></i> Ver Video</button>`
+                            : `<span style="font-size: 0.8rem; color: var(--gris-400);">Sin video</span>`}
                         <a href="crear_pauta.html" class="btn btn-secondary btn-sm">
                             <i class='bx bx-plus-circle'></i> Prescribir
                         </a>
@@ -199,23 +340,49 @@
             aplicarFiltros();
         }
 
+        function filtrarPorArea(area, botonElemento) {
+            areaFiltroActual = area;
+
+            const botones = document.querySelectorAll('#filtros-clinicos-container .filtro-biomecanico-pill');
+            botones.forEach(btn => btn.className = 'filtro-biomecanico-pill');
+            if (botonElemento) botonElemento.classList.add('activo-todos');
+
+            aplicarFiltros();
+        }
+
         function filtrarPorTexto() {
             aplicarFiltros();
         }
 
         function aplicarFiltros() {
             const inputTexto = document.getElementById('input-buscar-catalogo');
-            const termino = inputTexto ? inputTexto.value.trim().toLowerCase() : '';
+            const termino = normalizarTexto(inputTexto ? inputTexto.value.trim() : '');
 
             const filtrados = catalogoCompleto.filter(item => {
-                const nombre = (item.nombre || item.titulo || '').toLowerCase();
-                const grupo = (item.zona_cuerpo || item.grupo_muscular || '').toLowerCase();
-                const patron = (item.patron_movimiento || item.patron || '').toLowerCase();
+                const nombre = normalizarTexto(item.nombre || item.titulo);
+                const grupo = normalizarTexto(item.zona_cuerpo || item.grupo_muscular);
+                const patron = normalizarTexto(item.patron_movimiento || item.patron);
+                const listaAreasNorm = obtenerAreasEjercicio(item).map(a => normalizarTexto(a));
 
-                const coincideZona = (zonaFiltroActual === 'todos') || grupo.includes(zonaFiltroActual.toLowerCase());
-                const coincideTexto = !termino || nombre.includes(termino) || grupo.includes(termino) || patron.includes(termino);
+                const zonaClave = normalizarTexto(zonaFiltroActual).replace(/s$/, '');
+                const coincideZona =
+                    zonaFiltroActual === 'todos' ||
+                    (zonaFiltroActual === 'cadera'
+                        ? grupo.includes('cadera') || grupo.includes('gluteo')
+                        : grupo.includes(zonaClave));
 
-                return coincideZona && coincideTexto;
+                const areaClave = normalizarTexto(areaFiltroActual);
+                const coincideArea =
+                    areaFiltroActual === 'todos' ||
+                    listaAreasNorm.some(a => a.includes(areaClave));
+
+                const coincideTexto = !termino ||
+                    nombre.includes(termino) ||
+                    grupo.includes(termino) ||
+                    patron.includes(termino) ||
+                    listaAreasNorm.some(a => a.includes(termino));
+
+                return coincideZona && coincideArea && coincideTexto;
             });
 
             renderizarCatalogo(filtrados);

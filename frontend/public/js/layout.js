@@ -34,9 +34,29 @@ document.addEventListener("DOMContentLoaded", () => {
     else if (isPacientes) tituloPagina = 'Gestión de Pacientes';
 
     // Construir el Menú Lateral (Sidebar) con rutas relativas directas
+   // Construir el Menú Lateral (Sidebar) con rutas relativas directas
     const sidebarHTML = `
         <aside class="sidebar" id="sidebar">
-            <div class="brand">Kine<span>Connect</span></div>
+            <a href="inicio.html" style="display: flex; align-items: center; justify-content: flex-start; gap: 10px; text-decoration: none; background: transparent; padding: 6px 12px 18px; margin: 0 12px 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+                <svg width="36" height="36" viewBox="3 3 58 58" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0; display: block;" aria-hidden="true">
+                    <defs>
+                        <linearGradient id="waveCyanSidebar" x1="14" y1="14" x2="46" y2="38" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#7DD3FC" />
+                            <stop offset="100%" stop-color="#38BDF8" />
+                        </linearGradient>
+                        <linearGradient id="waveWhiteSidebar" x1="50" y1="50" x2="18" y2="26" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#FFFFFF" />
+                            <stop offset="100%" stop-color="#BAE6FD" />
+                        </linearGradient>
+                    </defs>
+                    <circle cx="32" cy="32" r="28" fill="#FFFFFF" fill-opacity="0.07" stroke="#38BDF8" stroke-opacity="0.32" stroke-width="1.5" />
+                    <path d="M16 36C16 20 26 14 46 20C36 21 27 27 24 38C20.5 38.5 17.5 37.5 16 36Z" fill="url(#waveCyanSidebar)" />
+                    <path d="M48 28C48 44 38 50 18 44C28 43 37 37 40 26C43.5 25.5 46.5 26.5 48 28Z" fill="url(#waveWhiteSidebar)" />
+                    <circle cx="32" cy="32" r="7.5" fill="#38BDF8" fill-opacity="0.24" />
+                    <circle cx="32" cy="32" r="4.3" fill="#38BDF8" />
+                </svg>
+                <div class="brand" style="margin: 0; padding: 0; width: auto; border: none; text-align: left; font-size: 1.38rem; line-height: 1; display: inline-flex; align-items: center; transform: translateY(1px);">Kine<span>Connect</span></div>
+            </a>
             <nav>
                 <a href="inicio.html" class="${isInicio ? 'active' : ''}">
                     <i class='bx bx-home-alt'></i> Inicio

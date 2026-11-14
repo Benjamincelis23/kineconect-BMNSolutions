@@ -20,40 +20,51 @@
 
             <div class="content">
                 <!-- Encabezado de la página -->
-                <div class="page-header">
-                    <div>
-                        <h2>Prescripción y Carrito de Ejercicios</h2>
-                        <p>Metodología biomecánica funcional (Empuje, Tracción, Core y Piernas) con mapa anatómico
-                            interactivo.</p>
-                    </div>
-                </div>
+               <!-- Encabezado de la página -->
+<div class="page-header">
+    <div>
+        <h2>Prescripción y Carrito de Ejercicios</h2>
+        <p>Selección clínica por mapa anatómico interactivo, condición patológica y protocolos maestros.</p>
+    </div>
+</div>
 
-                <!-- Barra Superior de Metodología Biomecánica y Selectores -->
-                <div class="card biomecanico-toolbar">
-                    <div class="biomecanico-toolbar-inner"
-                        style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; justify-content: space-between;">
+<!-- Barra Superior de Condición Clínica y Selectores -->
+<div class="card biomecanico-toolbar">
+    <div class="biomecanico-toolbar-inner"
+        style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; justify-content: space-between;">
 
-                        <!-- Filtros Biomecánicos -->
-                        <div class="biomecanico-group-wrapper">
-                            <span class="biomecanico-label"><i class='bx bx-filter-alt'></i> Patrón Funcional:</span>
-                            <div class="biomecanico-pills-list">
-                                <button type="button" class="filtro-biomecanico-pill activo-todos" data-patron="todos">
-                                    Todos
-                                </button>
-                                <button type="button" class="filtro-biomecanico-pill" data-patron="empuje">
-                                    <i class='bx bx-chevrons-up'></i> Empuje
-                                </button>
-                                <button type="button" class="filtro-biomecanico-pill" data-patron="traccion">
-                                    <i class='bx bx-chevrons-down'></i> Tracción
-                                </button>
-                                <button type="button" class="filtro-biomecanico-pill" data-patron="core">
-                                    <i class='bx bx-shield-quarter'></i> Core
-                                </button>
-                                <button type="button" class="filtro-biomecanico-pill" data-patron="piernas">
-                                    <i class='bx bx-run'></i> Piernas
-                                </button>
-                            </div>
-                        </div>
+        <!-- Filtros por Condición / Área Clínica -->
+        <div class="biomecanico-group-wrapper" style="flex: 1; min-width: 300px;">
+            <span class="biomecanico-label" style="color: #0369a1;">
+                <i class='bx bx-plus-medical'></i> Condición / Área Clínica:
+            </span>
+            <div class="biomecanico-pills-list" style="display: flex; flex-wrap: wrap; gap: 6px;">
+                <button type="button" class="filtro-biomecanico-pill activo-todos" data-area="todos">
+                    Todas
+                </button>
+                <button type="button" class="filtro-biomecanico-pill" data-area="general">
+                    Rehabilitación General
+                </button>
+                <button type="button" class="filtro-biomecanico-pill" data-area="traumatologia">
+                    Traumatología
+                </button>
+                <button type="button" class="filtro-biomecanico-pill" data-area="inmunologia">
+                    Inmunología / VIH-SIDA
+                </button>
+               <button type="button" class="filtro-biomecanico-pill" data-area="neurorehabilitacion">
+    Neurorehabilitación
+</button>
+<button type="button" class="filtro-biomecanico-pill" data-area="post-operatorio">
+    Post-Operatorio
+</button>
+                <button type="button" class="filtro-biomecanico-pill" data-area="cardiorrespiratorio">
+                    Cardiorrespiratorio
+                </button>
+                <button type="button" class="filtro-biomecanico-pill" data-area="geriatria">
+                    Adulto Mayor
+                </button>
+            </div>
+        </div>
 
                         <!-- Bloque de Selectores: Plantilla Rápida y Paciente Destinatario -->
                         <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
@@ -111,60 +122,169 @@
                             </div>
                         </div>
 
-                        <!-- Lienzo del Modelo Anatómico Interactivo -->
-                        <div class="mapa-svg-container" id="svg-map-wrapper">
-                            <svg viewBox="0 0 200 400" id="svg-anatomia"
-                                style="width: 100%; max-height: 420px; display: block;">
-                                <!-- Silueta Base Frontal -->
-                                <g id="grupo-frontal">
-                                    <circle cx="100" cy="30" r="18" class="anatomia-base" />
-                                    <rect x="94" y="48" width="12" height="12" class="anatomia-base" />
+                       <!-- Lienzo del Modelo Anatómico Interactivo -->
+<div class="mapa-svg-container" id="svg-map-wrapper" style="position: relative;">
+    <svg viewBox="0 0 200 360" id="svg-anatomia"
+        style="width: 100%; max-height: 430px; display: block;">
 
-                                    <path id="zona-hombros" data-zona="hombros" data-patron="empuje"
-                                        class="anatomia-zona grupo-empuje"
-                                        d="M72,56 C62,58 58,66 58,76 L68,76 C70,68 76,64 78,60 Z M128,56 C138,58 142,66 142,76 L132,76 C130,68 124,64 122,60 Z" />
-                                    <path id="zona-brazos" data-zona="brazos" data-patron="traccion"
-                                        class="anatomia-zona grupo-traccion"
-                                        d="M58,78 L54,120 L66,120 L68,78 Z M132,78 L134,120 L146,120 L142,78 Z" />
-                                    <path id="zona-pecho" data-zona="pecho" data-patron="empuje"
-                                        class="anatomia-zona grupo-empuje"
-                                        d="M74,62 L126,62 L120,95 L100,98 L80,95 Z" />
-                                    <path id="zona-core" data-zona="core" data-patron="core"
-                                        class="anatomia-zona grupo-core" d="M82,100 L118,100 L114,142 L86,142 Z" />
-                                    <path id="zona-cadera" data-zona="cadera" data-patron="piernas"
-                                        class="anatomia-zona grupo-piernas" d="M80,144 L120,144 L124,168 L76,168 Z" />
-                                    <path id="zona-cuadriceps" data-zona="cuadriceps" data-patron="piernas"
-                                        class="anatomia-zona grupo-piernas"
-                                        d="M76,172 L97,172 L95,248 L74,248 Z M103,172 L124,172 L126,248 L105,248 Z" />
-                                    <path id="zona-pantorrillas" data-zona="pantorrillas" data-patron="piernas"
-                                        class="anatomia-zona grupo-piernas"
-                                        d="M75,254 L94,254 L91,330 L78,330 Z M106,254 L125,254 L122,330 L109,330 Z" />
-                                </g>
+        <!-- ==================== VISTA FRONTAL ==================== -->
+        <g id="grupo-frontal">
+            <!-- Cabeza y Cuello -->
+            <circle id="zona-cabeza-f" cx="100" cy="24" r="15"
+                data-zona="cuello" data-titulo="Cabeza y Cuello"
+                data-detalle="Región cervical, ECM y musculatura suboccipital"
+                data-patron="core" class="anatomia-zona grupo-core" />
+            <rect id="zona-cuello-f" x="92" y="40" width="16" height="13" rx="3"
+                data-zona="cuello" data-titulo="Cabeza y Cuello"
+                data-detalle="Columna cervical anterior y flexores profundos"
+                data-patron="core" class="anatomia-zona grupo-core" />
 
-                                <!-- Silueta Dorsal -->
-                                <g id="grupo-dorsal" style="display: none;">
-                                    <circle cx="100" cy="30" r="18" class="anatomia-base" />
-                                    <path id="zona-espalda" data-zona="espalda" data-patron="traccion"
-                                        class="anatomia-zona grupo-traccion"
-                                        d="M72,58 L128,58 L122,110 L100,116 L78,110 Z" />
-                                    <path id="zona-lumbar" data-zona="lumbar" data-patron="core"
-                                        class="anatomia-zona grupo-core" d="M82,118 L118,118 L114,146 L86,146 Z" />
-                                    <path id="zona-gluteos" data-zona="gluteos" data-patron="piernas"
-                                        class="anatomia-zona grupo-piernas" d="M78,148 L122,148 L126,176 L74,176 Z" />
-                                    <path id="zona-isquiotibiales" data-zona="isquiotibiales" data-patron="piernas"
-                                        class="anatomia-zona grupo-piernas"
-                                        d="M76,180 L97,180 L94,250 L73,250 Z M103,180 L124,180 L127,250 L106,250 Z" />
-                                    <path id="zona-gemelos" data-zona="gemelos" data-patron="piernas"
-                                        class="anatomia-zona grupo-piernas"
-                                        d="M74,256 L94,256 L90,332 L77,332 Z M106,256 L126,256 L123,332 L110,332 Z" />
-                                </g>
-                            </svg>
-                            <div id="tooltip-anatomico"></div>
-                        </div>
-                    </div>
+            <!-- Hombros -->
+            <path id="zona-hombros"
+                data-zona="hombros" data-titulo="Hombros (Deltoides)"
+                data-detalle="Deltoides anterior/medio y manguito rotador"
+                data-patron="empuje" class="anatomia-zona grupo-empuje"
+                d="M72,54 C61,56 56,64 56,74 L68,74 C70,66 76,62 78,58 Z M128,54 C139,56 144,64 144,74 L132,74 C130,66 124,62 122,58 Z" />
 
-                    <!-- Columna 2: Catálogo de Ejercicios Disponibles -->
-                    <div class="card">
+            <!-- Pecho -->
+            <path id="zona-pecho"
+                data-zona="pecho" data-titulo="Pectoral y Tórax"
+                data-detalle="Pectoral mayor, menor y serrato anterior"
+                data-patron="empuje" class="anatomia-zona grupo-empuje"
+                d="M74,60 L126,60 L120,94 L100,97 L80,94 Z" />
+
+            <!-- Brazos y Antebrazos -->
+            <path id="zona-brazos"
+                data-zona="brazos" data-titulo="Brazos y Antebrazos"
+                data-detalle="Bíceps braquial, braquial y flexores de antebrazo"
+                data-patron="traccion" class="anatomia-zona grupo-traccion"
+                d="M56,76 L51,123 L64,123 L68,76 Z M132,76 L136,123 L149,123 L144,76 Z" />
+
+            <!-- Muñecas y Manos -->
+            <path id="zona-manos-f"
+                data-zona="manos" data-titulo="Muñecas y Manos"
+                data-detalle="Articulación radiocarpiana, túnel carpiano y dedos"
+                data-patron="traccion" class="anatomia-zona grupo-traccion"
+                d="M50,125 L64,125 L65,141 C65,144 50,144 49,141 Z M136,125 L150,125 L151,141 C150,144 135,144 135,141 Z" />
+
+            <!-- Core / Abdomen -->
+            <path id="zona-core"
+                data-zona="core" data-titulo="Core y Abdomen"
+                data-detalle="Recto abdominal, oblicuos y transverso"
+                data-patron="core" class="anatomia-zona grupo-core"
+                d="M82,99 L118,99 L114,141 L86,141 Z" />
+
+            <!-- Cadera / Pelvis -->
+            <path id="zona-cadera"
+                data-zona="cadera" data-titulo="Cadera y Pelvis"
+                data-detalle="Flexores de cadera, psoas ilíaco y abductores"
+                data-patron="piernas" class="anatomia-zona grupo-piernas"
+                d="M80,143 L120,143 L124,167 L76,167 Z" />
+
+            <!-- Cuádriceps / Muslo -->
+            <path id="zona-cuadriceps"
+                data-zona="cuadriceps" data-titulo="Muslo (Cuádriceps)"
+                data-detalle="Cuádriceps femoral, sartorio, aductores y rodilla"
+                data-patron="piernas" class="anatomia-zona grupo-piernas"
+                d="M76,170 L97,170 L95,244 L74,244 Z M103,170 L124,170 L126,244 L105,244 Z" />
+
+            <!-- Pierna / Tibial -->
+            <path id="zona-pantorrillas"
+                data-zona="pantorrillas" data-titulo="Pierna y Tibial Anterior"
+                data-detalle="Tibial anterior, peroneos y complejo de rodilla"
+                data-patron="piernas" class="anatomia-zona grupo-piernas"
+                d="M75,248 L94,248 L91,322 L78,322 Z M106,248 L125,248 L122,322 L109,322 Z" />
+
+            <!-- Tobillos y Pies -->
+            <path id="zona-pies-f"
+                data-zona="tobillo" data-titulo="Tobillos y Pies"
+                data-detalle="Articulación tibiotarsiana, empeine y dedos del pie"
+                data-patron="piernas" class="anatomia-zona grupo-piernas"
+                d="M77,325 L91,325 L93,344 L71,344 C71,338 75,332 77,325 Z M109,325 L123,325 C125,332 129,338 129,344 L107,344 Z" />
+        </g>
+
+        <!-- ==================== VISTA POSTERIOR (DORSAL) ==================== -->
+        <g id="grupo-dorsal" style="display: none;">
+            <!-- Cabeza / Nuca y Cervical -->
+            <circle id="zona-cabeza-d" cx="100" cy="24" r="15"
+                data-zona="cuello" data-titulo="Nuca y Columna Cervical"
+                data-detalle="Occipital, esplenio y trapecio superior"
+                data-patron="core" class="anatomia-zona grupo-core" />
+            <rect id="zona-cuello-d" x="92" y="40" width="16" height="13" rx="3"
+                data-zona="cuello" data-titulo="Nuca y Columna Cervical"
+                data-detalle="Columna cervical posterior y extensores de cuello"
+                data-patron="core" class="anatomia-zona grupo-core" />
+
+            <!-- Hombro Posterior -->
+            <path id="zona-hombros-d"
+                data-zona="hombros" data-titulo="Deltoides Posterior"
+                data-detalle="Deltoides posterior, infraespinoso y redondo menor"
+                data-patron="traccion" class="anatomia-zona grupo-traccion"
+                d="M72,54 C61,56 56,64 56,74 L68,74 C70,66 76,62 78,58 Z M128,54 C139,56 144,64 144,74 L132,74 C130,66 124,62 122,58 Z" />
+
+            <!-- Espalda Alta y Dorsal -->
+            <path id="zona-espalda"
+                data-zona="espalda" data-titulo="Espalda Alta y Dorsal"
+                data-detalle="Dorsal ancho, romboides y trapecio medio/inferior"
+                data-patron="traccion" class="anatomia-zona grupo-traccion"
+                d="M74,58 L126,58 L120,108 L100,114 L80,108 Z" />
+
+            <!-- Tríceps y Brazo Posterior -->
+            <path id="zona-triceps"
+                data-zona="triceps" data-titulo="Tríceps y Brazo Posterior"
+                data-detalle="Tríceps braquial (cabeza larga, lateral y medial) y extensores"
+                data-patron="empuje" class="anatomia-zona grupo-empuje"
+                d="M56,76 L51,123 L64,123 L68,76 Z M132,76 L136,123 L149,123 L144,76 Z" />
+
+            <!-- Muñecas y Dorso de Mano -->
+            <path id="zona-manos-d"
+                data-zona="manos" data-titulo="Muñecas y Dorso de Mano"
+                data-detalle="Extensores de muñeca y articulación radiocarpiana"
+                data-patron="empuje" class="anatomia-zona grupo-empuje"
+                d="M50,125 L64,125 L65,141 C65,144 50,144 49,141 Z M136,125 L150,125 L151,141 C150,144 135,144 135,141 Z" />
+
+            <!-- Zona Lumbar -->
+            <path id="zona-lumbar"
+                data-zona="lumbar" data-titulo="Zona Lumbar"
+                data-detalle="Erectores espinales, cuadrado lumbar y multífidos"
+                data-patron="core" class="anatomia-zona grupo-core"
+                d="M82,116 L118,116 L114,144 L86,144 Z" />
+
+            <!-- Glúteos -->
+            <path id="zona-gluteos"
+                data-zona="gluteos" data-titulo="Glúteos"
+                data-detalle="Glúteo mayor, glúteo medio y pelvitrocantéreos"
+                data-patron="piernas" class="anatomia-zona grupo-piernas"
+                d="M78,146 L122,146 L126,174 L74,174 Z" />
+
+            <!-- Isquiotibiales -->
+            <path id="zona-isquiotibiales"
+                data-zona="isquiotibiales" data-titulo="Isquiotibiales"
+                data-detalle="Bíceps femoral, semitendinoso y semimembranoso"
+                data-patron="piernas" class="anatomia-zona grupo-piernas"
+                d="M76,178 L97,178 L94,246 L73,246 Z M103,178 L124,178 L127,246 L106,246 Z" />
+
+            <!-- Gemelos / Pantorrilla Posterior -->
+            <path id="zona-gemelos"
+                data-zona="gemelos" data-titulo="Pantorrillas (Gemelos y Sóleo)"
+                data-detalle="Gastrocnemio, sóleo y tendón de Aquiles"
+                data-patron="piernas" class="anatomia-zona grupo-piernas"
+                d="M74,250 L94,250 L90,322 L77,322 Z M106,250 L126,250 L123,322 L110,322 Z" />
+
+            <!-- Talones y Tobillos -->
+            <path id="zona-pies-d"
+                data-zona="tobillo" data-titulo="Talones y Tobillos"
+                data-detalle="Tendón calcáneo (Aquiles), retropié y planta"
+                data-patron="piernas" class="anatomia-zona grupo-piernas"
+                d="M77,325 L91,325 L92,343 L76,343 Z M109,325 L123,325 L124,343 L108,343 Z" />
+        </g>
+  </svg>
+                        <div id="tooltip-anatomico" style="pointer-events: none;"></div>
+                    </div> <!-- 1. Cierra #svg-map-wrapper -->
+                </div> <!-- 2. Cierra .card.mapa-card (este es el que falta) -->
+
+                <!-- Columna 2: Catálogo de Ejercicios Disponibles -->
+                <div class="card">
                         <div class="page-header" style="margin-bottom: 16px;">
                             <div>
                                 <h3 style="margin: 0; color: var(--azul-900); font-size: 1.15rem;">Ejercicios

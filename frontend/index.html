@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar Sesión - KineConnect</title>
+    <link rel="icon" type="image/svg+xml" href="public/favicon.svg">
     <!-- Hoja de estilos y Boxicons -->
     <link rel="stylesheet" href="public/css/style.css">
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
@@ -14,6 +15,39 @@
             document.documentElement.setAttribute('data-theme', savedTheme);
         })();
     </script>
+    <style>
+        .kc-logo-login {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+
+        .kc-logo-login svg {
+            width: 64px;
+            height: 64px;
+            filter: drop-shadow(0 4px 10px rgba(25, 103, 163, 0.14));
+            transition: transform 0.25s ease;
+        }
+
+        .kc-logo-login:hover svg {
+            transform: scale(1.04);
+        }
+
+        .kc-logo-login .brand {
+            margin-bottom: 0;
+        }
+
+        /* Adaptación automática para Modo Oscuro */
+        [data-theme="dark"] .kc-halo {
+            fill: rgba(56, 189, 248, 0.12);
+        }
+
+        [data-theme="dark"] .kc-wave-bottom {
+            fill: url(#waveWhiteDark);
+        }
+    </style>
 </head>
 
 <body>
@@ -27,7 +61,44 @@
 
     <div class="login-wrap">
         <div class="login-card">
-            <div class="brand">Kine<span>Connect</span></div>
+            <!-- Nuevo Logo KineConnect -->
+            <div class="kc-logo-login">
+                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <defs>
+                        <linearGradient id="waveCyan" x1="14" y1="14" x2="46" y2="38" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#38BDF8" />
+                            <stop offset="100%" stop-color="#0284C7" />
+                        </linearGradient>
+                        <linearGradient id="waveNavy" x1="50" y1="50" x2="18" y2="26" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#0B1E33" />
+                            <stop offset="100%" stop-color="#1967A3" />
+                        </linearGradient>
+                        <linearGradient id="waveWhiteDark" x1="50" y1="50" x2="18" y2="26" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#FFFFFF" />
+                            <stop offset="100%" stop-color="#BAE6FD" />
+                        </linearGradient>
+                    </defs>
+
+                    <!-- Halo de fondo -->
+                    <circle class="kc-halo" cx="32" cy="32" r="28" fill="#F0F9FF" />
+
+                    <!-- Onda superior: fluidez y movimiento -->
+                    <path d="M16 36C16 20 26 14 46 20C36 21 27 27 24 38C20.5 38.5 17.5 37.5 16 36Z"
+                        fill="url(#waveCyan)" />
+
+                    <!-- Onda inferior: soporte y estabilidad -->
+                    <path class="kc-wave-bottom"
+                        d="M48 28C48 44 38 50 18 44C28 43 37 37 40 26C43.5 25.5 46.5 26.5 48 28Z"
+                        fill="url(#waveNavy)" />
+
+                    <!-- Núcleo central -->
+                    <circle cx="32" cy="32" r="7.5" fill="#38BDF8" fill-opacity="0.18" />
+                    <circle cx="32" cy="32" r="4.2" fill="#38BDF8" />
+                </svg>
+
+                <div class="brand">Kine<span>Connect</span></div>
+            </div>
+
             <div class="subtitle">Ingreso a la plataforma kinesiológica</div>
 
             <!-- Caja de Mensajes de Error -->
