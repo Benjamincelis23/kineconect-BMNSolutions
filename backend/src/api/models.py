@@ -1,7 +1,6 @@
 from django.db import models 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-
 class SolicitudRegistro(models.Model):
     ESTADOS = [
         ('PENDIENTE', 'Pendiente'),
@@ -19,7 +18,6 @@ class SolicitudRegistro(models.Model):
     def __str__(self):
         return f"{self.rut} - {self.nombre} {self.apellido} ({self.estado})"
 
-
 class Perfil(models.Model):
     ROL_CHOICES = (
         ('KINE', 'Kinesiólogo'),
@@ -34,6 +32,22 @@ class Perfil(models.Model):
 
     def __str__(self):
         return f"{self.user.get_full_name() or self.user.username} - {self.rol}"
+class SolicitudRegistro(models.Model):
+    ESTADOS = [
+        ('PENDIENTE', 'Pendiente'),
+        ('APROBADA', 'Aprobada'),
+        ('RECHAZADA', 'Rechazada')
+    ]
+    rut = models.CharField(max_length=12, unique=True)
+    nombre = models.CharField(max_length=100)
+    apellido = models.CharField(max_length=100)
+    email = models.EmailField()
+    telefono = models.CharField(max_length=20, blank=True)
+    estado = models.CharField(max_length=10, choices=ESTADOS, default='PENDIENTE')
+    creada = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.rut} - {self.nombre} {self.apellido} ({self.estado})"
 
 class AreaClinica(models.Model):
     nombre = models.CharField(max_length=100, unique=True)

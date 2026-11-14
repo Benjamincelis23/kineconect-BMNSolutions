@@ -30,6 +30,8 @@ urlpatterns = [
     # 1. Endpoints de Autenticación JWT y Refresco
     path('api/v1/auth/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/v1/registro/', views.RegistroView.as_view(), name='solicitud_registro'),
+path('api/v1/registro/aprobar/<str:token>/', views.aprobar_view, name='aprobar_registro'),
     
     # 2. Endpoints específicos para la App Móvil
     path('api/me/', MeView.as_view(), name='usuario_me'),

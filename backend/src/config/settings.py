@@ -7,7 +7,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Cargar las variables desde el archivo .env
 env_path = os.path.join(BASE_DIR, '.env')
-load_dotenv()
+load_dotenv(env_path)
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-ov9_d_vzukvo0*l&g2e$=6stt@6%4_09e-t%e+r%mxc7k9+k*q'
@@ -119,8 +119,7 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
 
-# --- CONFIGURACIÓN DE CORREO EN CONSOLA (Desarrollo local) ---
-# Configuración real de Correo con Resend para que llegue a tu bandeja
+# --- CONFIGURACIÓN DE CORREO CON RESEND ---
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.resend.com'
 EMAIL_PORT = 587
@@ -128,6 +127,11 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'resend'
 EMAIL_HOST_PASSWORD = os.environ.get('RESEND_API_KEY')
 DEFAULT_FROM_EMAIL = os.environ.get('RESEND_FROM', 'Kineconect <onboarding@resend.dev>')
+
+# Variables usadas por api/emails.py y el flujo de aprobación de registro
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY')
+RESEND_FROM = os.environ.get('RESEND_FROM', 'Kineconect <onboarding@resend.dev>')
+PUBLIC_BASE_URL = os.environ.get('PUBLIC_BASE_URL', 'http://127.0.0.1:8000')
 
 # Tu correo fijo como administrador y supervisor
 ADMIN_EMAIL = 'benj.celis@duocuc.cl'
@@ -145,7 +149,7 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 
-    # --- NUEVAS LÍNEAS PARA LA PAGINACIÓN  de 20 en 20 ---
+    # --- PAGINACIÓN de 20 en 20 ---
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
 }

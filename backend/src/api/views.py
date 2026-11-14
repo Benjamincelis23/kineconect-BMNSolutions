@@ -1,71 +1,41 @@
-from datetime import timedelta
-from django.contrib.auth.password_validation import validate_password
-from django.core.exceptions import ValidationError
-from django.utils import timezone
-from rest_framework import generics, status, viewsets, permissions, serializers
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
-from rest_framework_simplejwt.views import TokenObtainPairView
-from django.db.models import Q
-from django.contrib.auth import get_user_model
-from django.core import signing
-from django.http import HttpResponse
-from django.views.decorators.csrf import csrf_exempt
 import secrets
 import string
+from datetime import timedelta
+
 from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
+from django.core import signing
+from django.core.exceptions import ValidationError
+from django.db.models import Max, Q
+from django.http import HttpResponse
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+
+from rest_framework import generics, permissions, serializers, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .emails import enviar_email
-from .models import Perfil, Ejercicio, Pauta, RegistroFeedback, SolicitudRegistro
+from .models import Ejercicio, Pauta, Perfil, RegistroFeedback, SolicitudRegistro
 from .serializers import (
-    PerfilSerializer, EjercicioSerializer, PautaCreateSerializer,
-    PautaReadSerializer, RegistroFeedbackSerializer, PacienteRegistroSerializer,
-    PautaListSerializer, PautaDetailSerializer, CustomTokenObtainPairSerializer
+    CustomTokenObtainPairSerializer,
+    EjercicioSerializer,
+    PacienteRegistroSerializer,
+    PautaCreateSerializer,
+    PautaDetailSerializer,
+    PautaListSerializer,
+    PautaReadSerializer,
+    PerfilSerializer,
+    RegistroFeedbackSerializer,
+    validar_rut_chileno,
 )
 
 SALT = 'aprobacion-registro'
-
-
-class CustomTokenObtainPairView(TokenObtainPairView):
-    serializer_class = CustomTokenObtainPairSerializer
-
-
-def _calcular_alertas_abandono(user):
-    if user.is_staff or user.is_superuser:
-        pacientes = Perfil.objects.filter(rol='PACIENTE').select_related('user')
-    else:
-        pacientes = Perfil.objects.filter(rol='PACIENTE', kinesiologo_asignado=user).select_related('user')
-        if not pacientes.exists():
-            pacientes = Perfil.objects.filter(rol='PACIENTE').select_related('user')
-
-    limite = timezone.now() - timedelta(days=7)
-    alertas = []
-
-    for perfil in pacientes:
-        tiene_pauta = Pauta.objects.filter(paciente=perfil.user, activo=True, es_plantilla=False).exists()
-        if not tiene_pauta:
-            continue
-
-        ultimo_fb = RegistroFeedback.objects.filter(
-            pauta__paciente=perfil.user
-        ).order_by('-fecha_ejecucion').first()
-
-        if not ultimo_fb or ultimo_fb.fecha_ejecucion < limite:
-            dias = (timezone.now() - ultimo_fb.fecha_ejecucion).days if ultimo_fb else None
-            alertas.append({
-                'paciente_id': perfil.user.id,
-                'perfil_id': perfil.id,
-                'nombre_completo': perfil.user.get_full_name() or perfil.user.username,
-                'rut': perfil.rut,
-                'dias_inactivo': dias,
-                'ultima_actividad': ultimo_fb.fecha_ejecucion if ultimo_fb else None,
-                'mensaje': f'Sin actividad hace {dias} días' if dias is not None else 'Aún no inicia su primera sesión'
-            })
-
-    return alertas
 
 
 # =========================================================
@@ -76,6 +46,12 @@ class SolicitudSerializer(serializers.ModelSerializer):
     class Meta:
         model = SolicitudRegistro
         fields = ['rut', 'nombre', 'apellido', 'email', 'telefono']
+
+    def validate_rut(self, value):
+        rut_valido = validar_rut_chileno(value)
+        if Perfil.objects.filter(rut=rut_valido).exists():
+            raise serializers.ValidationError("Este RUT ya se encuentra registrado en el sistema.")
+        return rut_valido
 
 
 class RegistroView(APIView):
@@ -106,7 +82,7 @@ def _generar_password(n=12):
 @csrf_exempt
 def aprobar_view(request, token):
     try:
-        sid = signing.loads(token, salt=SALT, max_age=60*60*72)
+        sid = signing.loads(token, salt=SALT, max_age=60 * 60 * 72)
         s = SolicitudRegistro.objects.get(id=sid)
     except (signing.BadSignature, SolicitudRegistro.DoesNotExist):
         return HttpResponse('El enlace de aprobación es inválido o ha expirado.', status=400)
@@ -150,10 +126,11 @@ def aprobar_view(request, token):
     s.save()
 
     enviar_email(
-        s.email, 'Tus credenciales de acceso a Kineconect',
+        s.email,
+        'Tus credenciales de acceso a Kineconect',
         f'<p>Hola {s.nombre}, tu solicitud fue aprobada por el kinesiólogo.</p>'
         f'<p>Descarga la app e ingresa con los siguientes datos:</p>'
-        f'<p><b>Usuario (RUT):</b> {username_limpio}<br><b>Contraseña temporal:</b> {password}</p>'
+        f'<p><b>Usuario (RUT sin puntos ni guion):</b> {username_limpio}<br><b>Contraseña temporal:</b> {password}</p>'
         '<p>Te recomendamos cambiarla una vez que ingreses a la plataforma.</p>',
     )
     return HttpResponse('Paciente aprobado. Las credenciales temporales fueron enviadas a su correo.')
@@ -168,7 +145,7 @@ class MeView(APIView):
 
     def get(self, request):
         u = request.user
-        ultima = Pauta.objects.filter(paciente=u).order_by('-creado_en').first()
+        ultima = Pauta.objects.filter(paciente=u, es_plantilla=False).order_by('-creado_en').first()
         kine = None
         if ultima and ultima.kinesiologo:
             k = ultima.kinesiologo
@@ -194,7 +171,9 @@ class PautaListView(generics.ListAPIView):
     serializer_class = PautaListSerializer
 
     def get_queryset(self):
-        return Pauta.objects.filter(paciente=self.request.user, activo=True).order_by('-creado_en')
+        return Pauta.objects.filter(
+            paciente=self.request.user, activo=True, es_plantilla=False
+        ).order_by('-creado_en')
 
 
 class PautaDetailView(generics.RetrieveAPIView):
@@ -202,7 +181,7 @@ class PautaDetailView(generics.RetrieveAPIView):
     serializer_class = PautaDetailSerializer
 
     def get_queryset(self):
-        return Pauta.objects.filter(paciente=self.request.user)
+        return Pauta.objects.filter(paciente=self.request.user, es_plantilla=False)
 
 
 class FeedbackCreateView(generics.CreateAPIView):
@@ -231,6 +210,69 @@ class CambiarPasswordView(APIView):
         request.user.set_password(nueva)
         request.user.save()
         return Response({'detail': 'Contraseña actualizada.'})
+
+
+# =========================================================
+# AUXILIAR DE ALERTAS DE ABANDONO
+# =========================================================
+
+def _calcular_alertas_abandono(user):
+    ahora = timezone.now()
+    umbral_dias = 3
+    fecha_limite = ahora - timedelta(days=umbral_dias)
+
+    if user.is_staff or user.is_superuser:
+        pacientes_qs = Perfil.objects.filter(rol='PACIENTE')
+    else:
+        pacientes_qs = Perfil.objects.filter(rol='PACIENTE', kinesiologo_asignado=user)
+        if not pacientes_qs.exists():
+            pacientes_qs = Perfil.objects.filter(rol='PACIENTE')
+
+    pacientes_qs = pacientes_qs.select_related('user')
+
+    alertas = []
+    for perfil in pacientes_qs:
+        paciente_user = perfil.user
+        ultimo_feedback = RegistroFeedback.objects.filter(
+            pauta__paciente=paciente_user
+        ).aggregate(ultima_fecha=Max('fecha_ejecucion'))['ultima_fecha']
+
+        if ultimo_feedback:
+            dias_inactivo = (ahora - ultimo_feedback).days
+            en_riesgo = ultimo_feedback < fecha_limite
+            ultima_fecha_str = ultimo_feedback.strftime('%d/%m/%Y %H:%M')
+        else:
+            dias_inactivo = (ahora - paciente_user.date_joined).days
+            en_riesgo = True
+            ultima_fecha_str = "Sin registros"
+
+        if en_riesgo:
+            estado_alerta = 'peligro'
+        elif dias_inactivo >= 2:
+            estado_alerta = 'advertencia'
+        else:
+            estado_alerta = 'activo'
+
+        nombre_completo = f"{paciente_user.first_name} {paciente_user.last_name}".strip() or paciente_user.username
+
+        alertas.append({
+            'paciente_id': paciente_user.id,
+            'rut': perfil.rut,
+            'nombre_completo': nombre_completo,
+            'email': paciente_user.email,
+            'ultima_sesion': ultima_fecha_str,
+            'dias_inactivo': dias_inactivo,
+            'en_riesgo_abandono': en_riesgo,
+            'estado_alerta': estado_alerta
+        })
+
+    alertas.sort(key=lambda x: x['dias_inactivo'], reverse=True)
+
+    return {
+        'total_pacientes': len(alertas),
+        'pacientes_en_riesgo': sum(1 for p in alertas if p['en_riesgo_abandono']),
+        'pacientes': alertas
+    }
 
 
 # =========================================================
@@ -307,6 +349,12 @@ class PautaViewSet(viewsets.ModelViewSet):
             'ejercicios_detalle', 'ejercicios_detalle__ejercicio'
         ).order_by('-creado_en')
 
+        # Filtro opcional de la Web: ?es_plantilla=true o ?es_plantilla=false
+        es_plantilla_param = self.request.query_params.get('es_plantilla')
+        if es_plantilla_param is not None:
+            es_plantilla = es_plantilla_param.lower() in ['true', '1']
+            return base_qs.filter(es_plantilla=es_plantilla)
+
         if user.is_staff or user.is_superuser:
             return base_qs
 
@@ -315,7 +363,9 @@ class PautaViewSet(viewsets.ModelViewSet):
                 return base_qs.filter(paciente=user, activo=True, es_plantilla=False)
             elif user.perfil.rol == 'KINE':
                 qs = base_qs.filter(
-                    Q(kinesiologo=user) | Q(paciente__perfil__kinesiologo_asignado=user)
+                    Q(kinesiologo=user)
+                    | Q(paciente__perfil__kinesiologo_asignado=user)
+                    | Q(es_plantilla=True)
                 ).distinct()
                 if not qs.exists():
                     return base_qs

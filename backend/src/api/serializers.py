@@ -19,7 +19,6 @@ def validar_rut_chileno(rut: str) -> str:
     if not rut_limpio:
         raise serializers.ValidationError("El RUT no puede estar vacío.")
 
-    # Si viene sin guion pero tiene al menos 2 caracteres, añadimos el guion antes del último dígito
     if '-' not in rut_limpio and len(rut_limpio) >= 2:
         rut_limpio = f"{rut_limpio[:-1]}-{rut_limpio[-1]}"
 
@@ -47,10 +46,7 @@ class PacienteRegistroSerializer(serializers.ModelSerializer):
         rut = validated_data.pop('rut')
         kinesiologo = self.context['request'].user
 
-        # Username basado en el RUT limpio sin puntos ni guion para login simplificado
         username = rut.replace('-', '').replace('.', '').upper()
-
-        # Clave alfanumérica limpia (sin símbolos que fallen en teclados móviles)
         alfabeto = string.ascii_letters + string.digits
         password_temporal = ''.join(secrets.choice(alfabeto) for _ in range(10))
         correo_paciente = validated_data.get('email', '')
@@ -62,7 +58,6 @@ class PacienteRegistroSerializer(serializers.ModelSerializer):
             email=correo_paciente,
             password=password_temporal
         )
-        # Adjuntamos la clave en memoria para que views.py la devuelva sin sobrescribirla
         user._password_temporal = password_temporal
 
         Perfil.objects.update_or_create(
@@ -74,9 +69,6 @@ class PacienteRegistroSerializer(serializers.ModelSerializer):
             }
         )
 
-        # El correo va SOLO al administrador (Resend en modo prueba rechaza
-        # cualquier otro destinatario). El correo del paciente va en el cuerpo
-        # para que el administrador lo reenvíe como respaldo.
         destinatarios = [getattr(settings, 'ADMIN_EMAIL', None) or 'benj.celis@duocuc.cl']
 
         email_thread = threading.Thread(
@@ -127,6 +119,8 @@ class EjercicioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ejercicio
         fields = '__all__'
+
+
 # ==========================================
 # SERIALIZADORES PARA LA API REST DE PAUTAS
 # ==========================================
@@ -143,7 +137,7 @@ class PautaEjercicioSerializer(serializers.ModelSerializer):
 
     def get_media_url(self, obj):
         request = self.context.get('request')
-        if obj.ejercicio and obj.ejercicio.video:
+        if obj.ejercicio and getattr(obj.ejercicio, 'video', None):
             if request:
                 return request.build_absolute_uri(obj.ejercicio.video.url)
             return obj.ejercicio.video.url
@@ -155,13 +149,14 @@ class PautaListSerializer(serializers.ModelSerializer):
     cantidad_ejercicios = serializers.IntegerField(source='ejercicios_detalle.count', read_only=True)
     fecha_creacion = serializers.DateTimeField(source='creado_en', read_only=True)
     paciente_nombre = serializers.SerializerMethodField()
+    kinesiologo_nombre = serializers.SerializerMethodField()
     ejercicios_detalle = PautaEjercicioSerializer(many=True, read_only=True)
 
     class Meta:
         model = Pauta
         fields = [
             'id', 'titulo', 'notas', 'paciente', 'paciente_nombre',
-            'creado_en', 'fecha_creacion', 'activo',
+            'kinesiologo_nombre', 'creado_en', 'fecha_creacion', 'activo',
             'total_ejercicios', 'cantidad_ejercicios', 'es_plantilla',
             'ejercicios_detalle'
         ]
@@ -173,14 +168,39 @@ class PautaListSerializer(serializers.ModelSerializer):
         nombre_completo = f'{p.first_name} {p.last_name}'.strip()
         return nombre_completo or p.username
 
+    def get_kinesiologo_nombre(self, obj):
+        if not obj.kinesiologo:
+            return "KineConnect"
+        k = obj.kinesiologo
+        return f'{k.first_name} {k.last_name}'.strip() or k.username
+
 
 class PautaDetailSerializer(serializers.ModelSerializer):
-    ejercicios = PautaEjercicioSerializer(source='ejercicios_detalle', many=True)
+    ejercicios = PautaEjercicioSerializer(source='ejercicios_detalle', many=True, read_only=True)
+    ejercicios_detalle = PautaEjercicioSerializer(many=True, read_only=True)
     fecha_creacion = serializers.DateTimeField(source='creado_en', read_only=True)
+    paciente_nombre = serializers.SerializerMethodField()
+    kinesiologo_nombre = serializers.SerializerMethodField()
 
     class Meta:
         model = Pauta
-        fields = ['id', 'titulo', 'notas', 'fecha_creacion', 'ejercicios']
+        fields = [
+            'id', 'titulo', 'notas', 'paciente', 'paciente_nombre',
+            'kinesiologo_nombre', 'es_plantilla', 'activo',
+            'creado_en', 'fecha_creacion', 'ejercicios', 'ejercicios_detalle'
+        ]
+
+    def get_paciente_nombre(self, obj):
+        if not obj.paciente:
+            return "Plantilla General"
+        p = obj.paciente
+        return f'{p.first_name} {p.last_name}'.strip() or p.username
+
+    def get_kinesiologo_nombre(self, obj):
+        if not obj.kinesiologo:
+            return "KineConnect"
+        k = obj.kinesiologo
+        return f'{k.first_name} {k.last_name}'.strip() or k.username
 
 
 # Alias de compatibilidad
@@ -206,72 +226,105 @@ def _a_entero(valor, defecto):
 
 
 class PautaCreateSerializer(serializers.ModelSerializer):
-    """Serializador transaccional para crear la Cabecera y el Detalle en un solo POST"""
-    ejercicios_detalle = serializers.ListField(child=serializers.DictField(), write_only=True, required=False)
-    ejercicios = serializers.ListField(child=serializers.DictField(), write_only=True, required=False)
+    """Serializador transaccional para crear Pautas o Plantillas y su detalle en un solo POST"""
+    ejercicios_detalle = serializers.ListField(
+        child=serializers.DictField(),
+        required=False,
+        write_only=True
+    )
+    ejercicios = serializers.ListField(
+        child=serializers.DictField(),
+        required=False,
+        write_only=True
+    )
+    paciente = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        required=False,
+        allow_null=True
+    )
+    notas = serializers.CharField(required=False, allow_blank=True, default='')
+    es_plantilla = serializers.BooleanField(required=False, default=False)
+    guardar_como_plantilla = serializers.BooleanField(required=False, default=False, write_only=True)
 
     class Meta:
         model = Pauta
-        fields = ('paciente', 'es_plantilla', 'titulo', 'ejercicios_detalle', 'ejercicios', 'notas')
+        fields = (
+            'id', 'paciente', 'titulo', 'notas',
+            'es_plantilla', 'guardar_como_plantilla',
+            'ejercicios_detalle', 'ejercicios'
+        )
+        read_only_fields = ('id',)
 
     def validate_paciente(self, value):
-        if value is not None:
+        if value:
             if not hasattr(value, 'perfil') or value.perfil.rol != 'PACIENTE':
                 raise serializers.ValidationError("El usuario seleccionado no tiene rol de PACIENTE.")
         return value
 
-    @transaction.atomic
+    def validate(self, attrs):
+        es_plantilla = attrs.get('es_plantilla', False)
+        paciente = attrs.get('paciente', None)
+
+        if not es_plantilla and not paciente:
+            raise serializers.ValidationError({"paciente": "Debe asignar un paciente si no es una plantilla."})
+
+        if es_plantilla:
+            attrs['paciente'] = None
+
+        ejercicios_raw = attrs.get('ejercicios_detalle') or attrs.get('ejercicios')
+        if not ejercicios_raw:
+            raise serializers.ValidationError({"ejercicios_detalle": "Debe incluir al menos un ejercicio."})
+
+        detalles_limpios = []
+        for idx, item in enumerate(ejercicios_raw):
+            ej_id = _extraer_ejercicio_id(item)
+            if not ej_id or not Ejercicio.objects.filter(id=ej_id).exists():
+                raise serializers.ValidationError({
+                    "ejercicios_detalle": f"El ejercicio en la posición {idx + 1} no es válido o no existe."
+                })
+            series = _a_entero(item.get('series'), 3)
+            repeticiones = _a_entero(item.get('repeticiones'), 10)
+            descanso = _a_entero(
+                item.get('tiempo_descanso_segundos', item.get('descanso_seg')),
+                60
+            )
+            detalles_limpios.append({
+                'ejercicio_id': int(ej_id),
+                'series': max(1, series),
+                'repeticiones': max(1, repeticiones),
+                'tiempo_descanso_segundos': max(0, descanso),
+            })
+
+        attrs['_detalles_limpios'] = detalles_limpios
+        return attrs
+
     def create(self, validated_data):
-        detalle_a = validated_data.pop('ejercicios_detalle', None) or []
-        detalle_b = validated_data.pop('ejercicios', None) or []
-        ejercicios_data = detalle_a or detalle_b
+        detalles_limpios = validated_data.pop('_detalles_limpios')
+        validated_data.pop('ejercicios_detalle', None)
+        validated_data.pop('ejercicios', None)
+        guardar_como_plantilla = validated_data.pop('guardar_como_plantilla', False)
+        kinesiologo = self.context['request'].user
+        validated_data['kinesiologo'] = kinesiologo
 
-        validated_data['kinesiologo'] = self.context['request'].user
+        with transaction.atomic():
+            pauta = Pauta.objects.create(**validated_data)
 
-        detalles = []
-        for detalle in ejercicios_data:
-            ejercicio_id = _a_entero(_extraer_ejercicio_id(detalle), None)
-            if ejercicio_id is None:
-                continue
-            detalles.append({
-                'ejercicio_id': ejercicio_id,
-                'series': _a_entero(detalle.get('series') or detalle.get('series_count'), 3),
-                'repeticiones': _a_entero(detalle.get('repeticiones') or detalle.get('reps'), 10),
-                'descanso': _a_entero(
-                    detalle.get('tiempo_descanso_segundos')
-                    or detalle.get('descanso_seg')
-                    or detalle.get('descanso'),
-                    60
-                ),
-            })
-
-        if ejercicios_data and not detalles:
-            raise serializers.ValidationError({
-                'ejercicios': 'No se pudo identificar el id de ningún ejercicio. '
-                              'Envía "ejercicio_id" en cada elemento.'
-            })
-
-        ids = {d['ejercicio_id'] for d in detalles}
-        existentes = set(Ejercicio.objects.filter(id__in=ids).values_list('id', flat=True))
-        faltantes = ids - existentes
-        if faltantes:
-            raise serializers.ValidationError({
-                'ejercicios': f'Estos ejercicios no existen: {sorted(faltantes)}'
-            })
-
-        pauta = Pauta.objects.create(**validated_data)
-
-        if detalles:
             PautaEjercicio.objects.bulk_create([
-                PautaEjercicio(
-                    pauta=pauta,
-                    ejercicio_id=d['ejercicio_id'],
-                    series=d['series'],
-                    repeticiones=d['repeticiones'],
-                    tiempo_descanso_segundos=d['descanso'],
-                )
-                for d in detalles
+                PautaEjercicio(pauta=pauta, **detalle) for detalle in detalles_limpios
             ])
+
+            if guardar_como_plantilla and not pauta.es_plantilla:
+                plantilla_maestra = Pauta.objects.create(
+                    titulo=f"[Protocolo] {pauta.titulo}",
+                    kinesiologo=kinesiologo,
+                    paciente=None,
+                    notas=pauta.notas,
+                    es_plantilla=True,
+                    activo=True
+                )
+                PautaEjercicio.objects.bulk_create([
+                    PautaEjercicio(pauta=plantilla_maestra, **detalle) for detalle in detalles_limpios
+                ])
 
         return pauta
 
@@ -310,7 +363,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         raw_username = attrs.get('username', '')
         rut_sin_formato = raw_username.replace('.', '').replace('-', '').strip().upper()
 
-        # Permite iniciar sesión tanto con 11700900K como con 11.700.900-K o 11700900-K
         if User.objects.filter(username=rut_sin_formato).exists():
             attrs['username'] = rut_sin_formato
         elif User.objects.filter(username__iexact=raw_username.strip()).exists():
@@ -319,7 +371,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         data = super().validate(attrs)
 
-        # Incluimos alias de token y datos del usuario autenticado para que el móvil actualice la sesión
         data['token'] = data['access']
         data['access_token'] = data['access']
         data['refresh_token'] = data['refresh']
