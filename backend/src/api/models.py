@@ -35,8 +35,27 @@ class Perfil(models.Model):
     def __str__(self):
         return f"{self.user.get_full_name() or self.user.username} - {self.rol}"
 
+class AreaClinica(models.Model):
+    nombre = models.CharField(max_length=100, unique=True)
 
+    class Meta: 
+        verbose_name = "Área / Condición Clínica"
+        verbose_name_plural = "Áreas / Condiciones Clínicas"
+        ordering = ['nombre']
+        
+    def __str__(self):
+        return self.nombre
+    
 class Ejercicio(models.Model):
+    AREAS_CLINICAS_CHOICES = [
+        ('GENERAL', 'Rehabilitación General'),
+        ('TRAUMATOLOGIA', 'Traumatología / Lesiones'),
+        ('INMUNOLOGIA', 'Inmunología / VIH-SIDA'),
+        ('NEUROLOGIA', 'Neurorehabilitación'),
+        ('POST_OPERATORIO', 'Post-Operatorio'),
+        ('CARDIORRESPIRATORIO', 'Cardiorrespiratorio'),
+        ('GERIATRIA', 'Adulto Mayor / Geriatría'),
+    ]
     nombre = models.CharField(max_length=100)
     descripcion = models.TextField()
     zona_cuerpo = models.CharField(max_length=100)
@@ -46,6 +65,12 @@ class Ejercicio(models.Model):
     gif_url = models.URLField(
         blank=True, null=True,
         help_text="URL de un GIF demostrativo del ejercicio (opcional)."
+    )
+    area_clinica = models.ManyToManyField(
+        AreaClinica,
+        blank=True,
+        related_name='ejercicios',
+        verbose_name="Áreas / Condiciones Clínicas"
     )
 
     def __str__(self):

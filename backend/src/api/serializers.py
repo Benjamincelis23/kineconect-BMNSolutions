@@ -118,11 +118,15 @@ class PerfilSerializer(serializers.ModelSerializer):
 
 
 class EjercicioSerializer(serializers.ModelSerializer):
+    area_clinica = serializers.SlugRelatedField(
+        many=True,
+        read_only=True,
+        slug_field='nombre'
+    )
+
     class Meta:
         model = Ejercicio
-        fields = ('id', 'nombre', 'descripcion', 'zona_cuerpo', 'video', 'imagen', 'gif_url')
-
-
+        fields = '__all__'
 # ==========================================
 # SERIALIZADORES PARA LA API REST DE PAUTAS
 # ==========================================
