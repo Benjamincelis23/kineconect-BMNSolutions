@@ -7,6 +7,55 @@
     <title>Panel Principal - KineConnect</title>
     <link rel="stylesheet" href="public/css/style.css">
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <style>
+        .modulo-card {
+            padding: 18px;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border: 1px solid var(--gris-200);
+            border-radius: 14px;
+            background: #fff;
+            transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+        }
+
+        .modulo-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+            border-color: #0284c7;
+        }
+
+        .modulo-card-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .modulo-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 11px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+
+        .actividad-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 13px;
+            border: 1px solid var(--gris-200);
+            border-radius: 10px;
+            background: #f8fafc;
+        }
+    </style>
 </head>
 
 <body>
@@ -15,10 +64,10 @@
             <div class="content">
 
                 <!-- ENCABEZADO -->
-                <div class="page-header" style="flex-wrap: wrap; gap: 12px;">
+                <div class="page-header" style="flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
                     <div>
                         <h2>Panel Principal</h2>
-                        <p>Resumen clínico, adherencia de pacientes y actividad reciente de KineConnect.</p>
+                        <p>Acceso directo a módulos clínicos, prescripción biomecánica y seguimiento de pacientes.</p>
                     </div>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                         <button type="button" class="btn btn-secondary" onclick="cargarDashboard()">
@@ -30,153 +79,188 @@
                     </div>
                 </div>
 
-                <!-- TARJETAS KPI PRINCIPALES -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px;">
-                    <div class="card" style="padding: 18px; display: flex; align-items: center; gap: 14px; border-left: 4px solid #0284c7;">
-                        <div style="width: 46px; height: 46px; border-radius: 12px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0;">
+                <!-- 1. MÓDULOS CLÍNICOS (PRIORIDAD ALTA) -->
+                <div style="margin-bottom: 24px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                        <h3 style="margin: 0; font-size: 0.98rem; color: var(--azul-900); display: flex; align-items: center; gap: 6px;">
+                            <i class='bx bx-grid-alt' style="color: #0284c7;"></i> Acceso Rápido a Módulos Clínicos
+                        </h3>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 15px;">
+
+                        <!-- Módulo 1: Mapa Anatómico -->
+                        <a href="crear_pauta.html" class="modulo-card" style="border-top: 3px solid #0284c7;">
+                            <div>
+                                <div class="modulo-card-top">
+                                    <span class="modulo-icon" style="background: #e0f2fe; color: #0284c7;">
+                                        <i class='bx bx-body'></i>
+                                    </span>
+                                    <span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 700; font-size: 0.72rem;">
+                                        Prescribir
+                                    </span>
+                                </div>
+                                <strong style="display: block; color: var(--azul-900); font-size: 1rem; margin-bottom: 5px;">
+                                    Mapa Anatómico
+                                </strong>
+                                <p style="margin: 0 0 14px 0; font-size: 0.83rem; color: var(--gris-600); line-height: 1.45;">
+                                    Arma rutinas filtrando por grupos musculares, áreas clínicas o plantillas.
+                                </p>
+                            </div>
+                            <span style="font-size: 0.83rem; font-weight: 700; color: #0284c7;">
+                                Prescribir ahora →
+                            </span>
+                        </a>
+
+                        <!-- Módulo 2: Gestión de Pacientes -->
+                        <a href="pacientes.html" class="modulo-card" style="border-top: 3px solid #2563eb;">
+                            <div>
+                                <div class="modulo-card-top">
+                                    <span class="modulo-icon" style="background: #dbeafe; color: #2563eb;">
+                                        <i class='bx bx-group'></i>
+                                    </span>
+                                    <span id="badge-mod-pacientes" class="badge badge-neutro" style="font-size: 0.72rem;">
+                                        Pacientes
+                                    </span>
+                                </div>
+                                <strong style="display: block; color: var(--azul-900); font-size: 1rem; margin-bottom: 5px;">
+                                    Gestión de Pacientes
+                                </strong>
+                                <p style="margin: 0 0 14px 0; font-size: 0.83rem; color: var(--gris-600); line-height: 1.45;">
+                                    Registra nuevos pacientes, consulta sus credenciales y revisa sus pautas.
+                                </p>
+                            </div>
+                            <span style="font-size: 0.83rem; font-weight: 700; color: #2563eb;">
+                                Ver pacientes →
+                            </span>
+                        </a>
+
+                        <!-- Módulo 3: Catálogo de Ejercicios -->
+                        <a href="ejercicios.html" class="modulo-card" style="border-top: 3px solid #10b981;">
+                            <div>
+                                <div class="modulo-card-top">
+                                    <span class="modulo-icon" style="background: #d1fae5; color: #059669;">
+                                        <i class='bx bx-dumbbell'></i>
+                                    </span>
+                                    <span id="badge-mod-ejercicios" class="badge badge-ok" style="font-size: 0.72rem;">
+                                        Biblioteca
+                                    </span>
+                                </div>
+                                <strong style="display: block; color: var(--azul-900); font-size: 1rem; margin-bottom: 5px;">
+                                    Catálogo de Ejercicios
+                                </strong>
+                                <p style="margin: 0 0 14px 0; font-size: 0.83rem; color: var(--gris-600); line-height: 1.45;">
+                                    Explora la biblioteca clínica ordenada por segmento céfalo-caudal y video.
+                                </p>
+                            </div>
+                            <span style="font-size: 0.83rem; font-weight: 700; color: #059669;">
+                                Explorar catálogo →
+                            </span>
+                        </a>
+
+                        <!-- Módulo 4: Pautas y Dolor -->
+                        <a href="pautas.html" class="modulo-card" style="border-top: 3px solid #f59e0b;">
+                            <div>
+                                <div class="modulo-card-top">
+                                    <span class="modulo-icon" style="background: #fef3c7; color: #d97706;">
+                                        <i class='bx bx-pulse'></i>
+                                    </span>
+                                    <span id="badge-mod-reportes" class="badge badge-neutro" style="font-size: 0.72rem;">
+                                        Monitoreo
+                                    </span>
+                                </div>
+                                <strong style="display: block; color: var(--azul-900); font-size: 1rem; margin-bottom: 5px;">
+                                    Pautas y Dolor (EVA)
+                                </strong>
+                                <p style="margin: 0 0 14px 0; font-size: 0.83rem; color: var(--gris-600); line-height: 1.45;">
+                                    Evalúa reportes de dolor post-sesión, series completadas y alertas clínicas.
+                                </p>
+                            </div>
+                            <span style="font-size: 0.83rem; font-weight: 700; color: #d97706;">
+                                Ver seguimiento →
+                            </span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <!-- 2. MÉTRICAS RESUMEN (KPIs) -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(195px, 1fr)); gap: 14px; margin-bottom: 22px;">
+                    <div class="card" style="padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-left: 4px solid #2563eb;">
+                        <div style="width: 40px; height: 40px; border-radius: 10px; background: #dbeafe; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
                             <i class='bx bx-group'></i>
                         </div>
                         <div>
-                            <span style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--gris-600);">Pacientes Activos</span>
-                            <strong id="kpi-pacientes" style="font-size: 1.55rem; color: var(--azul-900);">—</strong>
+                            <span style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">Pacientes Activos</span>
+                            <strong id="kpi-pacientes" style="font-size: 1.35rem; color: var(--azul-900);">—</strong>
                         </div>
                     </div>
 
-                    <div class="card" style="padding: 18px; display: flex; align-items: center; gap: 14px; border-left: 4px solid #10b981;">
-                        <div style="width: 46px; height: 46px; border-radius: 12px; background: #d1fae5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0;">
+                    <div class="card" style="padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-left: 4px solid #10b981;">
+                        <div style="width: 40px; height: 40px; border-radius: 10px; background: #d1fae5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
                             <i class='bx bx-dumbbell'></i>
                         </div>
                         <div>
-                            <span style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--gris-600);">Biblioteca Clínica</span>
-                            <strong id="kpi-ejercicios" style="font-size: 1.55rem; color: var(--azul-900);">—</strong>
+                            <span style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">Biblioteca Clínica</span>
+                            <strong id="kpi-ejercicios" style="font-size: 1.35rem; color: var(--azul-900);">—</strong>
                         </div>
                     </div>
 
-                    <div class="card" style="padding: 18px; display: flex; align-items: center; gap: 14px; border-left: 4px solid #f59e0b;">
-                        <div style="width: 46px; height: 46px; border-radius: 12px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0;">
+                    <div class="card" style="padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-left: 4px solid #0284c7;">
+                        <div style="width: 40px; height: 40px; border-radius: 10px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
                             <i class='bx bx-clipboard'></i>
                         </div>
                         <div>
-                            <span style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--gris-600);">Pautas Prescritas</span>
-                            <strong id="kpi-pautas" style="font-size: 1.55rem; color: var(--azul-900);">—</strong>
+                            <span style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">Pautas Prescritas</span>
+                            <strong id="kpi-pautas" style="font-size: 1.35rem; color: var(--azul-900);">—</strong>
                         </div>
                     </div>
 
-                    <div class="card" style="padding: 18px; display: flex; align-items: center; gap: 14px; border-left: 4px solid #ef4444;">
-                        <div style="width: 46px; height: 46px; border-radius: 12px; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0;">
+                    <div class="card" style="padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-left: 4px solid #f59e0b;">
+                        <div style="width: 40px; height: 40px; border-radius: 10px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
                             <i class='bx bx-pulse'></i>
                         </div>
                         <div>
-                            <span style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--gris-600);">Reportes EVA Móvil</span>
-                            <strong id="kpi-reportes" style="font-size: 1.55rem; color: var(--azul-900);">—</strong>
+                            <span style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">Reportes EVA Móvil</span>
+                            <strong id="kpi-reportes" style="font-size: 1.35rem; color: var(--azul-900);">—</strong>
                         </div>
                     </div>
                 </div>
 
-                <!-- ACTIVIDAD RECIENTE (2 COLUMNAS) -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; margin-bottom: 24px;">
+                <!-- 3. ACTIVIDAD RECIENTE (2 COLUMNAS NIVELADAS) -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; align-items: stretch;">
 
                     <!-- Últimos Reportes de Dolor -->
-                    <div class="card" style="padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
-                        <div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-                                <h3 style="margin: 0; font-size: 1.02rem; color: var(--azul-900); display: flex; align-items: center; gap: 8px;">
-                                    <i class='bx bx-pulse' style="color: #ef4444;"></i> Últimos Reportes EVA (App Móvil)
-                                </h3>
-                                <a href="pautas.html" style="font-size: 0.82rem; font-weight: 600; color: #0284c7; text-decoration: none;">
-                                    Ver monitoreo →
-                                </a>
-                            </div>
+                    <div class="card" style="padding: 18px 20px; display: flex; flex-direction: column;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                            <h3 style="margin: 0; font-size: 1rem; color: var(--azul-900); display: flex; align-items: center; gap: 8px;">
+                                <i class='bx bx-pulse' style="color: #ef4444;"></i> Últimos Reportes EVA (App Móvil)
+                            </h3>
+                            <a href="pautas.html" style="font-size: 0.82rem; font-weight: 700; color: #0284c7; text-decoration: none;">
+                                Ver monitoreo →
+                            </a>
+                        </div>
 
-                            <div id="lista-ultimos-reportes" style="display: flex; flex-direction: column; gap: 10px;">
-                                <p style="margin: 0; font-size: 0.86rem; color: var(--gris-500);">Cargando reportes recientes...</p>
-                            </div>
+                        <div id="lista-ultimos-reportes" style="display: flex; flex-direction: column; gap: 9px; flex: 1;">
+                            <p style="margin: 0; font-size: 0.85rem; color: var(--gris-500);">Cargando reportes recientes...</p>
                         </div>
                     </div>
 
-                    <!-- Pacientes Recientes y Prescripción Rápida -->
-                    <div class="card" style="padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
-                        <div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-                                <h3 style="margin: 0; font-size: 1.02rem; color: var(--azul-900); display: flex; align-items: center; gap: 8px;">
-                                    <i class='bx bx-user-check' style="color: #0284c7;"></i> Pacientes Asignados
-                                </h3>
-                                <a href="pacientes.html" style="font-size: 0.82rem; font-weight: 600; color: #0284c7; text-decoration: none;">
-                                    Gestionar →
-                                </a>
-                            </div>
+                    <!-- Pacientes Recientes -->
+                    <div class="card" style="padding: 18px 20px; display: flex; flex-direction: column;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                            <h3 style="margin: 0; font-size: 1rem; color: var(--azul-900); display: flex; align-items: center; gap: 8px;">
+                                <i class='bx bx-user-check' style="color: #2563eb;"></i> Pacientes Asignados
+                            </h3>
+                            <a href="pacientes.html" style="font-size: 0.82rem; font-weight: 700; color: #2563eb; text-decoration: none;">
+                                Gestionar →
+                            </a>
+                        </div>
 
-                            <div id="lista-pacientes-recientes" style="display: flex; flex-direction: column; gap: 10px;">
-                                <p style="margin: 0; font-size: 0.86rem; color: var(--gris-500);">Cargando pacientes...</p>
-                            </div>
+                        <div id="lista-pacientes-recientes" style="display: flex; flex-direction: column; gap: 9px; flex: 1;">
+                            <p style="margin: 0; font-size: 0.85rem; color: var(--gris-500);">Cargando pacientes...</p>
                         </div>
                     </div>
-
-                </div>
-
-                <!-- ACCESOS DIRECTOS A MÓDULOS -->
-                <h3 style="margin: 0 0 14px 0; font-size: 1.02rem; color: var(--azul-900);">Módulos Clínicos</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
-
-                    <a href="crear_pauta.html" class="card" style="padding: 18px; text-decoration: none; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--gris-200);">
-                        <div>
-                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                                <span style="width: 36px; height: 36px; border-radius: 10px; background: #e0f2fe; color: #0284c7; display: inline-flex; align-items: center; justify-content: center; font-size: 1.2rem;">
-                                    <i class='bx bx-body'></i>
-                                </span>
-                                <strong style="color: var(--azul-900); font-size: 0.98rem;">Mapa Anatómico</strong>
-                            </div>
-                            <p style="margin: 0 0 12px 0; font-size: 0.84rem; color: var(--gris-600); line-height: 1.45;">
-                                Prescribe rutinas seleccionando regiones musculares y plantillas clínicas.
-                            </p>
-                        </div>
-                        <span style="font-size: 0.83rem; font-weight: 700; color: #0284c7;">Prescribir ahora →</span>
-                    </a>
-
-                    <a href="pacientes.html" class="card" style="padding: 18px; text-decoration: none; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--gris-200);">
-                        <div>
-                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                                <span style="width: 36px; height: 36px; border-radius: 10px; background: #e0f2fe; color: #0284c7; display: inline-flex; align-items: center; justify-content: center; font-size: 1.2rem;">
-                                    <i class='bx bx-group'></i>
-                                </span>
-                                <strong style="color: var(--azul-900); font-size: 0.98rem;">Gestión de Pacientes</strong>
-                            </div>
-                            <p style="margin: 0 0 12px 0; font-size: 0.84rem; color: var(--gris-600); line-height: 1.45;">
-                                Registra nuevos pacientes, consulta sus RUT y revisa sus pautas asignadas.
-                            </p>
-                        </div>
-                        <span style="font-size: 0.83rem; font-weight: 700; color: #0284c7;">Ver pacientes →</span>
-                    </a>
-
-                    <a href="ejercicios.html" class="card" style="padding: 18px; text-decoration: none; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--gris-200);">
-                        <div>
-                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                                <span style="width: 36px; height: 36px; border-radius: 10px; background: #d1fae5; color: #059669; display: inline-flex; align-items: center; justify-content: center; font-size: 1.2rem;">
-                                    <i class='bx bx-dumbbell'></i>
-                                </span>
-                                <strong style="color: var(--azul-900); font-size: 0.98rem;">Catálogo de Ejercicios</strong>
-                            </div>
-                            <p style="margin: 0 0 12px 0; font-size: 0.84rem; color: var(--gris-600); line-height: 1.45;">
-                                Explora los 39 ejercicios agrupados por zona céfalo-caudal y condición clínica.
-                            </p>
-                        </div>
-                        <span style="font-size: 0.83rem; font-weight: 700; color: #059669;">Explorar catálogo →</span>
-                    </a>
-
-                    <a href="pautas.html" class="card" style="padding: 18px; text-decoration: none; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--gris-200);">
-                        <div>
-                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                                <span style="width: 36px; height: 36px; border-radius: 10px; background: #fef3c7; color: #d97706; display: inline-flex; align-items: center; justify-content: center; font-size: 1.2rem;">
-                                    <i class='bx bx-clipboard'></i>
-                                </span>
-                                <strong style="color: var(--azul-900); font-size: 0.98rem;">Pautas y Dolor</strong>
-                            </div>
-                            <p style="margin: 0 0 12px 0; font-size: 0.84rem; color: var(--gris-600); line-height: 1.45;">
-                                Monitorea el dolor percibido (EVA 0–10) y el cumplimiento de series diarias.
-                            </p>
-                        </div>
-                        <span style="font-size: 0.83rem; font-weight: 700; color: #d97706;">Ver seguimiento →</span>
-                    </a>
 
                 </div>
 
@@ -219,12 +303,18 @@
             const mapaPautas = {};
             todasPautas.forEach(p => { mapaPautas[p.id] = p; });
 
+            // KPIs
             document.getElementById('kpi-pacientes').textContent = pacientes.length;
             document.getElementById('kpi-ejercicios').textContent = totalEjercicios;
             document.getElementById('kpi-pautas').textContent = pautasActivas.length;
             document.getElementById('kpi-reportes').textContent = reportes.length;
 
-            // Renderizar últimos 4 reportes EVA
+            // Badges en vivo de los módulos superiores
+            document.getElementById('badge-mod-pacientes').textContent = `${pacientes.length} activos`;
+            document.getElementById('badge-mod-ejercicios').textContent = `${totalEjercicios} ejercicios`;
+            document.getElementById('badge-mod-reportes').textContent = `${reportes.length} reportes`;
+
+            // Últimos 4 reportes EVA
             const contReportes = document.getElementById('lista-ultimos-reportes');
             if (reportes.length === 0) {
                 contReportes.innerHTML = `<p style="margin: 0; font-size: 0.85rem; color: var(--gris-500);">Aún no hay reportes recibidos desde la app móvil.</p>`;
@@ -241,7 +331,7 @@
                         : '';
 
                     return `
-                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--gris-200); border-radius: 10px; background: #f8fafc;">
+                        <div class="actividad-row">
                             <div style="min-width: 0;">
                                 <strong style="display: block; font-size: 0.88rem; color: var(--azul-900); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                                     ${escaparHtml(titulo)}
@@ -256,7 +346,7 @@
                 }).join('');
             }
 
-            // Renderizar últimos 4 pacientes
+            // Pacientes asignados (hasta 4 para nivelar con reportes)
             const contPacientes = document.getElementById('lista-pacientes-recientes');
             if (pacientes.length === 0) {
                 contPacientes.innerHTML = `<p style="margin: 0; font-size: 0.85rem; color: var(--gris-500);">No tienes pacientes registrados todavía.</p>`;
@@ -269,16 +359,21 @@
                     const rut = p.rut || 'Sin RUT';
 
                     return `
-                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--gris-200); border-radius: 10px; background: #f8fafc;">
+                        <div class="actividad-row">
                             <div style="min-width: 0;">
                                 <strong style="display: block; font-size: 0.88rem; color: var(--azul-900); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                                     ${escaparHtml(nombre)}
                                 </strong>
                                 <span style="font-size: 0.77rem; color: var(--gris-600);">${escaparHtml(rut)}</span>
                             </div>
-                            <a href="crear_pauta.html?paciente=${encodeURIComponent(userId)}" class="btn btn-secondary btn-sm" style="white-space: nowrap; flex-shrink: 0;">
-                                <i class='bx bx-plus-circle'></i> Prescribir
-                            </a>
+                            <div style="display: flex; gap: 6px; flex-shrink: 0;">
+                                <a href="pautas.html?paciente=${encodeURIComponent(userId)}" class="btn btn-secondary btn-sm" title="Ver evolución">
+                                    <i class='bx bx-line-chart'></i>
+                                </a>
+                                <a href="crear_pauta.html?paciente=${encodeURIComponent(userId)}" class="btn btn-primary btn-sm" style="white-space: nowrap;">
+                                    <i class='bx bx-plus-circle'></i> Prescribir
+                                </a>
+                            </div>
                         </div>
                     `;
                 }).join('');
