@@ -103,10 +103,15 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [BASE_DIR / 'static'] if (BASE_DIR / 'static').exists() else []
 
 # Archivos multimedia (Supabase Storage S3 en producción / carpeta media en local)
+# Archivos multimedia (Supabase Storage S3 en producción / carpeta media en local)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 if os.environ.get('AWS_ACCESS_KEY_ID'):
+    # Evita que boto3 envíe cabeceras aws-chunked/CRC32 rechazadas por Supabase Storage
+    os.environ.setdefault('AWS_REQUEST_CHECKSUM_CALCULATION', 'when_required')
+    os.environ.setdefault('AWS_RESPONSE_CHECKSUM_VALIDATION', 'when_required')
+
     AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
     AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
     AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', 'kineconect-media')
@@ -114,6 +119,8 @@ if os.environ.get('AWS_ACCESS_KEY_ID'):
     AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'us-east-1')
     AWS_S3_CUSTOM_DOMAIN = os.environ.get('AWS_S3_CUSTOM_DOMAIN')
     AWS_S3_ADDRESSING_STYLE = 'path'
+    AWS_S3_SIGNATURE_VERSION = 's3v4'
+    AWS_DEFAULT_ACL = None
     AWS_QUERYSTRING_AUTH = False
 
     STORAGES = {
@@ -133,6 +140,24 @@ else:
             'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
         },
     }
+
+# Muestra los errores 500 completos en los Logs de Render con DEBUG=False
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+}
 
 # Autenticación del portal web
 LOGIN_URL = 'login'
