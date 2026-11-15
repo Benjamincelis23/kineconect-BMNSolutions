@@ -26,11 +26,10 @@
                 </div>
 
                 <!-- FORMULARIO DE REGISTRO (Ocultable) -->
-                <div id="seccion-registro" class="card seccion-registro-card is-hidden" style="display: none;">
+                <div id="seccion-registro" class="card seccion-registro-card is-hidden" style="display: none; margin-bottom: 24px;">
                     <div class="registro-card-header">
                         <h3 class="titulo-nuevo-paciente">Registrar Nuevo Paciente</h3>
-                        <p class="subtitulo-nuevo-paciente">Ingresa los datos personales. Se generará un usuario y clave
-                            temporal automáticamente.</p>
+                        <p class="subtitulo-nuevo-paciente">Ingresa los datos personales. Se generará un usuario y clave temporal automáticamente.</p>
                     </div>
 
                     <ul class="messages is-hidden" id="registro-messages">
@@ -58,8 +57,7 @@
                             <div class="field">
                                 <label for="email">Correo Electrónico</label>
                                 <input type="email" id="email" placeholder="paciente@correo.cl">
-                                <span class="help-text">Se enviará la credencial de acceso si el correo es
-                                    válido.</span>
+                                <span class="help-text">Se intentará enviar por correo y además se mostrarán aquí en pantalla.</span>
                             </div>
 
                             <div class="form-actions-full">
@@ -76,27 +74,39 @@
 
                 <!-- TABLA DE RESULTADOS -->
                 <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+                        <div style="position: relative; flex: 1 1 280px; max-width: 420px;">
+                            <i class='bx bx-search' style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--gris-400); pointer-events: none;"></i>
+                            <input type="text" id="input-buscar-paciente" placeholder="Buscar por nombre, RUT o correo..."
+                                oninput="filtrarTablaPacientes()"
+                                style="width: 100%; box-sizing: border-box; padding: 8px 12px 8px 34px; border-radius: 8px; border: 1px solid var(--gris-200); font-size: 0.86rem;">
+                        </div>
+                        <span id="contador-pacientes" style="font-size: 0.83rem; font-weight: 600; color: var(--gris-600);"></span>
+                    </div>
+
                     <div id="loading-pacientes" class="empty-state">
                         <i class='bx bx-loader-alt bx-spin loading-icon'></i>
                         <p class="loading-text">Consultando lista de pacientes a la API...</p>
                     </div>
 
-                    <table id="tabla-pacientes" style="display: none;">
-                        <thead>
-                            <tr>
-                                <th>Nombre Completo</th>
-                                <th>RUT</th>
-                                <th>Correo Electrónico</th>
-                                <th>ESTADO DE ACTIVIDAD</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbody-pacientes"></tbody>
-                    </table>
+                    <div style="overflow-x: auto;">
+                        <table id="tabla-pacientes" style="display: none;">
+                            <thead>
+                                <tr>
+                                    <th>Nombre Completo</th>
+                                    <th>RUT</th>
+                                    <th>Correo Electrónico</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-pacientes"></tbody>
+                        </table>
+                    </div>
 
                     <div id="no-pacientes" class="empty-state" style="display: none;">
                         <i class='bx bx-user-x empty-icon'></i>
-                        <p class="empty-text">Aún no tienes pacientes asignados.</p>
+                        <p class="empty-text">No se encontraron pacientes.</p>
                     </div>
 
                     <div id="error-pacientes" class="empty-state" style="display: none;">
@@ -109,12 +119,57 @@
         </main>
     </div>
 
-    <!-- 1. PRIMERO se cargan las librerías base -->
+    <!-- MODAL DE CREDENCIALES GENERADAS -->
+    <div id="modal-credenciales-paciente" onclick="if(event.target === this) cerrarModalCredenciales()"
+        style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.72); z-index: 9999; align-items: center; justify-content: center; padding: 16px;">
+        <div class="card" style="width: 100%; max-width: 460px; padding: 24px; position: relative;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <span style="width: 40px; height: 40px; border-radius: 12px; background: #d1fae5; color: #059669; display: inline-flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+                    <i class='bx bx-check-shield'></i>
+                </span>
+                <div>
+                    <h3 style="margin: 0; font-size: 1.1rem; color: var(--azul-900);">Paciente Registrado</h3>
+                    <p id="cred-nombre-paciente" style="margin: 2px 0 0; font-size: 0.83rem; color: var(--gris-600);"></p>
+                </div>
+            </div>
+
+            <p style="font-size: 0.84rem; color: var(--gris-700); line-height: 1.45; margin: 10px 0 14px;">
+                Comparte estas credenciales con el paciente para que ingrese a la aplicación móvil <strong>KineConnect</strong>:
+            </p>
+
+            <div style="background: #f8fafc; border: 1px solid var(--gris-200); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.8rem; font-weight: 600; color: var(--gris-600);">Usuario (App Móvil):</span>
+                    <strong id="cred-username" style="font-size: 0.95rem; color: var(--azul-900); font-family: monospace;"></strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid var(--gris-200);">
+                    <span style="font-size: 0.8rem; font-weight: 600; color: var(--gris-600);">Contraseña Temporal:</span>
+                    <strong id="cred-password" style="font-size: 0.98rem; color: #0369a1; background: #e0f2fe; padding: 3px 10px; border-radius: 6px; font-family: monospace;"></strong>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                <button type="button" id="btn-copiar-credenciales" class="btn btn-primary" onclick="copiarCredenciales()">
+                    <i class='bx bx-copy'></i> Copiar Credenciales
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="cerrarModalCredenciales()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/api.js"></script>
     <script src="js/layout.js"></script>
 
-    <!-- 2. DESPUÉS se ejecuta la lógica de la página -->
     <script>
+        let listaPacientesCache = [];
+        let textoCredencialesCopiar = '';
+
+        function escaparHtml(txt) {
+            return String(txt ?? '').replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[c]));
+        }
+
         function toggleFormulario() {
             const sec = document.getElementById('seccion-registro');
             if (!sec) return;
@@ -129,10 +184,98 @@
             }
         }
 
+        function abrirModalCredenciales(nombreCompleto, username, passwordTemporal) {
+            document.getElementById('cred-nombre-paciente').textContent = nombreCompleto;
+            document.getElementById('cred-username').textContent = username || 'RUT sin puntos ni guion';
+            document.getElementById('cred-password').textContent = passwordTemporal || '(Revisar en Django Admin)';
+
+            textoCredencialesCopiar =
+                `Hola ${nombreCompleto}, tus credenciales de acceso a KineConnect son:\n` +
+                `• Usuario: ${username}\n` +
+                `• Contraseña temporal: ${passwordTemporal}`;
+
+            const btnCopiar = document.getElementById('btn-copiar-credenciales');
+            btnCopiar.innerHTML = "<i class='bx bx-copy'></i> Copiar Credenciales";
+            document.getElementById('modal-credenciales-paciente').style.display = 'flex';
+        }
+
+        function cerrarModalCredenciales() {
+            document.getElementById('modal-credenciales-paciente').style.display = 'none';
+        }
+
+        async function copiarCredenciales() {
+            if (!textoCredencialesCopiar) return;
+            try {
+                await navigator.clipboard.writeText(textoCredencialesCopiar);
+                const btn = document.getElementById('btn-copiar-credenciales');
+                btn.innerHTML = "<i class='bx bx-check'></i> ¡Copiado!";
+            } catch {
+                alert(textoCredencialesCopiar);
+            }
+        }
+
+        function renderizarTablaPacientes(lista) {
+            const tabla = document.getElementById('tabla-pacientes');
+            const tbody = document.getElementById('tbody-pacientes');
+            const noData = document.getElementById('no-pacientes');
+            const contador = document.getElementById('contador-pacientes');
+
+            if (contador) contador.textContent = `${lista.length} ${lista.length === 1 ? 'paciente' : 'pacientes'}`;
+            tbody.innerHTML = '';
+
+            if (lista.length === 0) {
+                tabla.style.display = 'none';
+                noData.style.display = 'block';
+                return;
+            }
+
+            noData.style.display = 'none';
+            tabla.style.display = 'table';
+
+            lista.forEach(p => {
+                const tr = document.createElement('tr');
+                const nombre = p.nombre_completo || (p.user && typeof p.user === 'object' ? `${p.user.first_name} ${p.user.last_name}`.trim() : '') || 'Paciente';
+                const correo = p.email || (p.user && typeof p.user === 'object' ? p.user.email : 'Sin correo');
+                const userId = p.user_id || ((p.user && typeof p.user === 'object') ? p.user.id : (p.user || p.id));
+
+                tr.innerHTML = `
+                    <td><strong>${escaparHtml(nombre)}</strong></td>
+                    <td>${escaparHtml(p.rut || 'N/A')}</td>
+                    <td>${escaparHtml(correo)}</td>
+                    <td><span class="badge badge-ok">${escaparHtml(p.rol || 'PACIENTE')}</span></td>
+                    <td>
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            <a href="crear_pauta.html?paciente=${encodeURIComponent(userId)}" class="btn btn-secondary btn-sm" title="Prescribir Pauta">
+                                <i class='bx bx-plus-circle'></i> Prescribir
+                            </a>
+                            <a href="pautas.html?paciente=${encodeURIComponent(userId)}&nombre=${encodeURIComponent(nombre)}" class="btn btn-secondary btn-sm" title="Ver Historial">
+                                <i class='bx bx-line-chart'></i> Ver Pautas
+                            </a>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filtrarTablaPacientes() {
+            const q = (document.getElementById('input-buscar-paciente')?.value || '').toLowerCase().trim();
+            if (!q) {
+                renderizarTablaPacientes(listaPacientesCache);
+                return;
+            }
+            const filtrados = listaPacientesCache.filter(p => {
+                const nombre = (p.nombre_completo || '').toLowerCase();
+                const rut = (p.rut || '').toLowerCase();
+                const correo = (p.email || '').toLowerCase();
+                return nombre.includes(q) || rut.includes(q) || correo.includes(q);
+            });
+            renderizarTablaPacientes(filtrados);
+        }
+
         async function cargarPacientes() {
             const loading = document.getElementById('loading-pacientes');
             const tabla = document.getElementById('tabla-pacientes');
-            const tbody = document.getElementById('tbody-pacientes');
             const noData = document.getElementById('no-pacientes');
             const errorDiv = document.getElementById('error-pacientes');
             const errorText = document.getElementById('error-text');
@@ -141,7 +284,6 @@
             tabla.style.display = 'none';
             noData.style.display = 'none';
             errorDiv.style.display = 'none';
-            tbody.innerHTML = '';
 
             try {
                 let respuesta = await api.getMisPacientes();
@@ -155,39 +297,9 @@
                     pacientes = [respuesta];
                 }
 
+                listaPacientesCache = pacientes;
                 loading.style.display = 'none';
-
-                if (pacientes.length === 0) {
-                    noData.style.display = 'block';
-                    return;
-                }
-
-                tabla.style.display = 'table';
-
-                pacientes.forEach(p => {
-                    const tr = document.createElement('tr');
-                    const nombre = p.nombre_completo || (p.user && typeof p.user === 'object' ? `${p.user.first_name} ${p.user.last_name}`.trim() : '') || 'Paciente';
-                    const correo = p.email || (p.user && typeof p.user === 'object' ? p.user.email : 'Sin correo');
-                    const userId = p.user_id || ((p.user && typeof p.user === 'object') ? p.user.id : (p.user || p.id));
-
-                    tr.innerHTML = `
-                        <td><strong>${nombre}</strong></td>
-                        <td>${p.rut || 'N/A'}</td>
-                        <td>${correo}</td>
-                        <td><span class="badge badge-ok">${p.rol || 'PACIENTE'}</span></td>
-                        <td>
-                            <div style="display: flex; gap: 6px;">
-                                <a href="crear_pauta.html?paciente=${userId}" class="btn btn-secondary btn-sm" title="Prescribir Pauta">
-                                    <i class='bx bx-plus-circle'></i> Prescribir
-                                </a>
-                                <a href="pautas.html?paciente=${userId}&nombre=${encodeURIComponent(nombre)}" class="btn btn-secondary btn-sm" title="Ver Historial">
-                                    <i class='bx bx-line-chart'></i> Ver Pautas
-                                </a>
-                            </div>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+                renderizarTablaPacientes(pacientes);
 
             } catch (err) {
                 loading.style.display = 'none';
@@ -215,10 +327,12 @@
 
                     const rawRut = document.getElementById('rut').value;
                     const rutLimpio = rawRut.replace(/\./g, '').trim().toUpperCase();
+                    const firstName = document.getElementById('first_name').value.trim();
+                    const lastName = document.getElementById('last_name').value.trim();
 
                     const payload = {
-                        first_name: document.getElementById('first_name').value.trim(),
-                        last_name: document.getElementById('last_name').value.trim(),
+                        first_name: firstName,
+                        last_name: lastName,
                         rut: rutLimpio,
                         email: document.getElementById('email').value.trim()
                     };
@@ -228,16 +342,14 @@
                     msgBox.classList.add('is-hidden');
 
                     try {
-                        await api.registrarPaciente(payload);
-                        msgBox.className = 'messages is-ok';
-                        msgItem.textContent = '¡Paciente registrado y vinculado exitosamente!';
-                        msgBox.classList.remove('is-hidden');
+                        const res = await api.registrarPaciente(payload);
                         formRegistro.reset();
+                        toggleFormulario();
+                        await cargarPacientes();
 
-                        setTimeout(() => {
-                            toggleFormulario();
-                            cargarPacientes();
-                        }, 1200);
+                        const userGenerado = res?.username || rutLimpio.replace(/-/g, '');
+                        const passGenerada = res?.password_temporal || '';
+                        abrirModalCredenciales(`${firstName} ${lastName}`, userGenerado, passGenerada);
 
                     } catch (error) {
                         msgBox.className = 'messages is-error';
