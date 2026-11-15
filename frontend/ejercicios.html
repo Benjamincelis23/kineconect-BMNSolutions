@@ -1,17 +1,401 @@
-import { defineConfig } from 'vite';
-import { resolve } from 'path';
+<!DOCTYPE html>
+<html lang="es">
 
-export default defineConfig({
-  build: {
-    rollupOptions: {
-      input: {
-        main: resolve(__dirname, 'index.html'),
-        inicio: resolve(__dirname, 'inicio.html'),
-        crear_pauta: resolve(__dirname, 'crear_pauta.html'),
-        ejercicios: resolve(__dirname, 'ejercicios.html'),
-        pacientes: resolve(__dirname, 'pacientes.html'),
-        pautas: resolve(__dirname, 'pautas.html'),
-      },
-    },
-  },
-});
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo Muscular y Ejercicios - KineConnect</title>
+    <!-- Estilos unificados y Boxicons -->
+    <link rel="stylesheet" href="public/css/style.css">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-shell">
+
+        <!-- Contenido Principal -->
+        <main class="main">
+            <div class="content">
+
+                <!-- Encabezado de la página -->
+                <div class="page-header">
+                    <div>
+                        <h2>Catálogo Muscular y Ejercicios</h2>
+                        <p>Consulta, filtra y gestiona la biblioteca biomecánica y clínica de ejercicios terapéuticos.</p>
+                    </div>
+                    <a href="crear_pauta.html" class="btn btn-primary">
+                        <i class='bx bx-body'></i> Ir a Prescribir Pauta
+                    </a>
+                </div>
+
+                <!-- Filtros por Zona Anatómica, Área Clínica y Buscador -->
+                <div class="card" style="margin-bottom: 24px; padding: 16px 20px; display: flex; flex-direction: column; gap: 14px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <span style="font-size: 0.85rem; font-weight: 700; color: var(--azul-900);">
+                                <i class='bx bx-body'></i> Zona Anatómica:
+                            </span>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="filtros-zonas-container">
+    <button type="button" class="filtro-biomecanico-pill activo-todos" onclick="filtrarPorZona('todos', this)">Todos</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('cuello', this)">Cuello</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('hombro', this)">Hombro</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('espalda', this)">Espalda</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('core', this)">Core</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('cadera', this)">Cadera / Glúteos</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('piernas', this)">Piernas</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('rodilla', this)">Rodilla</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('tobillo', this)">Tobillo / Pie</button>
+</div>
+                        </div>
+
+                        <!-- Barra de Búsqueda de Texto -->
+                        <div class="field" style="margin: 0; min-width: 260px;">
+                            <input type="text" id="input-buscar-catalogo"
+                                placeholder="Buscar por nombre, zona o condición..." oninput="filtrarPorTexto()">
+                        </div>
+                    </div>
+
+                    <!-- Filtro por Área / Condición Clínica -->
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-top: 12px; border-top: 1px solid var(--gris-100);">
+                        <span style="font-size: 0.85rem; font-weight: 700; color: #0369a1;">
+                            <i class='bx bx-plus-medical'></i> Condición / Área Clínica:
+                        </span>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="filtros-clinicos-container">
+    <button type="button" class="filtro-biomecanico-pill activo-todos" onclick="filtrarPorArea('todos', this)">Todas</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorArea('general', this)">Rehabilitación General</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorArea('traumatologia', this)">Traumatología</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorArea('inmunologia', this)">Inmunología / VIH-SIDA</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorArea('neurologia', this)">Neurorehabilitación</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorArea('post_operatorio', this)">Post-Operatorio</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorArea('cardiorrespiratorio', this)">Cardiorrespiratorio</button>
+    <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorArea('geriatria', this)">Adulto Mayor</button>
+</div>
+                    </div>
+                </div>
+
+                <!-- Lista / Cuadrícula de Ejercicios -->
+                <div class="card">
+                    <!-- Estado de Carga -->
+                    <div id="loading-ejercicios" class="empty-state">
+                        <i class='bx bx-loader-alt bx-spin loading-icon'></i>
+                        <p class="loading-text">Cargando catálogo biomecánico...</p>
+                    </div>
+
+                    <!-- Grid de Tarjetas de Ejercicios -->
+                    <div id="grid-catalogo-ejercicios"
+                        style="display: none; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px;">
+                    </div>
+
+                    <!-- Estado Vacío -->
+                    <div id="no-ejercicios" class="empty-state" style="display: none;">
+                        <i class='bx bx-dumbbell empty-icon'></i>
+                        <p class="empty-text">No se encontraron ejercicios con los filtros seleccionados.</p>
+                    </div>
+
+                    <!-- Estado de Error -->
+                    <div id="error-ejercicios" class="empty-state" style="display: none;">
+                        <i class='bx bx-error-circle error-icon'></i>
+                        <p id="error-text" class="error-msg-text"></p>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Reproductor de Video -->
+    <div id="modal-video-ejercicio" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); z-index: 9999; align-items: center; justify-content: center; padding: 16px;">
+        <div class="card" style="width: 100%; max-width: 720px; padding: 20px; position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <h3 id="modal-video-titulo" style="margin: 0; color: var(--azul-900); font-size: 1.1rem;">Demostración</h3>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="cerrarModalVideo()">
+                    <i class='bx bx-x'></i> Cerrar
+                </button>
+            </div>
+            <video id="reproductor-ejercicio" controls playsinline style="width: 100%; max-height: 70vh; border-radius: 8px; background: #000;">
+                Tu navegador no soporta la reproducción de video MP4.
+            </video>
+        </div>
+    </div>
+
+    <!-- Scripts Esenciales -->
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
+
+<!-- Lógica de Consulta y Filtrado del Catálogo -->
+    <script>
+        const API_BASE_URL = 'https://kineconect-bmnsolutions.onrender.com/api/v1';
+        let catalogoCompleto = [];
+        let zonaFiltroActual = 'todos';
+        let areaFiltroActual = 'todos';
+
+        function normalizarTexto(txt) {
+            return String(txt ?? '')
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[-_]+/g, ' ')
+                .trim();
+        }
+
+        function obtenerAreasEjercicio(item) {
+            if (Array.isArray(item.area_clinica) && item.area_clinica.length > 0) {
+                return item.area_clinica.map(a => (typeof a === 'object' ? (a.nombre || '') : String(a)));
+            }
+            if (typeof item.area_clinica === 'string' && item.area_clinica.trim()) {
+                return [item.area_clinica];
+            }
+            return ['Rehabilitación General'];
+        }
+
+        function toggleAreasExtra(btn) {
+            const extra = btn.nextElementSibling;
+            if (!extra) return;
+            const oculto = extra.style.display === 'none';
+            extra.style.display = oculto ? 'contents' : 'none';
+            btn.textContent = oculto ? 'Ver menos' : btn.getAttribute('data-label');
+        }
+
+        function resolverUrlVideo(item) {
+            let rawUrl =
+                item.video ||
+                item.archivo_video ||
+                item.video_file ||
+                item.video_mp4 ||
+                item.url_multimedia ||
+                item.video_url ||
+                '';
+
+            if (!rawUrl && item && typeof item === 'object') {
+                const rutaDetectada = Object.values(item).find(
+                    v => typeof v === 'string' && /\.(mp4|webm|mov)($|\?)/i.test(v)
+                );
+                if (rutaDetectada) rawUrl = rutaDetectada;
+            }
+
+            if (!rawUrl) return '';
+            if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) return rawUrl;
+            return `${BACKEND_ORIGIN}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
+        }
+
+        function abrirModalVideo(boton) {
+            const titulo = boton.getAttribute('data-nombre') || 'Demostración';
+            const url = boton.getAttribute('data-video');
+            if (!url) return;
+
+            const modal = document.getElementById('modal-video-ejercicio');
+            const tituloEl = document.getElementById('modal-video-titulo');
+            const videoEl = document.getElementById('reproductor-ejercicio');
+
+            tituloEl.textContent = titulo;
+            videoEl.pause();
+            videoEl.src = url;
+            videoEl.load();
+
+            modal.style.display = 'flex';
+            videoEl.play().catch(() => {});
+        }
+
+        function cerrarModalVideo() {
+            const modal = document.getElementById('modal-video-ejercicio');
+            const videoEl = document.getElementById('reproductor-ejercicio');
+
+            videoEl.pause();
+            videoEl.removeAttribute('src');
+            videoEl.load();
+            modal.style.display = 'none';
+        }
+
+        async function cargarCatalogo() {
+            const loading = document.getElementById('loading-ejercicios');
+            const grid = document.getElementById('grid-catalogo-ejercicios');
+            const noData = document.getElementById('no-ejercicios');
+            const errorDiv = document.getElementById('error-ejercicios');
+            const errorText = document.getElementById('error-text');
+
+            loading.style.display = 'block';
+            grid.style.display = 'none';
+            noData.style.display = 'none';
+            errorDiv.style.display = 'none';
+
+            try {
+                let respuesta = await api.getEjercicios();
+
+                if (respuesta && respuesta.results) {
+                    catalogoCompleto = respuesta.results;
+                } else if (Array.isArray(respuesta)) {
+                    catalogoCompleto = respuesta;
+                } else {
+                    catalogoCompleto = respuesta ? [respuesta] : [];
+                }
+
+                loading.style.display = 'none';
+
+                if (catalogoCompleto.length === 0) {
+                    noData.style.display = 'block';
+                    return;
+                }
+
+                renderizarCatalogo(catalogoCompleto);
+
+            } catch (err) {
+                loading.style.display = 'none';
+                errorDiv.style.display = 'block';
+                errorText.textContent = `Error al cargar ejercicios: ${err.message}`;
+            }
+        }
+
+        function renderizarCatalogo(lista) {
+            const grid = document.getElementById('grid-catalogo-ejercicios');
+            const noData = document.getElementById('no-ejercicios');
+
+            grid.innerHTML = '';
+
+            if (lista.length === 0) {
+                grid.style.display = 'none';
+                noData.style.display = 'block';
+                return;
+            }
+
+            noData.style.display = 'none';
+            grid.style.display = 'grid';
+
+            const listaOrdenada = [...lista].sort((a, b) =>
+                (a.nombre || a.titulo || '').localeCompare(b.nombre || b.titulo || '', 'es')
+            );
+
+            listaOrdenada.forEach(item => {
+                const nombre = item.nombre || item.titulo || 'Ejercicio Sin Nombre';
+                const zona = item.zona_cuerpo || item.grupo_muscular || 'General';
+                const patron = item.patron_movimiento || item.patron || 'Terapéutico';
+                const descripcion = item.descripcion || 'Sin descripción disponible para este ejercicio terapéutico.';
+                const videoUrl = resolverUrlVideo(item);
+
+                let areas = [...obtenerAreasEjercicio(item)].sort((a, b) => a.localeCompare(b, 'es'));
+                if (areaFiltroActual !== 'todos') {
+                    const clave = normalizarTexto(areaFiltroActual);
+                    areas.sort((a, b) => (normalizarTexto(b).includes(clave) ? 1 : 0) - (normalizarTexto(a).includes(clave) ? 1 : 0));
+                }
+
+                const estiloBadge = 'background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;';
+                const visibles = areas.slice(0, 2);
+                const ocultas = areas.slice(2);
+
+                let areasHtml = visibles
+                    .map(area => `<span class="badge" style="${estiloBadge}"><i class='bx bx-plus-medical'></i> ${area}</span>`)
+                    .join('');
+
+                if (ocultas.length > 0) {
+                    const labelExtra = `+${ocultas.length} más`;
+                    areasHtml += `
+                        <button type="button" class="badge" data-label="${labelExtra}" onclick="toggleAreasExtra(this)"
+                            title="${ocultas.join(', ')}"
+                            style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; cursor: pointer;">
+                            ${labelExtra}
+                        </button>
+                        <span style="display: none;">
+                            ${ocultas.map(area => `<span class="badge" style="${estiloBadge}"><i class='bx bx-plus-medical'></i> ${area}</span>`).join('')}
+                        </span>
+                    `;
+                }
+
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.style.cssText = 'padding: 18px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--gris-200);';
+
+                card.innerHTML = `
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 10px;">
+    <h3 style="margin: 0; font-size: 1.05rem; color: var(--azul-900); font-weight: 700;">${nombre}</h3>
+    ${videoUrl ? `<span class="badge badge-ok">Con Video</span>` : ''}
+</div>
+                        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 12px;">
+                            <span class="badge badge-neutro"><i class='bx bx-body'></i> ${zona}</span>
+                            ${areasHtml}
+                        </div>
+                        <p style="font-size: 0.86rem; color: var(--gris-600); margin: 0; line-height: 1.4;">
+                            ${descripcion}
+                        </p>
+                    </div>
+                    <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--gris-100); display: flex; justify-content: space-between; align-items: center;">
+                        ${videoUrl
+                            ? `<button type="button" class="btn btn-secondary btn-sm" data-nombre="${nombre.replace(/"/g, '&quot;')}" data-video="${videoUrl}" onclick="abrirModalVideo(this)"><i class='bx bx-video'></i> Ver Video</button>`
+                            : `<span style="font-size: 0.8rem; color: var(--gris-400);">Sin video</span>`}
+                        <a href="crear_pauta.html" class="btn btn-secondary btn-sm">
+                            <i class='bx bx-plus-circle'></i> Prescribir
+                        </a>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function filtrarPorZona(zona, botonElemento) {
+            zonaFiltroActual = zona;
+
+            const botones = document.querySelectorAll('#filtros-zonas-container .filtro-biomecanico-pill');
+            botones.forEach(btn => btn.className = 'filtro-biomecanico-pill');
+            if (botonElemento) botonElemento.classList.add('activo-todos');
+
+            aplicarFiltros();
+        }
+
+        function filtrarPorArea(area, botonElemento) {
+            areaFiltroActual = area;
+
+            const botones = document.querySelectorAll('#filtros-clinicos-container .filtro-biomecanico-pill');
+            botones.forEach(btn => btn.className = 'filtro-biomecanico-pill');
+            if (botonElemento) botonElemento.classList.add('activo-todos');
+
+            aplicarFiltros();
+        }
+
+        function filtrarPorTexto() {
+            aplicarFiltros();
+        }
+
+        function aplicarFiltros() {
+            const inputTexto = document.getElementById('input-buscar-catalogo');
+            const termino = normalizarTexto(inputTexto ? inputTexto.value.trim() : '');
+
+            const filtrados = catalogoCompleto.filter(item => {
+                const nombre = normalizarTexto(item.nombre || item.titulo);
+                const grupo = normalizarTexto(item.zona_cuerpo || item.grupo_muscular);
+                const patron = normalizarTexto(item.patron_movimiento || item.patron);
+                const listaAreasNorm = obtenerAreasEjercicio(item).map(a => normalizarTexto(a));
+
+                const zonaClave = normalizarTexto(zonaFiltroActual).replace(/s$/, '');
+                const coincideZona =
+                    zonaFiltroActual === 'todos' ||
+                    (zonaFiltroActual === 'cadera'
+                        ? grupo.includes('cadera') || grupo.includes('gluteo')
+                        : grupo.includes(zonaClave));
+
+                const areaClave = normalizarTexto(areaFiltroActual);
+                const coincideArea =
+                    areaFiltroActual === 'todos' ||
+                    listaAreasNorm.some(a => a.includes(areaClave));
+
+                const coincideTexto = !termino ||
+                    nombre.includes(termino) ||
+                    grupo.includes(termino) ||
+                    patron.includes(termino) ||
+                    listaAreasNorm.some(a => a.includes(termino));
+
+                return coincideZona && coincideArea && coincideTexto;
+            });
+
+            renderizarCatalogo(filtrados);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof api !== 'undefined' && !api.isAuthenticated()) {
+                window.location.href = 'index.html';
+                return;
+            }
+            cargarCatalogo();
+        });
+    </script>
+</body>
+
+</html>

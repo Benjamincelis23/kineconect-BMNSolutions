@@ -134,10 +134,9 @@
         </div>
     </div>
 
-    <!-- Scripts Esenciales -->
-    <script src="public/js/api.js"></script>
-    <script src="public/js/layout.js"></script>
-
+    <!-- Scripts Esenciales y Lógica del Modal -->
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
     <script>
         let pautasCargadas = [];
         let mapaEjercicios = {};
@@ -158,9 +157,12 @@
             }
         }
 
-        function verDetallePauta(pautaId) {
+       function verDetallePauta(pautaId) {
             const pauta = pautasCargadas.find(item => item.id === pautaId);
             if (!pauta) return;
+
+            // Inspecciona esto en F12 (Consola) si quieres ver exactamente qué claves envía Django
+            console.log("Pauta seleccionada desde la API:", pauta);
 
             const esPlantilla = pauta.es_plantilla === true;
             const fecha = pauta.creado_en ? new Date(pauta.creado_en).toLocaleDateString('es-CL') : 'Reciente';
@@ -176,13 +178,13 @@
             }
 
             document.getElementById('detalle-pauta-titulo').textContent = pauta.titulo || 'Sin Título';
-            document.getElementById('detalle-pauta-subtitulo').textContent = `${destinatario} • Creada el ${fecha}`;
+            document.getElementById('detalle-pauta-subtitulo').textContent = `${destinatario} | Creada el ${fecha}`;
 
-            const indicaciones = (pauta.descripcion || pauta.objetivo || '').trim();
+            // Busca en todas las posibles variantes de nombres de campo del backend
+           const indicaciones = (pauta.notas || pauta.descripcion || pauta.objetivo || '').trim();
             document.getElementById('detalle-pauta-indicaciones').innerHTML = indicaciones
                 ? `<strong>Indicaciones / Objetivo:</strong> ${indicaciones}`
-                : `<span style="color: var(--gris-500); font-style: italic;">Sin indicaciones adicionales registradas para esta rutina.</span>`;
-
+                : `<span style="color: var(--gris-500); font-style: italic;">Sin indicaciones adicionales.</span>`;
             const listaEl = document.getElementById('detalle-pauta-lista-ejercicios');
             const detalles = Array.isArray(pauta.ejercicios_detalle) ? pauta.ejercicios_detalle : [];
 
