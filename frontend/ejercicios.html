@@ -367,9 +367,9 @@
 
                 card.innerHTML = `
                     <div>
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 10px;">
-                            <h3 style="margin: 0; font-size: 1.05rem; color: var(--azul-900); font-weight: 700;">${escaparHtml(nombre)}</h3>
-                            ${videoUrl ? `<span class="badge badge-ok">Con Video</span>` : ''}
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px;">
+                            <h3 style="margin: 0; font-size: 1.05rem; color: var(--azul-900); font-weight: 700; flex: 1; min-width: 0; line-height: 1.3;">${escaparHtml(nombre)}</h3>
+                            ${videoUrl ? `<span class="badge badge-ok" style="white-space: nowrap; flex-shrink: 0;">Con Video</span>` : ''}
                         </div>
                         <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px;">
                             <span class="badge badge-neutro"><i class='bx bx-body'></i> ${escaparHtml(zona)}</span>
