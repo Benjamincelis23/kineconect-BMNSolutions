@@ -188,8 +188,8 @@ const api = {
     },
 
     async getEjercicios() {
-        return this.request('/ejercicios/');
-    },
+    return this.request('/ejercicios/');
+},
 
     async getReportesDolor() {
         // Feedback registrado en el router
