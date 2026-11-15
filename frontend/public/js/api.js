@@ -1,5 +1,4 @@
-const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
-
+const BASE_URL = 'https://kineconect-bmnsolutions.onrender.com/api/v1';
 const api = {
     // ==========================================
     // GESTIÓN DE TOKENS Y SESIÓN
@@ -66,10 +65,10 @@ const api = {
             this.setTokens(data.access, data.refresh);
 
             const userData = {
-                username: username,
-                nombre_completo: data.nombre_completo || username,
-                rol: data.rol || 'kinesiologo'
-            };
+    username: data.user?.username || username,
+    nombre_completo: data.user?.nombre_completo || username,
+    rol: data.user?.rol || 'KINE'
+};
             this.setUser(userData);
 
             return data;
