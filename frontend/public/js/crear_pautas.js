@@ -1,11 +1,24 @@
 let todosLosEjercicios = [];
 let ejerciciosFiltrados = [];
-let todasLasPlantillas = []; // Almacena los protocolos maestros disponibles
+let todasLasPautas = [];      // todas las pautas (para "Usar en nueva prescripción")
+let todasLasPlantillas = [];  // solo protocolos maestros
 let carrito = [];
 let zonaSeleccionadaActual = '';
 let areaClinicaActual = 'todos';
 let vistaActual = 'frontal';
-const BACKEND_ORIGIN = 'http://127.0.0.1:8000';
+const API_BASE_URL = 'https://kineconect-bmnsolutions.onrender.com/api/v1';
+
+// ---------- Utilidades ----------
+function esc(valor) {
+    return String(valor ?? '').replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+}
+
+function aEntero(valor, defecto, minimo = 0) {
+    const n = parseInt(valor, 10);
+    return Number.isNaN(n) ? defecto : Math.max(minimo, n);
+}
 
 function resolverUrlMedia(ej) {
     let rawUrl =
@@ -31,7 +44,11 @@ function resolverUrlMedia(ej) {
     return `${BACKEND_ORIGIN}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
 }
 
-// 1. Alternancia de Vistas Anatómicas (Frontal / Dorsal)
+function obtenerTextareaNotas() {
+    return document.getElementById('pauta-descripcion');
+}
+
+// ---------- 1. Alternancia de vistas anatómicas ----------
 window.cambiarVistaAnatomica = function (vista) {
     vistaActual = vista;
     const gFrontal = document.getElementById('grupo-frontal');
@@ -52,8 +69,7 @@ window.cambiarVistaAnatomica = function (vista) {
     }
 };
 
-// 2. Mapa Anatómico SVG
-// Diccionario de equivalencias clínicas para filtrar ejercicios del catálogo
+// ---------- 2. Mapa anatómico SVG ----------
 const ALIAS_ZONAS_ANATOMICAS = {
     cuello: ['cuello', 'cabeza', 'cervical', 'nuca'],
     hombros: ['hombro', 'hombros', 'deltoides', 'manguito'],
@@ -92,7 +108,6 @@ function obtenerAreasEjercicio(item) {
     return ['Rehabilitación General'];
 }
 
-// 2. Mapa Anatómico SVG
 function inicializarEventosMapa() {
     const zonas = document.querySelectorAll('.anatomia-zona');
     const tooltip = document.getElementById('tooltip-anatomico');
@@ -109,9 +124,7 @@ function inicializarEventosMapa() {
                 zonaSeleccionadaActual = idZona;
                 actualizarResaltadoZonas();
                 const labelTxt = document.getElementById('txt-zona-seleccionada');
-                if (labelTxt) {
-                    labelTxt.textContent = tituloZona;
-                }
+                if (labelTxt) labelTxt.textContent = tituloZona;
                 filtrarYRenderizarEjercicios();
             }
         });
@@ -130,9 +143,9 @@ function inicializarEventosMapa() {
             tooltip.style.left = `${Math.min(posX, rect.width - 175)}px`;
             tooltip.style.top = `${Math.max(posY, 8)}px`;
             tooltip.innerHTML = `
-                <strong>${tituloZona}</strong>
-                ${detalleZona ? `<span style="display:block; font-size:0.72rem; opacity:0.9; margin-top:2px;">${detalleZona}</span>` : ''}
-                <span style="display:block; font-size:0.7rem; margin-top:3px; opacity:0.75;">Patrón: ${patron}</span>
+                <strong>${esc(tituloZona)}</strong>
+                ${detalleZona ? `<span style="display:block; font-size:0.72rem; opacity:0.9; margin-top:2px;">${esc(detalleZona)}</span>` : ''}
+                <span style="display:block; font-size:0.7rem; margin-top:3px; opacity:0.75;">Patrón: ${esc(patron)}</span>
             `;
         });
 
@@ -152,42 +165,24 @@ window.resetFiltroZona = function () {
 
 function actualizarResaltadoZonas() {
     document.querySelectorAll('.anatomia-zona').forEach(zona => {
-        const idZona = zona.getAttribute('data-zona');
-        if (idZona === zonaSeleccionadaActual) {
-            zona.classList.add('active');
-        } else {
-            zona.classList.remove('active');
-        }
+        zona.classList.toggle('active', zona.getAttribute('data-zona') === zonaSeleccionadaActual);
     });
 }
 
-// 3. Filtros Biomecánicos
-// 3. Filtros por Condición / Área Clínica
+// ---------- 3. Filtros por condición / área clínica ----------
 function inicializarFiltrosBiomecanicos() {
     const pills = document.querySelectorAll('.filtro-biomecanico-pill');
     pills.forEach(pill => {
         pill.addEventListener('click', () => {
             pills.forEach(p => p.className = 'filtro-biomecanico-pill');
             pill.classList.add('activo-todos');
-
             areaClinicaActual = pill.getAttribute('data-area') || 'todos';
             filtrarYRenderizarEjercicios();
         });
     });
 }
 
-function resaltarZonasPorPatron(patron) {
-    document.querySelectorAll('.anatomia-zona').forEach(zona => {
-        const patronZona = zona.getAttribute('data-patron');
-        if (patron !== 'todos' && patronZona === patron) {
-            zona.classList.add('active-grupo');
-        } else {
-            zona.classList.remove('active-grupo');
-        }
-    });
-}
-
-// 4. Catálogo de Ejercicios
+// ---------- 4. Catálogo de ejercicios ----------
 async function inicializarCatalogo() {
     const loading = document.getElementById('loading-ejercicios');
     const container = document.getElementById('lista-ejercicios-disponibles');
@@ -198,44 +193,59 @@ async function inicializarCatalogo() {
     if (noData) noData.style.display = 'none';
 
     try {
-        todosLosEjercicios = await api.getEjercicios();
-        if (todosLosEjercicios && todosLosEjercicios.results) {
-            todosLosEjercicios = todosLosEjercicios.results;
-        } else if (!Array.isArray(todosLosEjercicios)) {
-            todosLosEjercicios = [];
-        }
+        const resp = await api.getEjercicios();
+        todosLosEjercicios = Array.isArray(resp) ? resp : (resp?.results || []);
         filtrarYRenderizarEjercicios();
     } catch (error) {
         console.error('Error cargando ejercicios:', error);
         if (noData) {
             noData.style.display = 'block';
-            noData.querySelector('p').textContent = `Error al cargar catálogo: ${error.message}`;
+            const p = noData.querySelector('p');
+            if (p) p.textContent = `Error al cargar catálogo: ${error.message}`;
         }
     } finally {
         if (loading) loading.style.display = 'none';
     }
 }
 
-window.toggleAreasExtra = function (btn) {
-    const contenedorExtra = btn.nextElementSibling;
-    if (!contenedorExtra) return;
-    const oculto = contenedorExtra.style.display === 'none';
-    contenedorExtra.style.display = oculto ? 'contents' : 'none';
-    btn.textContent = oculto ? 'Ver menos' : btn.getAttribute('data-label');
-};
+// Un solo listener para los botones de la lista (evita onclick inline con texto del usuario)
+function inicializarAccionesCatalogo() {
+    const container = document.getElementById('lista-ejercicios-disponibles');
+    if (!container) return;
+
+    container.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-accion]');
+        if (!btn) return;
+        const accion = btn.dataset.accion;
+
+        if (accion === 'agregar') {
+            agregarAlCarrito(Number(btn.dataset.id));
+        } else if (accion === 'media') {
+            const ej = todosLosEjercicios.find(x => x.id === Number(btn.dataset.id));
+            if (ej) verMultimedia(ej.nombre || ej.titulo || 'Ejercicio', resolverUrlMedia(ej));
+        } else if (accion === 'areas') {
+            const extra = btn.nextElementSibling;
+            if (!extra) return;
+            const oculto = extra.style.display === 'none';
+            extra.style.display = oculto ? 'contents' : 'none';
+            btn.textContent = oculto ? 'Ver menos' : btn.dataset.label;
+        }
+    });
+}
 
 function filtrarYRenderizarEjercicios() {
     const inputBuscar = document.getElementById('input-buscar-ejercicio');
     const termino = inputBuscar ? inputBuscar.value.trim() : '';
     const container = document.getElementById('lista-ejercicios-disponibles');
     const noData = document.getElementById('no-ejercicios');
+    const terminoNorm = normalizarTexto(termino);
+    const areaClave = normalizarTexto(areaClinicaActual);
 
     ejerciciosFiltrados = todosLosEjercicios
         .filter(item => {
             const nombre = normalizarTexto(item.nombre || item.titulo);
             const grupo = normalizarTexto(item.zona_corporal || item.zona_cuerpo || item.grupo_muscular);
             const listaAreasNorm = obtenerAreasEjercicio(item).map(a => normalizarTexto(a));
-            const terminoNorm = normalizarTexto(termino);
 
             const coincideTexto = !terminoNorm ||
                 nombre.includes(terminoNorm) ||
@@ -248,10 +258,7 @@ function filtrarYRenderizarEjercicios() {
                 coincideZona = claves.some(clave => grupo.includes(clave) || nombre.includes(clave));
             }
 
-            const areaClave = normalizarTexto(areaClinicaActual);
-            const coincideArea =
-                areaClinicaActual === 'todos' ||
-                listaAreasNorm.some(a => a.includes(areaClave));
+            const coincideArea = areaClinicaActual === 'todos' || listaAreasNorm.some(a => a.includes(areaClave));
 
             return coincideTexto && coincideZona && coincideArea;
         })
@@ -269,36 +276,35 @@ function filtrarYRenderizarEjercicios() {
     container.style.display = 'flex';
     container.innerHTML = '';
 
-ejerciciosFiltrados.forEach(ej => {
+    const estiloBadgeArea = 'font-size: 0.7rem; padding: 2px 8px; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; border-radius: 999px; font-weight: 600;';
+
+    ejerciciosFiltrados.forEach(ej => {
         const div = document.createElement('div');
         div.className = 'ejercicio-item-card';
         div.style.cssText = 'display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding: 14px 16px; text-align: left;';
 
         const nombre = ej.nombre || ej.titulo || 'Ejercicio';
         const zona = ej.zona_corporal || ej.zona_cuerpo || ej.grupo_muscular || 'General';
-        const mediaUrl = resolverUrlMedia(ej);
+        const tieneMedia = !!resolverUrlMedia(ej);
 
         let areas = [...obtenerAreasEjercicio(ej)].sort((a, b) => a.localeCompare(b, 'es'));
         if (areaClinicaActual !== 'todos') {
-            const clave = normalizarTexto(areaClinicaActual);
-            areas.sort((a, b) => (normalizarTexto(b).includes(clave) ? 1 : 0) - (normalizarTexto(a).includes(clave) ? 1 : 0));
+            areas.sort((a, b) => (normalizarTexto(b).includes(areaClave) ? 1 : 0) - (normalizarTexto(a).includes(areaClave) ? 1 : 0));
         }
 
-        const estiloBadgeArea = 'font-size: 0.7rem; padding: 2px 8px; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; border-radius: 999px; font-weight: 600;';
         const visibles = areas.slice(0, 2);
         const ocultas = areas.slice(2);
 
-        let areasHtml = visibles.map(a => `<span style="${estiloBadgeArea}">${a}</span>`).join('');
+        let areasHtml = visibles.map(a => `<span style="${estiloBadgeArea}">${esc(a)}</span>`).join('');
         if (ocultas.length > 0) {
             const labelExtra = `+${ocultas.length} más`;
             areasHtml += `
-                <button type="button" data-label="${labelExtra}" onclick="toggleAreasExtra(this)"
-                    title="${ocultas.join(', ')}"
+                <button type="button" data-accion="areas" data-label="${esc(labelExtra)}" title="${esc(ocultas.join(', '))}"
                     style="font-size: 0.7rem; padding: 2px 8px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 999px; cursor: pointer; font-weight: 600;">
-                    ${labelExtra}
+                    ${esc(labelExtra)}
                 </button>
                 <span style="display: none;">
-                    ${ocultas.map(a => `<span style="${estiloBadgeArea}">${a}</span>`).join('')}
+                    ${ocultas.map(a => `<span style="${estiloBadgeArea}">${esc(a)}</span>`).join('')}
                 </span>
             `;
         }
@@ -307,19 +313,16 @@ ejerciciosFiltrados.forEach(ej => {
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%;">
                 <div style="display: flex; flex-direction: column; align-items: flex-start; text-align: left; min-width: 0; flex: 1; gap: 4px;">
                     <strong style="color: var(--azul-900); font-size: 0.95rem; line-height: 1.25; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                        ${nombre}
+                        ${esc(nombre)}
                     </strong>
-                    <span class="badge badge-neutro" style="font-size: 0.7rem;">
-                        ${zona}
-                    </span>
+                    <span class="badge badge-neutro" style="font-size: 0.7rem;">${esc(zona)}</span>
                 </div>
                 <div style="display: flex; gap: 6px; align-items: center; justify-content: flex-end; flex-shrink: 0;">
-                    <button type="button" class="btn btn-secondary btn-sm" 
-                        onclick="verMultimedia('${encodeURIComponent(nombre)}', '${encodeURIComponent(mediaUrl)}')" 
-                        ${!mediaUrl ? 'disabled style="opacity: 0.5; cursor: not-allowed;" title="Sin demostración"' : 'title="Ver demostración"'}>
+                    <button type="button" class="btn btn-secondary btn-sm" data-accion="media" data-id="${ej.id}"
+                        ${!tieneMedia ? 'disabled style="opacity: 0.5; cursor: not-allowed;" title="Sin demostración"' : 'title="Ver demostración"'}>
                         <i class='bx bx-video'></i>
                     </button>
-                    <button type="button" class="btn btn-primary btn-sm" onclick="agregarAlCarrito(${ej.id})" title="Añadir a la pauta">
+                    <button type="button" class="btn btn-primary btn-sm" data-accion="agregar" data-id="${ej.id}" title="Añadir a la pauta">
                         <i class='bx bx-plus'></i> Añadir
                     </button>
                 </div>
@@ -331,17 +334,14 @@ ejerciciosFiltrados.forEach(ej => {
         container.appendChild(div);
     });
 }
-// 5. Modal de Previsualización Multimedia
-window.verMultimedia = function (nombreEnc, urlEnc) {
-    const nombre = decodeURIComponent(nombreEnc);
-    const url = decodeURIComponent(urlEnc);
 
+// ---------- 5. Modal multimedia ----------
+window.verMultimedia = function (nombre, url) {
     if (!url) return;
 
     const modal = document.getElementById('modal-multimedia');
     const contenedor = document.getElementById('modal-multimedia-contenedor');
     const titulo = document.getElementById('modal-multimedia-titulo');
-
     if (!modal || !contenedor) return;
 
     if (titulo) titulo.textContent = nombre;
@@ -355,18 +355,18 @@ window.verMultimedia = function (nombreEnc, urlEnc) {
             videoId = url.split('watch?v=')[1].split('&')[0];
         }
         contenedor.innerHTML = `
-            <iframe width="100%" height="340" src="https://www.youtube.com/embed/${videoId}?autoplay=1" 
-                frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            <iframe width="100%" height="340" src="https://www.youtube.com/embed/${encodeURIComponent(videoId)}?autoplay=1"
+                frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowfullscreen style="display: block; border: 0;"></iframe>`;
-    } else if (url.match(/\.(mp4|webm|mov)($|\?)/i)) {
+    } else if (/\.(mp4|webm|mov)($|\?)/i.test(url)) {
         contenedor.innerHTML = `
-            <video src="${url}" width="100%" controls autoplay playsinline
+            <video src="${esc(url)}" width="100%" controls autoplay playsinline
                 style="display: block; max-height: 420px; background: #000;">
                 Tu navegador no soporta la reproducción de video.
             </video>`;
     } else {
         contenedor.innerHTML = `
-            <img src="${url}" alt="${nombre}" style="max-width: 100%; max-height: 380px; object-fit: contain; padding: 10px;">`;
+            <img src="${esc(url)}" alt="${esc(nombre)}" style="max-width: 100%; max-height: 380px; object-fit: contain; padding: 10px;">`;
     }
 
     modal.style.display = 'flex';
@@ -387,30 +387,28 @@ window.cerrarModalMultimedia = function () {
     if (modal) modal.style.display = 'none';
 };
 
-
-// 6. Carrito de Prescripción
-window.agregarAlCarrito = function (idEjercicio, dosificacionPersonalizada = null) {
+// ---------- 6. Carrito de prescripción ----------
+window.agregarAlCarrito = function (idEjercicio, dosificacion = null) {
     const ejercicio = todosLosEjercicios.find(e => e.id === idEjercicio);
     if (!ejercicio) return;
 
     const existente = carrito.find(item => item.ejercicio.id === idEjercicio);
     if (existente) {
-        if (dosificacionPersonalizada) {
-            existente.series = dosificacionPersonalizada.series || existente.series;
-            existente.repeticiones = dosificacionPersonalizada.repeticiones || existente.repeticiones;
-            existente.descanso = dosificacionPersonalizada.descanso || existente.descanso;
+        if (dosificacion) {
+            existente.series = dosificacion.series ?? existente.series;
+            existente.repeticiones = dosificacion.repeticiones ?? existente.repeticiones;
+            existente.descanso = dosificacion.descanso ?? existente.descanso;
         } else {
             existente.series += 1;
         }
     } else {
         carrito.push({
-            ejercicio: ejercicio,
-            series: dosificacionPersonalizada ? dosificacionPersonalizada.series : 3,
-            repeticiones: dosificacionPersonalizada ? dosificacionPersonalizada.repeticiones : 12,
-            descanso: dosificacionPersonalizada ? dosificacionPersonalizada.descanso : 60
+            ejercicio,
+            series: dosificacion?.series ?? 3,
+            repeticiones: dosificacion?.repeticiones ?? 12,
+            descanso: dosificacion?.descanso ?? 60
         });
     }
-
     renderizarCarrito();
 };
 
@@ -420,9 +418,9 @@ window.eliminarDelCarrito = function (index) {
 };
 
 window.actualizarDosificacion = function (index, campo, valor) {
-    if (carrito[index]) {
-        carrito[index][campo] = parseInt(valor, 10) || 0;
-    }
+    if (!carrito[index]) return;
+    const minimo = campo === 'descanso' ? 0 : 1;
+    carrito[index][campo] = aEntero(valor, minimo, minimo);
 };
 
 function renderizarCarrito() {
@@ -432,7 +430,6 @@ function renderizarCarrito() {
 
     if (badgeTotal) badgeTotal.textContent = `${carrito.length} Ejercicios`;
     if (btnSubmit) btnSubmit.disabled = (carrito.length === 0);
-
     if (!contenedor) return;
 
     if (carrito.length === 0) {
@@ -452,7 +449,7 @@ function renderizarCarrito() {
 
         div.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <strong style="font-size: 0.85rem; color: var(--azul-900);">${nombre}</strong>
+                <strong style="font-size: 0.85rem; color: var(--azul-900);">${esc(nombre)}</strong>
                 <button type="button" onclick="eliminarDelCarrito(${index})" style="background: none; border: none; color: var(--rojo-500); cursor: pointer;" title="Quitar">
                     <i class='bx bx-trash'></i>
                 </button>
@@ -476,72 +473,72 @@ function renderizarCarrito() {
     });
 }
 
-// 7. Cargar Selector de Protocolos / Plantillas Rápidas
+// ---------- 7. Plantillas / protocolos rápidos ----------
+// Carga una pauta (plantilla o pauta existente) en el formulario.
+function aplicarPautaAlFormulario(pauta) {
+    const inputNombre = document.getElementById('pauta-nombre');
+    if (inputNombre) {
+        inputNombre.value = (pauta.titulo || '').replace(/\[Protocolo\]\s*/i, '').trim();
+    }
+
+    const textarea = obtenerTextareaNotas();
+    if (textarea) textarea.value = pauta.notas || '';
+
+    carrito = [];
+    const detalles = Array.isArray(pauta.ejercicios_detalle) ? pauta.ejercicios_detalle : [];
+    detalles.forEach(d => {
+        const idEj = Number(
+            d.ejercicio_id ?? (d.ejercicio && typeof d.ejercicio === 'object' ? d.ejercicio.id : d.ejercicio)
+        );
+        agregarAlCarrito(idEj, {
+            series: aEntero(d.series, 3, 1),
+            repeticiones: aEntero(d.repeticiones, 12, 1),
+            descanso: aEntero(d.tiempo_descanso_segundos ?? d.descanso_seg, 60, 0)
+        });
+    });
+    renderizarCarrito();
+}
+
 async function cargarSelectorPlantillas() {
     const select = document.getElementById('select-plantilla-predefinida');
     if (!select) return;
 
     try {
-        let pautas = [];
-        if (typeof api.getPautas === 'function') {
-            pautas = await api.getPautas();
-        }
-        const lista = Array.isArray(pautas) ? pautas : (pautas?.results || []);
-
-        // Filtramos solo las que son plantillas maestras
-        todasLasPlantillas = lista.filter(p => p.es_plantilla === true);
+        const resp = typeof api.getPautas === 'function' ? await api.getPautas() : [];
+        todasLasPautas = Array.isArray(resp) ? resp : (resp?.results || []);
+        todasLasPlantillas = todasLasPautas.filter(p => p.es_plantilla === true);
 
         select.innerHTML = '<option value="">-- Sin plantilla (Prescripción manual) --</option>';
-
         todasLasPlantillas.forEach(pl => {
             const opt = document.createElement('option');
             opt.value = pl.id;
             opt.textContent = `📋 ${pl.titulo}`;
             select.appendChild(opt);
         });
-        const plantillaUrlParam = new URLSearchParams(window.location.search).get('plantilla');
-if (plantillaUrlParam) {
-    select.value = plantillaUrlParam;
-    select.dispatchEvent(new Event('change'));
-}
 
-        // Evento: Al seleccionar una plantilla, cargamos sus ejercicios al carrito
+        // El listener se registra ANTES de usar el parámetro de la URL
         select.addEventListener('change', (e) => {
-            const plantillaId = parseInt(e.target.value, 10);
-            if (!plantillaId) return;
-
-            const seleccionada = todasLasPlantillas.find(p => p.id === plantillaId);
-            if (!seleccionada) return;
-
-            // Rellenar título sugerido
-            const inputNombre = document.getElementById('pauta-nombre');
-            if (inputNombre) {
-                // Quitamos "[Protocolo]" si viene en el texto para que quede limpio
-                inputNombre.value = seleccionada.titulo.replace(/\[Protocolo\]\s*/i, '').trim();
-            }
-
-            // Vaciar y poblar el carrito con los ejercicios de la plantilla
-            carrito = [];
-            if (seleccionada.ejercicios_detalle && seleccionada.ejercicios_detalle.length > 0) {
-                seleccionada.ejercicios_detalle.forEach(detalle => {
-                    const idEj = detalle.ejercicio_id || detalle.ejercicio;
-                    agregarAlCarrito(idEj, {
-                        series: detalle.series,
-                        repeticiones: detalle.repeticiones,
-                        descanso: detalle.tiempo_descanso_segundos
-                    });
-                });
-            } else {
-                renderizarCarrito();
-            }
+            const id = parseInt(e.target.value, 10);
+            if (!id) return;
+            const pauta = todasLasPautas.find(p => p.id === id);
+            if (pauta) aplicarPautaAlFormulario(pauta);
         });
 
+        // ?plantilla=ID puede apuntar a una plantilla O a una pauta normal
+        const idUrl = parseInt(new URLSearchParams(window.location.search).get('plantilla'), 10);
+        if (idUrl) {
+            const pauta = todasLasPautas.find(p => p.id === idUrl);
+            if (pauta) {
+                if (pauta.es_plantilla) select.value = String(pauta.id);
+                aplicarPautaAlFormulario(pauta);
+            }
+        }
     } catch (error) {
         console.error('Error al cargar plantillas predefinidas:', error);
     }
 }
 
-// 8. Selector de Pacientes y Detección de Parámetro URL (?paciente=ID)
+// ---------- 8. Selector de pacientes (?paciente=ID) ----------
 async function cargarSelectorPacientes() {
     const select = document.getElementById('select-paciente-pauta');
     if (!select) return;
@@ -552,25 +549,23 @@ async function cargarSelectorPacientes() {
         if (!Array.isArray(pacientes)) pacientes = pacientes ? [pacientes] : [];
 
         select.innerHTML = '<option value="">-- Seleccionar Paciente --</option>';
-
-        const params = new URLSearchParams(window.location.search);
-        const pacienteUrlParam = params.get('paciente');
+        const pacienteUrlParam = new URLSearchParams(window.location.search).get('paciente');
 
         pacientes.forEach(p => {
             const opt = document.createElement('option');
             const userId = p.user_id || ((p.user && typeof p.user === 'object') ? p.user.id : (p.user || p.id));
             opt.value = userId;
 
-            const nombre = p.nombre_completo || (p.user && typeof p.user === 'object' ? `${p.user.first_name} ${p.user.last_name}`.trim() : '') || 'Paciente';
-            opt.textContent = `${nombre} (${p.rut || 'Sin RUT'})`;
+            const nombre = p.nombre_completo ||
+                (p.user && typeof p.user === 'object' ? `${p.user.first_name} ${p.user.last_name}`.trim() : '') ||
+                'Paciente';
+            opt.textContent = `${nombre} (${p.rut || 'Sin RUT'})`; // textContent: seguro
 
             if (pacienteUrlParam && (String(userId) === String(pacienteUrlParam) || String(p.id) === String(pacienteUrlParam))) {
                 opt.selected = true;
             }
-
             select.appendChild(opt);
         });
-
     } catch (error) {
         console.error('Error al cargar selector de pacientes:', error);
     }
@@ -608,12 +603,12 @@ function inicializarFormularioPauta() {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-       const inputNombre = document.getElementById('pauta-nombre');
-const inputDescripcion = document.getElementById('pauta-descripcion');
-const esSoloPlantilla = checkSoloPlantilla ? checkSoloPlantilla.checked : false;
-const pacienteId = selectPaciente ? selectPaciente.value : '';
-const titulo = inputNombre ? inputNombre.value.trim() : '';
-const descripcion = inputDescripcion ? inputDescripcion.value.trim() : '';
+        const inputNombre = document.getElementById('pauta-nombre');
+        const inputDescripcion = document.getElementById('pauta-descripcion') || document.querySelector('textarea');
+        const esSoloPlantilla = checkSoloPlantilla ? checkSoloPlantilla.checked : false;
+        const pacienteId = selectPaciente ? selectPaciente.value : '';
+        const titulo = inputNombre ? inputNombre.value.trim() : '';
+        const textoNotas = inputDescripcion ? inputDescripcion.value.trim() : '';
 
         // Solo exigimos paciente si NO es plantilla maestra
         if (!esSoloPlantilla && !pacienteId) {
@@ -634,18 +629,18 @@ const descripcion = inputDescripcion ? inputDescripcion.value.trim() : '';
         }
 
         const payload = {
-    paciente: esSoloPlantilla ? null : parseInt(pacienteId, 10),
-    titulo: esSoloPlantilla && !titulo.toLowerCase().includes('protocolo') ? `[Protocolo] ${titulo}` : titulo,
-    descripcion: descripcion,
-    es_plantilla: esSoloPlantilla,
-    guardar_como_plantilla: false,
-    ejercicios_detalle: carrito.map(item => ({
-        ejercicio: item.ejercicio.id,
-        series: parseInt(item.series, 10) || 3,
-        repeticiones: parseInt(item.repeticiones, 10) || 10,
-        tiempo_descanso_segundos: parseInt(item.descanso, 10) || 60
-    }))
-};
+            paciente: esSoloPlantilla ? null : parseInt(pacienteId, 10),
+            titulo: esSoloPlantilla && !titulo.toLowerCase().includes('protocolo') ? `[Protocolo] ${titulo}` : titulo,
+            notas: textoNotas,
+            es_plantilla: esSoloPlantilla,
+            guardar_como_plantilla: false,
+            ejercicios_detalle: carrito.map(item => ({
+                ejercicio: item.ejercicio.id,
+                series: parseInt(item.series, 10) || 3,
+                repeticiones: parseInt(item.repeticiones, 10) || 10,
+                tiempo_descanso_segundos: parseInt(item.descanso, 10) || 60
+            }))
+        };
 
         btnSubmit.disabled = true;
         btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
@@ -670,7 +665,7 @@ const descripcion = inputDescripcion ? inputDescripcion.value.trim() : '';
     });
 }
 
-// Inicialización global
+// ---------- Inicialización global ----------
 document.addEventListener('DOMContentLoaded', async () => {
     if (typeof api !== 'undefined' && !api.isAuthenticated()) {
         window.location.href = 'index.html';
@@ -679,13 +674,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     inicializarEventosMapa();
     inicializarFiltrosBiomecanicos();
-    await inicializarCatalogo(); // Aseguramos carga de ejercicios primero
-    cargarSelectorPlantillas(); // Cargamos protocolos predefinidos
-    cargarSelectorPacientes();
+    inicializarAccionesCatalogo();
     inicializarFormularioPauta();
+    await inicializarCatalogo();
+    await cargarSelectorPacientes();
+    await cargarSelectorPlantillas(); // el catálogo ya está cargado: se puede rellenar el carrito
 
     const inputBuscar = document.getElementById('input-buscar-ejercicio');
-    if (inputBuscar) {
-        inputBuscar.addEventListener('input', filtrarYRenderizarEjercicios);
-    }
+    if (inputBuscar) inputBuscar.addEventListener('input', filtrarYRenderizarEjercicios);
 });

@@ -126,14 +126,17 @@ class EjercicioSerializer(serializers.ModelSerializer):
 # ==========================================
 
 class PautaEjercicioSerializer(serializers.ModelSerializer):
+    ejercicio_id = serializers.IntegerField(read_only=True)
     nombre = serializers.CharField(source='ejercicio.nombre', read_only=True)
     zona = serializers.CharField(source='ejercicio.zona_cuerpo', read_only=True)
     media_url = serializers.SerializerMethodField()
     descanso_seg = serializers.IntegerField(source='tiempo_descanso_segundos', read_only=True)
+    tiempo_descanso_segundos = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = PautaEjercicio
-        fields = ['id', 'nombre', 'zona', 'series', 'repeticiones', 'descanso_seg', 'media_url']
+        fields = ['id', 'ejercicio_id', 'nombre', 'zona', 'series', 'repeticiones',
+                  'descanso_seg', 'tiempo_descanso_segundos', 'media_url']
 
     def get_media_url(self, obj):
         request = self.context.get('request')
@@ -142,7 +145,6 @@ class PautaEjercicioSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.ejercicio.video.url)
             return obj.ejercicio.video.url
         return getattr(obj.ejercicio, 'video_url', None)
-
 
 class PautaListSerializer(serializers.ModelSerializer):
     total_ejercicios = serializers.IntegerField(source='ejercicios_detalle.count', read_only=True)
@@ -227,20 +229,13 @@ def _a_entero(valor, defecto):
 
 class PautaCreateSerializer(serializers.ModelSerializer):
     """Serializador transaccional para crear Pautas o Plantillas y su detalle en un solo POST"""
-    ejercicios_detalle = serializers.ListField(
-        child=serializers.DictField(),
-        required=False,
-        write_only=True
-    )
-    ejercicios = serializers.ListField(
-        child=serializers.DictField(),
-        required=False,
-        write_only=True
-    )
+
+    # El front puede mandar los ejercicios con cualquiera de estas dos claves.
+    ejercicios = serializers.ListField(child=serializers.DictField(), required=False, write_only=True)
+    ejercicios_detalle = serializers.ListField(child=serializers.DictField(), required=False, write_only=True)
+
     paciente = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all(),
-        required=False,
-        allow_null=True
+        queryset=User.objects.all(), required=False, allow_null=True,
     )
     notas = serializers.CharField(required=False, allow_blank=True, default='')
     es_plantilla = serializers.BooleanField(required=False, default=False)
@@ -248,12 +243,20 @@ class PautaCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Pauta
-        fields = (
-            'id', 'paciente', 'titulo', 'notas',
-            'es_plantilla', 'guardar_como_plantilla',
-            'ejercicios_detalle', 'ejercicios'
-        )
+        fields = ['id', 'titulo', 'notas', 'paciente', 'es_plantilla',
+                  'guardar_como_plantilla', 'ejercicios', 'ejercicios_detalle']
         read_only_fields = ('id',)
+
+    def to_internal_value(self, data):
+        # Si el front manda el texto con otro nombre, lo aceptamos como 'notas'.
+        if hasattr(data, 'copy'):
+            data = data.copy()
+        if not data.get('notas'):
+            for alias in ('instrucciones', 'objetivo', 'indicaciones', 'descripcion'):
+                if data.get(alias):
+                    data['notas'] = data[alias]
+                    break
+        return super().to_internal_value(data)
 
     def validate_paciente(self, value):
         if value:
@@ -267,32 +270,26 @@ class PautaCreateSerializer(serializers.ModelSerializer):
 
         if not es_plantilla and not paciente:
             raise serializers.ValidationError({"paciente": "Debe asignar un paciente si no es una plantilla."})
-
         if es_plantilla:
             attrs['paciente'] = None
 
         ejercicios_raw = attrs.get('ejercicios_detalle') or attrs.get('ejercicios')
         if not ejercicios_raw:
-            raise serializers.ValidationError({"ejercicios_detalle": "Debe incluir al menos un ejercicio."})
+            raise serializers.ValidationError({"ejercicios": "Debe incluir al menos un ejercicio."})
 
         detalles_limpios = []
         for idx, item in enumerate(ejercicios_raw):
             ej_id = _extraer_ejercicio_id(item)
             if not ej_id or not Ejercicio.objects.filter(id=ej_id).exists():
                 raise serializers.ValidationError({
-                    "ejercicios_detalle": f"El ejercicio en la posición {idx + 1} no es válido o no existe."
+                    "ejercicios": f"El ejercicio en la posición {idx + 1} no es válido o no existe."
                 })
-            series = _a_entero(item.get('series'), 3)
-            repeticiones = _a_entero(item.get('repeticiones'), 10)
-            descanso = _a_entero(
-                item.get('tiempo_descanso_segundos', item.get('descanso_seg')),
-                60
-            )
             detalles_limpios.append({
                 'ejercicio_id': int(ej_id),
-                'series': max(1, series),
-                'repeticiones': max(1, repeticiones),
-                'tiempo_descanso_segundos': max(0, descanso),
+                'series': max(1, _a_entero(item.get('series'), 3)),
+                'repeticiones': max(1, _a_entero(item.get('repeticiones'), 10)),
+                'tiempo_descanso_segundos': max(0, _a_entero(
+                    item.get('tiempo_descanso_segundos', item.get('descanso_seg')), 60)),
             })
 
         attrs['_detalles_limpios'] = detalles_limpios
@@ -308,26 +305,24 @@ class PautaCreateSerializer(serializers.ModelSerializer):
 
         with transaction.atomic():
             pauta = Pauta.objects.create(**validated_data)
-
             PautaEjercicio.objects.bulk_create([
-                PautaEjercicio(pauta=pauta, **detalle) for detalle in detalles_limpios
+                PautaEjercicio(pauta=pauta, **d) for d in detalles_limpios
             ])
 
             if guardar_como_plantilla and not pauta.es_plantilla:
-                plantilla_maestra = Pauta.objects.create(
+                plantilla = Pauta.objects.create(
                     titulo=f"[Protocolo] {pauta.titulo}",
                     kinesiologo=kinesiologo,
                     paciente=None,
                     notas=pauta.notas,
                     es_plantilla=True,
-                    activo=True
+                    activo=True,
                 )
                 PautaEjercicio.objects.bulk_create([
-                    PautaEjercicio(pauta=plantilla_maestra, **detalle) for detalle in detalles_limpios
+                    PautaEjercicio(pauta=plantilla, **d) for d in detalles_limpios
                 ])
 
         return pauta
-
 
 class RegistroFeedbackSerializer(serializers.ModelSerializer):
     """Serializador para pantalla de feedback y registro EVA con validación 0-10"""
