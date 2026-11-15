@@ -21,10 +21,8 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .emails import enviar_email
+from .emails import enviar_email, enviar_credenciales
 from .models import Ejercicio, Pauta, Perfil, RegistroFeedback, SolicitudRegistro
 from .serializers import (
     EjercicioSerializer,
@@ -77,35 +75,6 @@ class SoloLecturaParaPacientes(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
         return _es_admin(user) or _rol(user) != 'PACIENTE'
-
-
-# =========================================================
-# AUTENTICACIÓN JWT PERSONALIZADA
-# =========================================================
-
-class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    def validate(self, attrs):
-        raw_username = attrs.get(self.username_field, '')
-        if isinstance(raw_username, str):
-            limpio = raw_username.replace('.', '').replace('-', '').strip()
-            User = get_user_model()
-            user_obj = (
-                User.objects.filter(username__iexact=raw_username.strip()).first()
-                or User.objects.filter(username__iexact=limpio).first()
-            )
-            if user_obj:
-                attrs[self.username_field] = user_obj.get_username()
-
-        data = super().validate(attrs)
-        perfil = getattr(self.user, 'perfil', None)
-        data['username'] = self.user.username
-        data['nombre'] = f'{self.user.first_name} {self.user.last_name}'.strip() or self.user.username
-        data['rol'] = perfil.rol if perfil else ('ADMIN' if _es_admin(self.user) else 'KINE')
-        return data
-
-
-class CustomTokenObtainPairView(TokenObtainPairView):
-    serializer_class = CustomTokenObtainPairSerializer
 
 
 # =========================================================
@@ -198,8 +167,8 @@ def aprobar_view(request, token):
 
     password = _generar_password()
 
+    # 1) Crear al paciente (esto SÍ es obligatorio y va en transacción).
     try:
-        # Usuario, perfil, estado y correo van juntos: si algo falla, no queda nada a medias.
         with transaction.atomic():
             user = User.objects.create_user(
                 username=username_limpio,
@@ -211,25 +180,21 @@ def aprobar_view(request, token):
             Perfil.objects.create(user=user, rut=s.rut, rol='PACIENTE')
             s.estado = 'APROBADA'
             s.save()
-
-            enviar_email(
-                s.email,
-                'Tus credenciales de acceso a Kineconect',
-                f'<p>Hola {escape(s.nombre)}, tu solicitud fue aprobada por el kinesiólogo.</p>'
-                f'<p>Descarga la app e ingresa con los siguientes datos:</p>'
-                f'<p><b>Usuario (RUT sin puntos ni guion):</b> {escape(username_limpio)}<br>'
-                f'<b>Contraseña temporal:</b> {escape(password)}</p>'
-                '<p>Te recomendamos cambiarla una vez que ingreses a la plataforma.</p>',
-            )
     except Exception:
         logger.exception('Fallo al aprobar la solicitud %s', s.id)
-        return HttpResponse(
-            'No se pudo completar la aprobación (¿falló el envío del correo?). '
-            'No se creó nada; puedes volver a intentarlo con el mismo enlace.',
-            status=500,
-        )
+        return HttpResponse('No se pudo crear el paciente. Inténtalo de nuevo.', status=500)
 
-    return HttpResponse('Paciente aprobado. Las credenciales temporales fueron enviadas a su correo.')
+    # 2) Enviar credenciales (opcional: si falla, se muestran en pantalla).
+    try:
+        enviar_credenciales(s.email, s.nombre, username_limpio, password)
+        return HttpResponse('Paciente aprobado. Las credenciales fueron enviadas por correo.')
+    except Exception:
+        logger.exception('Paciente %s creado, pero el correo falló', s.id)
+        return HttpResponse(
+            'Paciente aprobado, pero no se pudo enviar el correo. '
+            f'Entrégale estos datos manualmente: usuario {escape(username_limpio)} · '
+            f'contraseña temporal {escape(password)}'
+        )
 
 
 # =========================================================
@@ -241,23 +206,18 @@ class MeView(APIView):
 
     def get(self, request):
         u = request.user
-        perfil = getattr(u, 'perfil', None)
-        kine_user = getattr(perfil, 'kinesiologo_asignado', None)
-
-        if not kine_user:
-            ultima = (
-                Pauta.objects.filter(paciente=u, es_plantilla=False)
-                .select_related('kinesiologo')
-                .order_by('-creado_en')
-                .first()
-            )
-            if ultima and ultima.kinesiologo:
-                kine_user = ultima.kinesiologo
+        ultima = (
+            Pauta.objects.filter(paciente=u, es_plantilla=False)
+            .select_related('kinesiologo')
+            .order_by('-creado_en')
+            .first()
+        )
 
         kine = None
-        if kine_user:
-            nombre = f'{kine_user.first_name} {kine_user.last_name}'.strip() or kine_user.username
-            kine = {'nombre': nombre, 'email': kine_user.email}
+        if ultima and ultima.kinesiologo:
+            k = ultima.kinesiologo
+            nombre = f'{k.first_name} {k.last_name}'.strip() or k.username
+            kine = {'nombre': nombre, 'email': k.email}
 
         semana = RegistroFeedback.objects.filter(
             pauta__paciente=u,
@@ -282,7 +242,7 @@ class PautaListView(generics.ListAPIView):
     def get_queryset(self):
         return (
             Pauta.objects.filter(paciente=self.request.user, activo=True, es_plantilla=False)
-            .prefetch_related('ejercicios_detalle')
+            .prefetch_related('ejercicios_detalle', 'ejercicios_detalle__ejercicio')
             .order_by('-creado_en')
         )
 
@@ -451,7 +411,7 @@ class PautaViewSet(viewsets.ModelViewSet):
             'ejercicios_detalle', 'ejercicios_detalle__ejercicio'
         ).order_by('-creado_en')
 
-        # 1) Primero se limita por rol (nunca se devuelve nada fuera de este alcance).
+        # 1) Primero se limita por rol.
         if _es_admin(user):
             qs = base_qs
         else:

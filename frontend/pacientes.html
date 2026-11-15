@@ -148,6 +148,8 @@
                 </div>
             </div>
 
+            <p id="cred-aviso-correo" style="display: none; font-size: 0.78rem; color: var(--gris-600); margin: -6px 0 14px;"></p>
+
             <div style="display: flex; justify-content: flex-end; gap: 8px;">
                 <button type="button" id="btn-copiar-credenciales" class="btn btn-primary" onclick="copiarCredenciales()">
                     <i class='bx bx-copy'></i> Copiar Credenciales
@@ -157,8 +159,8 @@
         </div>
     </div>
 
-    <script src="js/api.js"></script>
-    <script src="js/layout.js"></script>
+    <script src="public/js/api.js"></script>
+    <script src="public/js/layout.js"></script>
 
     <script>
         let listaPacientesCache = [];
@@ -184,10 +186,18 @@
             }
         }
 
-        function abrirModalCredenciales(nombreCompleto, username, passwordTemporal) {
+        function abrirModalCredenciales(nombreCompleto, username, passwordTemporal, correo) {
             document.getElementById('cred-nombre-paciente').textContent = nombreCompleto;
             document.getElementById('cred-username').textContent = username || 'RUT sin puntos ni guion';
-            document.getElementById('cred-password').textContent = passwordTemporal || '(Revisar en Django Admin)';
+            document.getElementById('cred-password').textContent = passwordTemporal || '(no disponible)';
+
+            const aviso = document.getElementById('cred-aviso-correo');
+            if (aviso) {
+                aviso.textContent = correo
+                    ? `También se intentó enviar un correo a ${correo}. Si no llega, usa el botón de copiar.`
+                    : 'No se indicó correo: entrega estos datos al paciente directamente.';
+                aviso.style.display = 'block';
+            }
 
             textoCredencialesCopiar =
                 `Hola ${nombreCompleto}, tus credenciales de acceso a KineConnect son:\n` +
@@ -196,19 +206,24 @@
 
             const btnCopiar = document.getElementById('btn-copiar-credenciales');
             btnCopiar.innerHTML = "<i class='bx bx-copy'></i> Copiar Credenciales";
+            btnCopiar.disabled = !passwordTemporal;
             document.getElementById('modal-credenciales-paciente').style.display = 'flex';
         }
 
         function cerrarModalCredenciales() {
             document.getElementById('modal-credenciales-paciente').style.display = 'none';
+            textoCredencialesCopiar = ''; // no dejar la clave en memoria
         }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') cerrarModalCredenciales();
+        });
 
         async function copiarCredenciales() {
             if (!textoCredencialesCopiar) return;
             try {
                 await navigator.clipboard.writeText(textoCredencialesCopiar);
-                const btn = document.getElementById('btn-copiar-credenciales');
-                btn.innerHTML = "<i class='bx bx-check'></i> ¡Copiado!";
+                document.getElementById('btn-copiar-credenciales').innerHTML = "<i class='bx bx-check'></i> ¡Copiado!";
             } catch {
                 alert(textoCredencialesCopiar);
             }
@@ -235,7 +250,7 @@
             lista.forEach(p => {
                 const tr = document.createElement('tr');
                 const nombre = p.nombre_completo || (p.user && typeof p.user === 'object' ? `${p.user.first_name} ${p.user.last_name}`.trim() : '') || 'Paciente';
-                const correo = p.email || (p.user && typeof p.user === 'object' ? p.user.email : 'Sin correo');
+                const correo = p.email || (p.user && typeof p.user === 'object' ? p.user.email : '') || 'Sin correo';
                 const userId = p.user_id || ((p.user && typeof p.user === 'object') ? p.user.id : (p.user || p.id));
 
                 tr.innerHTML = `
@@ -286,7 +301,7 @@
             errorDiv.style.display = 'none';
 
             try {
-                let respuesta = await api.getMisPacientes();
+                const respuesta = await api.getMisPacientes();
                 let pacientes = [];
 
                 if (Array.isArray(respuesta)) {
@@ -325,17 +340,12 @@
                 formRegistro.addEventListener('submit', async (e) => {
                     e.preventDefault();
 
-                    const rawRut = document.getElementById('rut').value;
-                    const rutLimpio = rawRut.replace(/\./g, '').trim().toUpperCase();
+                    const rutLimpio = document.getElementById('rut').value.replace(/\./g, '').trim().toUpperCase();
                     const firstName = document.getElementById('first_name').value.trim();
                     const lastName = document.getElementById('last_name').value.trim();
+                    const correo = document.getElementById('email').value.trim();
 
-                    const payload = {
-                        first_name: firstName,
-                        last_name: lastName,
-                        rut: rutLimpio,
-                        email: document.getElementById('email').value.trim()
-                    };
+                    const payload = { first_name: firstName, last_name: lastName, rut: rutLimpio, email: correo };
 
                     btnSubmit.disabled = true;
                     btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
@@ -349,7 +359,7 @@
 
                         const userGenerado = res?.username || rutLimpio.replace(/-/g, '');
                         const passGenerada = res?.password_temporal || '';
-                        abrirModalCredenciales(`${firstName} ${lastName}`, userGenerado, passGenerada);
+                        abrirModalCredenciales(`${firstName} ${lastName}`, userGenerado, passGenerada, correo);
 
                     } catch (error) {
                         msgBox.className = 'messages is-error';

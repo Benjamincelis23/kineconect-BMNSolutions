@@ -1,14 +1,12 @@
 import secrets
 import string
-import threading
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.utils.html import escape
 from django.db import transaction
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import Perfil, Ejercicio, Pauta, PautaEjercicio, RegistroFeedback
-from .emails import enviar_email
+from .emails import enviar_credenciales_en_segundo_plano
 
 
 def validar_rut_chileno(rut: str) -> str:
@@ -52,43 +50,29 @@ class PacienteRegistroSerializer(serializers.ModelSerializer):
         password_temporal = ''.join(secrets.choice(alfabeto) for _ in range(10))
         correo_paciente = validated_data.get('email', '')
 
-        user = User.objects.create_user(
-            username=username,
-            first_name=validated_data.get('first_name', ''),
-            last_name=validated_data.get('last_name', ''),
-            email=correo_paciente,
-            password=password_temporal
-        )
+        with transaction.atomic():
+            user = User.objects.create_user(
+                username=username,
+                first_name=validated_data.get('first_name', ''),
+                last_name=validated_data.get('last_name', ''),
+                email=correo_paciente,
+                password=password_temporal,
+            )
+            Perfil.objects.update_or_create(
+                user=user,
+                defaults={
+                    'rut': rut,
+                    'rol': 'PACIENTE',
+                    'kinesiologo_asignado': kinesiologo,
+                },
+            )
         user._password_temporal = password_temporal
 
-        Perfil.objects.update_or_create(
-            user=user,
-            defaults={
-                'rut': rut,
-                'rol': 'PACIENTE',
-                'kinesiologo_asignado': kinesiologo
-            }
-        )
-
+        # El correo es un respaldo: si falla, el registro sigue y el modal muestra la clave.
         if correo_paciente:
-            html_content = (
-                f'<p>Hola <b>{escape(user.get_full_name())}</b>, tu cuenta en <strong>KineConnect</strong> ha sido creada exitosamente.</p>'
-                f'<p>Descarga la aplicación móvil e ingresa con los siguientes datos:</p>'
-                f'<ul>'
-                f'<li><b>Usuario (RUT sin puntos ni guión):</b> {escape(username)}</li>'
-                f'<li><b>Contraseña temporal:</b> {escape(password_temporal)}</li>'
-                f'</ul>'
-                f'<p>Te recomendamos cambiar tu contraseña una vez que ingreses a la plataforma.</p>'
+            enviar_credenciales_en_segundo_plano(
+                correo_paciente, user.get_full_name(), username, password_temporal
             )
-            email_thread = threading.Thread(
-                target=enviar_email,
-                args=(
-                    correo_paciente,
-                    'Tus credenciales de acceso a KineConnect',
-                    html_content
-                )
-            )
-            email_thread.start()
 
         return user
 
@@ -107,7 +91,7 @@ class PerfilSerializer(serializers.ModelSerializer):
         return {
             'first_name': obj.user.first_name,
             'last_name': obj.user.last_name,
-            'email': obj.user.email
+            'email': obj.user.email,
         }
 
 
@@ -115,7 +99,7 @@ class EjercicioSerializer(serializers.ModelSerializer):
     area_clinica = serializers.SlugRelatedField(
         many=True,
         read_only=True,
-        slug_field='nombre'
+        slug_field='nombre',
     )
 
     class Meta:
@@ -148,6 +132,11 @@ class PautaEjercicioSerializer(serializers.ModelSerializer):
             return obj.ejercicio.video.url
         return getattr(obj.ejercicio, 'video_url', None)
 
+
+def _nombre_o_username(u):
+    return f'{u.first_name} {u.last_name}'.strip() or u.username
+
+
 class PautaListSerializer(serializers.ModelSerializer):
     total_ejercicios = serializers.IntegerField(source='ejercicios_detalle.count', read_only=True)
     cantidad_ejercicios = serializers.IntegerField(source='ejercicios_detalle.count', read_only=True)
@@ -162,21 +151,14 @@ class PautaListSerializer(serializers.ModelSerializer):
             'id', 'titulo', 'notas', 'paciente', 'paciente_nombre',
             'kinesiologo_nombre', 'creado_en', 'fecha_creacion', 'activo',
             'total_ejercicios', 'cantidad_ejercicios', 'es_plantilla',
-            'ejercicios_detalle'
+            'ejercicios_detalle',
         ]
 
     def get_paciente_nombre(self, obj):
-        if not obj.paciente:
-            return "Plantilla General"
-        p = obj.paciente
-        nombre_completo = f'{p.first_name} {p.last_name}'.strip()
-        return nombre_completo or p.username
+        return _nombre_o_username(obj.paciente) if obj.paciente else "Plantilla General"
 
     def get_kinesiologo_nombre(self, obj):
-        if not obj.kinesiologo:
-            return "KineConnect"
-        k = obj.kinesiologo
-        return f'{k.first_name} {k.last_name}'.strip() or k.username
+        return _nombre_o_username(obj.kinesiologo) if obj.kinesiologo else "KineConnect"
 
 
 class PautaDetailSerializer(serializers.ModelSerializer):
@@ -191,20 +173,14 @@ class PautaDetailSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'titulo', 'notas', 'paciente', 'paciente_nombre',
             'kinesiologo_nombre', 'es_plantilla', 'activo',
-            'creado_en', 'fecha_creacion', 'ejercicios', 'ejercicios_detalle'
+            'creado_en', 'fecha_creacion', 'ejercicios', 'ejercicios_detalle',
         ]
 
     def get_paciente_nombre(self, obj):
-        if not obj.paciente:
-            return "Plantilla General"
-        p = obj.paciente
-        return f'{p.first_name} {p.last_name}'.strip() or p.username
+        return _nombre_o_username(obj.paciente) if obj.paciente else "Plantilla General"
 
     def get_kinesiologo_nombre(self, obj):
-        if not obj.kinesiologo:
-            return "KineConnect"
-        k = obj.kinesiologo
-        return f'{k.first_name} {k.last_name}'.strip() or k.username
+        return _nombre_o_username(obj.kinesiologo) if obj.kinesiologo else "KineConnect"
 
 
 # Alias de compatibilidad
@@ -249,6 +225,7 @@ class PautaCreateSerializer(serializers.ModelSerializer):
         read_only_fields = ('id',)
 
     def to_internal_value(self, data):
+        # Si el front manda el texto con otro nombre, se acepta como 'notas'.
         if hasattr(data, 'copy'):
             data = data.copy()
         if not data.get('notas'):
@@ -323,6 +300,7 @@ class PautaCreateSerializer(serializers.ModelSerializer):
                 ])
 
         return pauta
+
 
 class RegistroFeedbackSerializer(serializers.ModelSerializer):
     """Serializador para pantalla de feedback y registro EVA con validación 0-10"""
