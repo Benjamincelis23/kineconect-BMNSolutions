@@ -66,10 +66,17 @@ const api = {
             this.setTokens(data.access, data.refresh);
 
             const userData = {
+<<<<<<< HEAD
+                username: data.user?.username || username,
+                nombre_completo: data.user?.nombre_completo || username,
+                rol: data.user?.rol || 'KINE'
+            };
+=======
     username: data.user?.username || username,
     nombre_completo: data.user?.nombre_completo || username,
     rol: data.user?.rol || 'KINE'
 };
+>>>>>>> 86de9de564b188a1b476e9f6e00a6cb85d613fb0
             this.setUser(userData);
 
             return data;
