@@ -277,9 +277,30 @@ async function inicializarCatalogo() {
     if (noData) noData.style.display = 'none';
 
     try {
-        const resp = await api.getEjercicios();
-        todosLosEjercicios = Array.isArray(resp) ? resp : (resp?.results || []);
-        filtrarYRenderizarEjercicios();
+       const resp = await api.getEjercicios();
+        let acumulados = [];
+
+        if (Array.isArray(resp)) {
+            acumulados = resp;
+        } else if (resp && Array.isArray(resp.results)) {
+            acumulados = [...resp.results];
+            let siguienteUrl = resp.next;
+            while (siguienteUrl && typeof api.request === 'function') {
+                const urlObj = new URL(siguienteUrl, BACKEND_ORIGIN);
+                const endpointRelativo = urlObj.pathname.replace(/^\/api\/v1/, '') + urlObj.search;
+                const paginaSig = await api.request(endpointRelativo);
+                if (paginaSig && Array.isArray(paginaSig.results)) {
+                    acumulados.push(...paginaSig.results);
+                    siguienteUrl = paginaSig.next;
+                } else {
+                    break;
+                }
+            }
+        } else if (resp) {
+            acumulados = [resp];
+        }
+
+        todosLosEjercicios = acumulados;
     } catch (error) {
         console.error('Error cargando ejercicios:', error);
         if (noData) {
