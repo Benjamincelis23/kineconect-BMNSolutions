@@ -6,7 +6,6 @@ let carrito = [];
 let zonaSeleccionadaActual = '';
 let areaClinicaActual = 'todos';
 let vistaActual = 'frontal';
-const API_BASE_URL = 'https://kineconect-bmnsolutions.onrender.com/api/v1';
 
 // ---------- Utilidades ----------
 function esc(valor) {
