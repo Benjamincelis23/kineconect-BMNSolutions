@@ -10,7 +10,7 @@ import { AppThemeProvider } from './src/context/ThemeContext';
 // Importamos tus pantallas y navegadores
 import MainTabNavigator from './src/navigation/MainTabNavigator';
 import LoginScreen from './src/screens/LoginScreen';
-import RegisterScreen from './src/screens/RegisterScreen';
+// (Eliminamos la importación de RegisterScreen)
 
 const Stack = createNativeStackNavigator();
 
@@ -30,14 +30,11 @@ function RootNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {userToken ? (
-        // Usuario CON sesión: va al menú principal
+        // Usuario CON sesión: va al menú principal (MainTabNavigator)
         <Stack.Screen name="Main" component={MainTabNavigator} />
       ) : (
-        // Usuario SIN sesión: va al login/registro
-        <>
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Register" component={RegisterScreen} />
-        </>
+        // Usuario SIN sesión: va solo al login
+        <Stack.Screen name="Login" component={LoginScreen} />
       )}
     </Stack.Navigator>
   );
