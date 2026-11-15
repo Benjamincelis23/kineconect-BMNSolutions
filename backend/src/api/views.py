@@ -21,6 +21,8 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .emails import enviar_email
 from .models import Ejercicio, Pauta, Perfil, RegistroFeedback, SolicitudRegistro
@@ -75,6 +77,35 @@ class SoloLecturaParaPacientes(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
         return _es_admin(user) or _rol(user) != 'PACIENTE'
+
+
+# =========================================================
+# AUTENTICACIÓN JWT PERSONALIZADA
+# =========================================================
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        raw_username = attrs.get(self.username_field, '')
+        if isinstance(raw_username, str):
+            limpio = raw_username.replace('.', '').replace('-', '').strip()
+            User = get_user_model()
+            user_obj = (
+                User.objects.filter(username__iexact=raw_username.strip()).first()
+                or User.objects.filter(username__iexact=limpio).first()
+            )
+            if user_obj:
+                attrs[self.username_field] = user_obj.get_username()
+
+        data = super().validate(attrs)
+        perfil = getattr(self.user, 'perfil', None)
+        data['username'] = self.user.username
+        data['nombre'] = f'{self.user.first_name} {self.user.last_name}'.strip() or self.user.username
+        data['rol'] = perfil.rol if perfil else ('ADMIN' if _es_admin(self.user) else 'KINE')
+        return data
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
 
 
 # =========================================================
@@ -242,8 +273,6 @@ class MeView(APIView):
             'sesiones_semana': semana,
             'meta_semanal': 3,
         })
-
-        
 
 
 class PautaListView(generics.ListAPIView):
