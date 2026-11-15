@@ -5,15 +5,18 @@ from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Cargar las variables desde el archivo .env
+# Cargar las variables desde el archivo .env (en local)
 env_path = os.path.join(BASE_DIR, '.env')
 load_dotenv(env_path)
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-ov9_d_vzukvo0*l&g2e$=6stt@6%4_09e-t%e+r%mxc7k9+k*q'
+SECRET_KEY = os.environ.get(
+    'SECRET_KEY',
+    'django-insecure-ov9_d_vzukvo0*l&g2e$=6stt@6%4_09e-t%e+r%mxc7k9+k*q'
+)
 
-# DEBUG también puede quedar en True temporalmente si lo prefieres, o leerlo del env
-DEBUG = True
+# En local queda en True; en Render agrega la variable DEBUG=False
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 # Puedes agregar los hosts permitidos en el .env separados por comas (ej. ALLOWED_HOSTS=localhost,127.0.0.1)
 ALLOWED_HOSTS = ['*']
@@ -41,6 +44,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -70,7 +74,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 
 # Database
-# Configuración adaptada para PostgreSQL usando variables de entorno
+# Configuración adaptada para PostgreSQL (Neon) usando variables de entorno
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -79,6 +83,10 @@ DATABASES = {
         'PASSWORD': os.environ.get('DB_PASSWORD'),
         'HOST': os.environ.get('DB_HOST', 'localhost'),
         'PORT': os.environ.get('DB_PORT', '5432'),
+        'CONN_MAX_AGE': 0,
+        'OPTIONS': {
+            'sslmode': os.environ.get('DB_SSLMODE', 'require'),
+        },
     }
 }
 
@@ -107,11 +115,13 @@ USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-STATIC_URL = 'static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [BASE_DIR / 'static'] if (BASE_DIR / 'static').exists() else []
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Archivos subidos por el usuario
-MEDIA_URL = 'media/'
+MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Autenticación del portal web
