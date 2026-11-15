@@ -159,8 +159,8 @@
         </div>
     </div>
 
-  <script src="public/js/api.js"></script>
-<script src="public/js/layout.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
 
     <script>
         let listaPacientesCache = [];
@@ -170,6 +170,10 @@
             return String(txt ?? '').replace(/[&<>"']/g, c => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
             }[c]));
+        }
+
+        function correoDePaciente(p) {
+            return p.email || (p.user && typeof p.user === 'object' ? p.user.email : '') || '';
         }
 
         function toggleFormulario() {
@@ -189,7 +193,7 @@
         function abrirModalCredenciales(nombreCompleto, username, passwordTemporal, correo) {
             document.getElementById('cred-nombre-paciente').textContent = nombreCompleto;
             document.getElementById('cred-username').textContent = username || 'RUT sin puntos ni guion';
-            document.getElementById('cred-password').textContent = passwordTemporal || '(no disponible)';
+            document.getElementById('cred-password').textContent = passwordTemporal || '(Revisar en Django Admin)';
 
             const aviso = document.getElementById('cred-aviso-correo');
             if (aviso) {
@@ -199,10 +203,11 @@
                 aviso.style.display = 'block';
             }
 
-            textoCredencialesCopiar =
-                `Hola ${nombreCompleto}, tus credenciales de acceso a KineConnect son:\n` +
-                `• Usuario: ${username}\n` +
-                `• Contraseña temporal: ${passwordTemporal}`;
+            textoCredencialesCopiar = passwordTemporal
+                ? `Hola ${nombreCompleto}, tus credenciales de acceso a KineConnect son:\n` +
+                  `• Usuario: ${username}\n` +
+                  `• Contraseña temporal: ${passwordTemporal}`
+                : '';
 
             const btnCopiar = document.getElementById('btn-copiar-credenciales');
             btnCopiar.innerHTML = "<i class='bx bx-copy'></i> Copiar Credenciales";
@@ -223,7 +228,8 @@
             if (!textoCredencialesCopiar) return;
             try {
                 await navigator.clipboard.writeText(textoCredencialesCopiar);
-                document.getElementById('btn-copiar-credenciales').innerHTML = "<i class='bx bx-check'></i> ¡Copiado!";
+                const btn = document.getElementById('btn-copiar-credenciales');
+                btn.innerHTML = "<i class='bx bx-check'></i> ¡Copiado!";
             } catch {
                 alert(textoCredencialesCopiar);
             }
@@ -250,7 +256,7 @@
             lista.forEach(p => {
                 const tr = document.createElement('tr');
                 const nombre = p.nombre_completo || (p.user && typeof p.user === 'object' ? `${p.user.first_name} ${p.user.last_name}`.trim() : '') || 'Paciente';
-                const correo = p.email || (p.user && typeof p.user === 'object' ? p.user.email : '') || 'Sin correo';
+                const correo = correoDePaciente(p) || 'Sin correo';
                 const userId = p.user_id || ((p.user && typeof p.user === 'object') ? p.user.id : (p.user || p.id));
 
                 tr.innerHTML = `
@@ -282,7 +288,7 @@
             const filtrados = listaPacientesCache.filter(p => {
                 const nombre = (p.nombre_completo || '').toLowerCase();
                 const rut = (p.rut || '').toLowerCase();
-                const correo = (p.email || '').toLowerCase();
+                const correo = correoDePaciente(p).toLowerCase();
                 return nombre.includes(q) || rut.includes(q) || correo.includes(q);
             });
             renderizarTablaPacientes(filtrados);
@@ -301,7 +307,7 @@
             errorDiv.style.display = 'none';
 
             try {
-                const respuesta = await api.getMisPacientes();
+                let respuesta = await api.getMisPacientes();
                 let pacientes = [];
 
                 if (Array.isArray(respuesta)) {
@@ -340,12 +346,18 @@
                 formRegistro.addEventListener('submit', async (e) => {
                     e.preventDefault();
 
-                    const rutLimpio = document.getElementById('rut').value.replace(/\./g, '').trim().toUpperCase();
+                    const rawRut = document.getElementById('rut').value;
+                    const rutLimpio = rawRut.replace(/\./g, '').trim().toUpperCase();
                     const firstName = document.getElementById('first_name').value.trim();
                     const lastName = document.getElementById('last_name').value.trim();
                     const correo = document.getElementById('email').value.trim();
 
-                    const payload = { first_name: firstName, last_name: lastName, rut: rutLimpio, email: correo };
+                    const payload = {
+                        first_name: firstName,
+                        last_name: lastName,
+                        rut: rutLimpio,
+                        email: correo
+                    };
 
                     btnSubmit.disabled = true;
                     btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
