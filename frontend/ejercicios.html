@@ -28,41 +28,65 @@
                     </a>
                 </div>
 
-                <!-- Filtros por Zona Anatómica, Área Clínica, Orden y Buscador -->
-                <div class="card" style="margin-bottom: 24px; padding: 16px 20px; display: flex; flex-direction: column; gap: 14px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
-                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                            <span style="font-size: 0.85rem; font-weight: 700; color: var(--azul-900);">
-                                <i class='bx bx-body'></i> Zona Anatómica:
-                            </span>
-                            <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="filtros-zonas-container">
-                                <button type="button" class="filtro-biomecanico-pill activo-todos" onclick="filtrarPorZona('todos', this)">Todos</button>
-                                <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('cuello', this)">Cuello</button>
-                                <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('hombro', this)">Hombro</button>
-                                <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('brazos', this)">Brazos / Muñeca</button>
-                                <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('pecho', this)">Pecho</button>
-                                <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('espalda', this)">Espalda</button>
-                                <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('core', this)">Core</button>
-                                <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('cadera', this)">Cadera / Glúteos</button>
-                                <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('piernas', this)">Piernas</button>
-                                <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('rodilla', this)">Rodilla</button>
-                                <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('tobillo', this)">Tobillo / Pie</button>
-                            </div>
+                <!-- Panel de Búsqueda y Filtros -->
+                <div class="card" style="margin-bottom: 24px; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px;">
+
+                    <!-- Fila 1: Buscador ancho + Controles rápidos -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                        <div style="position: relative; flex: 1 1 320px; min-width: 240px;">
+                            <i class='bx bx-search' style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--gris-400); font-size: 1.05rem; pointer-events: none;"></i>
+                            <input type="text" id="input-buscar-catalogo"
+                                placeholder="Buscar ejercicio por nombre, zona o condición..."
+                                oninput="filtrarPorTexto()"
+                                style="width: 100%; box-sizing: border-box; padding: 9px 12px 9px 36px; border-radius: 8px; border: 1px solid var(--gris-200); font-size: 0.88rem; color: var(--azul-900); background: #fff; outline: none;">
                         </div>
 
-                        <!-- Barra de Búsqueda de Texto -->
-                        <div class="field" style="margin: 0; min-width: 260px;">
-                            <input type="text" id="input-buscar-catalogo"
-                                placeholder="Buscar por nombre, zona o condición..." oninput="filtrarPorTexto()">
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <button type="button" id="btn-solo-video" class="btn btn-secondary btn-sm" onclick="toggleSoloConVideo()">
+                                <i class='bx bx-video'></i> Solo con video
+                            </button>
+
+                            <select id="select-orden-catalogo" onchange="cambiarOrdenCatalogo(this.value)"
+                                title="Modo de visualización"
+                                style="padding: 7px 12px; border-radius: 8px; border: 1px solid var(--gris-200); font-size: 0.83rem; font-weight: 600; color: var(--azul-900); background: #fff; cursor: pointer;">
+                                <option value="zona">Agrupado por Zona</option>
+                                <option value="video">Con Video primero</option>
+                                <option value="alfabetico">Alfabético (A–Z)</option>
+                            </select>
+
+                            <button type="button" id="btn-limpiar-filtros" class="btn btn-secondary btn-sm"
+                                onclick="limpiarTodosLosFiltros()" style="display: none;">
+                                <i class='bx bx-reset'></i> Limpiar
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Filtro por Área / Condición Clínica -->
+                    <!-- Fila 2: Zona Anatómica -->
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-top: 12px; border-top: 1px solid var(--gris-100);">
-                        <span style="font-size: 0.85rem; font-weight: 700; color: #0369a1;">
-                            <i class='bx bx-plus-medical'></i> Condición / Área Clínica:
+                        <span style="font-size: 0.83rem; font-weight: 700; color: var(--azul-900); margin-right: 4px; white-space: nowrap;">
+                            <i class='bx bx-body'></i> Zona:
                         </span>
-                        <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="filtros-clinicos-container">
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;" id="filtros-zonas-container">
+                            <button type="button" class="filtro-biomecanico-pill activo-todos" onclick="filtrarPorZona('todos', this)">Todas</button>
+                            <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('cuello', this)">Cuello</button>
+                            <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('hombro', this)">Hombro</button>
+                            <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('brazos', this)">Brazos / Muñeca</button>
+                            <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('pecho', this)">Pecho</button>
+                            <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('espalda', this)">Espalda</button>
+                            <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('core', this)">Core</button>
+                            <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('cadera', this)">Cadera / Glúteos</button>
+                            <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('piernas', this)">Piernas</button>
+                            <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('rodilla', this)">Rodilla</button>
+                            <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorZona('tobillo', this)">Tobillo / Pie</button>
+                        </div>
+                    </div>
+
+                    <!-- Fila 3: Condición / Área Clínica -->
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-top: 12px; border-top: 1px solid var(--gris-100);">
+                        <span style="font-size: 0.83rem; font-weight: 700; color: #0369a1; margin-right: 4px; white-space: nowrap;">
+                            <i class='bx bx-plus-medical'></i> Área Clínica:
+                        </span>
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;" id="filtros-clinicos-container">
                             <button type="button" class="filtro-biomecanico-pill activo-todos" onclick="filtrarPorArea('todos', this)">Todas</button>
                             <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorArea('general', this)">Rehabilitación General</button>
                             <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorArea('traumatologia', this)">Traumatología</button>
@@ -74,32 +98,20 @@
                         </div>
                     </div>
 
-                    <!-- Barra de Ordenamiento, Filtro Multimedia y Contador -->
-                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding-top: 12px; border-top: 1px solid var(--gris-100);">
-                        <span id="contador-resultados-catalogo" style="font-size: 0.84rem; font-weight: 600; color: var(--gris-600);">
+                    <!-- Fila 4: Contador + Contraer/Expandir secciones -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding-top: 10px; border-top: 1px solid var(--gris-100);">
+                        <span id="contador-resultados-catalogo" style="font-size: 0.83rem; font-weight: 600; color: var(--gris-600);">
                             Cargando ejercicios...
                         </span>
-
-                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                            <button type="button" id="btn-solo-video" class="btn btn-secondary btn-sm" onclick="toggleSoloConVideo()">
-                                <i class='bx bx-video'></i> Solo con video
-                            </button>
-
-                            <div style="display: flex; align-items: center; gap: 6px;">
-                                <label for="select-orden-catalogo" style="font-size: 0.82rem; font-weight: 600; color: var(--gris-700);">Ordenar:</label>
-                                <select id="select-orden-catalogo" onchange="cambiarOrdenCatalogo(this.value)"
-                                    style="padding: 6px 10px; border-radius: 8px; border: 1px solid var(--gris-200); font-size: 0.83rem; color: var(--azul-900); background: #fff;">
-                                    <option value="zona">Por Zona Anatómica (Céfalo-Caudal)</option>
-                                    <option value="video">Con Video primero (A–Z)</option>
-                                    <option value="alfabetico">Alfabético (A–Z)</option>
-                                </select>
-                            </div>
-                        </div>
+                        <button type="button" id="btn-toggle-secciones" class="btn btn-secondary btn-sm"
+                            onclick="toggleTodasLasSecciones()" style="display: none; font-size: 0.78rem; padding: 4px 10px;">
+                            <i class='bx bx-collapse-vertical'></i> Contraer secciones
+                        </button>
                     </div>
                 </div>
 
                 <!-- Lista / Cuadrícula de Ejercicios -->
-                <div class="card">
+                <div class="card" style="padding: 20px;">
                     <!-- Estado de Carga -->
                     <div id="loading-ejercicios" class="empty-state">
                         <i class='bx bx-loader-alt bx-spin loading-icon'></i>
@@ -171,6 +183,7 @@
         let areaFiltroActual = 'todos';
         let soloConVideoActual = false;
         let ordenActual = 'zona';
+        let seccionesContraidas = false;
 
         const ORDEN_ZONAS_CLINICAS = [
             'Cuello',
@@ -367,12 +380,12 @@
 
             const card = document.createElement('div');
             card.className = 'card';
-            card.style.cssText = 'padding: 18px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--gris-200);';
+            card.style.cssText = 'padding: 18px; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--gris-200);';
 
             card.innerHTML = `
                 <div>
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px;">
-                        <h3 style="margin: 0; font-size: 1.05rem; color: var(--azul-900); font-weight: 700; flex: 1; min-width: 0; line-height: 1.3;">${escaparHtml(nombre)}</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 12px;">
+                        <h3 style="margin: 0; font-size: 1rem; color: var(--azul-900); font-weight: 700; flex: 1; min-width: 0; line-height: 1.35;">${escaparHtml(nombre)}</h3>
                         ${videoUrl ? `<span class="badge badge-ok" style="white-space: nowrap; flex-shrink: 0;">Con Video</span>` : ''}
                     </div>
                     <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px;">
@@ -380,13 +393,13 @@
                         ${areasHtml}
                     </div>
                 </div>
-                <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--gris-100); display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px;">
+                <div style="margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--gris-100); display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px;">
                     <div style="display: flex; flex-wrap: wrap; gap: 6px;">
                         <button type="button" class="btn btn-secondary btn-sm" onclick="abrirModalInfo(${indexGlobal})">
                             <i class='bx bx-info-circle'></i> Información
                         </button>
                         ${videoUrl
-                            ? `<button type="button" class="btn btn-secondary btn-sm" data-nombre="${escaparHtml(nombre)}" data-video="${escaparHtml(videoUrl)}" onclick="abrirModalVideo(this)"><i class='bx bx-video'></i> Ver Video</button>`
+                            ? `<button type="button" class="btn btn-secondary btn-sm" data-nombre="${escaparHtml(nombre)}" data-video="${escaparHtml(videoUrl)}" onclick="abrirModalVideo(this)"><i class='bx bx-video'></i> Video</button>`
                             : ''}
                     </div>
                     <a href="crear_pauta.html" class="btn btn-primary btn-sm">
@@ -411,15 +424,41 @@
 
             try {
                 let respuesta = await api.getEjercicios();
+                let acumulados = [];
 
-                if (respuesta && respuesta.results) {
-                    catalogoCompleto = respuesta.results;
-                } else if (Array.isArray(respuesta)) {
-                    catalogoCompleto = respuesta;
-                } else {
-                    catalogoCompleto = respuesta ? [respuesta] : [];
+                if (Array.isArray(respuesta)) {
+                    acumulados = respuesta;
+                } else if (respuesta && Array.isArray(respuesta.results)) {
+                    acumulados = [...respuesta.results];
+                    let siguienteUrl = respuesta.next;
+                    let guard = 0;
+
+                    while (siguienteUrl && guard < 10) {
+                        guard++;
+                        try {
+                            const urlSegura = siguienteUrl.replace(/^http:\/\//i, 'https://');
+                            const urlObj = new URL(urlSegura, BACKEND_ORIGIN);
+                            const endpointRelativo = urlObj.pathname.replace(/^\/api\/v1/, '') + urlObj.search;
+                            const paginaSig = typeof api.request === 'function'
+                                ? await api.request(endpointRelativo)
+                                : null;
+
+                            if (paginaSig && Array.isArray(paginaSig.results)) {
+                                acumulados.push(...paginaSig.results);
+                                siguienteUrl = paginaSig.next;
+                            } else {
+                                break;
+                            }
+                        } catch (errPag) {
+                            console.warn('No se pudo cargar página adicional:', errPag);
+                            break;
+                        }
+                    }
+                } else if (respuesta) {
+                    acumulados = [respuesta];
                 }
 
+                catalogoCompleto = acumulados;
                 loading.style.display = 'none';
 
                 if (catalogoCompleto.length === 0) {
@@ -443,9 +482,35 @@
             contadorEl.textContent = `Mostrando ${cantidad} de ${catalogoCompleto.length} ejercicios`;
         }
 
+        function toggleSeccionIndividual(headerEl) {
+            const grid = headerEl.nextElementSibling;
+            const icono = headerEl.querySelector('.icono-acordeon');
+            if (!grid) return;
+            const oculto = grid.style.display === 'none';
+            grid.style.display = oculto ? 'grid' : 'none';
+            if (icono) icono.className = oculto ? 'bx bx-chevron-down icono-acordeon' : 'bx bx-chevron-right icono-acordeon';
+        }
+
+        function toggleTodasLasSecciones() {
+            seccionesContraidas = !seccionesContraidas;
+            document.querySelectorAll('.seccion-zona-grid').forEach(grid => {
+                grid.style.display = seccionesContraidas ? 'none' : 'grid';
+            });
+            document.querySelectorAll('.icono-acordeon').forEach(icono => {
+                icono.className = seccionesContraidas ? 'bx bx-chevron-right icono-acordeon' : 'bx bx-chevron-down icono-acordeon';
+            });
+            const btn = document.getElementById('btn-toggle-secciones');
+            if (btn) {
+                btn.innerHTML = seccionesContraidas
+                    ? "<i class='bx bx-expand-vertical'></i> Expandir secciones"
+                    : "<i class='bx bx-collapse-vertical'></i> Contraer secciones";
+            }
+        }
+
         function renderizarCatalogo(lista) {
             const contenedor = document.getElementById('grid-catalogo-ejercicios');
             const noData = document.getElementById('no-ejercicios');
+            const btnSecciones = document.getElementById('btn-toggle-secciones');
             const inputTexto = document.getElementById('input-buscar-catalogo');
             const hayBusquedaTexto = Boolean(inputTexto && inputTexto.value.trim());
 
@@ -454,6 +519,7 @@
             actualizarContador(lista.length);
 
             if (lista.length === 0) {
+                if (btnSecciones) btnSecciones.style.display = 'none';
                 contenedor.style.display = 'none';
                 noData.style.display = 'block';
                 return;
@@ -462,8 +528,10 @@
             noData.style.display = 'none';
             contenedor.style.display = 'block';
 
-            // Vista agrupada por zona anatómica cuando se muestran todas las zonas sin búsqueda específica
-            if (ordenActual === 'zona' && zonaFiltroActual === 'todos' && !hayBusquedaTexto) {
+            const modoAgrupado = ordenActual === 'zona' && zonaFiltroActual === 'todos' && !hayBusquedaTexto;
+            if (btnSecciones) btnSecciones.style.display = modoAgrupado ? 'inline-flex' : 'none';
+
+            if (modoAgrupado) {
                 const grupos = {};
                 ORDEN_ZONAS_CLINICAS.forEach(z => { grupos[z] = []; });
 
@@ -480,23 +548,23 @@
 
                     const seccion = document.createElement('section');
                     seccion.style.cssText = idxSeccion === 0
-                        ? 'margin-bottom: 28px;'
-                        : 'margin-bottom: 28px; padding-top: 22px; border-top: 1px solid var(--gris-200);';
+                        ? 'margin-bottom: 24px;'
+                        : 'margin-bottom: 24px; padding-top: 20px; border-top: 1px solid var(--gris-200);';
 
-                    seccion.innerHTML = `
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; background: #e0f2fe; color: #0369a1;">
-                                    <i class='bx bx-body'></i>
-                                </span>
-                                <h3 style="margin: 0; font-size: 1.05rem; color: var(--azul-900); font-weight: 700;">${escaparHtml(nombreZona)}</h3>
-                            </div>
-                            <span class="badge badge-neutro">${ejerciciosZona.length} ${ejerciciosZona.length === 1 ? 'ejercicio' : 'ejercicios'}</span>
+                    const header = document.createElement('div');
+                    header.onclick = () => toggleSeccionIndividual(header);
+                    header.style.cssText = 'display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; cursor: pointer; user-select: none; padding: 6px 8px; border-radius: 8px; background: #f8fafc;';
+                    header.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <i class='bx ${seccionesContraidas ? 'bx-chevron-right' : 'bx-chevron-down'} icono-acordeon' style="font-size: 1.2rem; color: var(--azul-900);"></i>
+                            <h3 style="margin: 0; font-size: 1.02rem; color: var(--azul-900); font-weight: 700;">${escaparHtml(nombreZona)}</h3>
                         </div>
+                        <span class="badge badge-neutro">${ejerciciosZona.length} ${ejerciciosZona.length === 1 ? 'ejercicio' : 'ejercicios'}</span>
                     `;
 
                     const gridZona = document.createElement('div');
-                    gridZona.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px;';
+                    gridZona.className = 'seccion-zona-grid';
+                    gridZona.style.cssText = `display: ${seccionesContraidas ? 'none' : 'grid'}; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px;`;
 
                     ejerciciosZona.forEach(item => {
                         const idxGlobal = listaRenderizadaActual.length;
@@ -504,16 +572,16 @@
                         gridZona.appendChild(crearTarjetaEjercicio(item, idxGlobal));
                     });
 
+                    seccion.appendChild(header);
                     seccion.appendChild(gridZona);
                     contenedor.appendChild(seccion);
                 });
                 return;
             }
 
-            // Vista en cuadrícula directa (cuando filtras por zona, buscas texto o eliges orden plano)
             const listaOrdenada = ordenarEjercicios(lista, ordenActual === 'video' || ordenActual === 'zona');
             const gridPlano = document.createElement('div');
-            gridPlano.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px;';
+            gridPlano.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px;';
 
             listaOrdenada.forEach(item => {
                 const idxGlobal = listaRenderizadaActual.length;
@@ -522,6 +590,35 @@
             });
 
             contenedor.appendChild(gridPlano);
+        }
+
+        function actualizarBotonLimpiar() {
+            const inputTexto = document.getElementById('input-buscar-catalogo');
+            const hayTexto = Boolean(inputTexto && inputTexto.value.trim());
+            const hayFiltros = zonaFiltroActual !== 'todos' || areaFiltroActual !== 'todos' || soloConVideoActual || hayTexto;
+            const btnLimpiar = document.getElementById('btn-limpiar-filtros');
+            if (btnLimpiar) btnLimpiar.style.display = hayFiltros ? 'inline-flex' : 'none';
+        }
+
+        function limpiarTodosLosFiltros() {
+            zonaFiltroActual = 'todos';
+            areaFiltroActual = 'todos';
+            soloConVideoActual = false;
+
+            const inputTexto = document.getElementById('input-buscar-catalogo');
+            if (inputTexto) inputTexto.value = '';
+
+            const btnVideo = document.getElementById('btn-solo-video');
+            if (btnVideo) btnVideo.className = 'btn btn-secondary btn-sm';
+
+            document.querySelectorAll('#filtros-zonas-container .filtro-biomecanico-pill').forEach((btn, idx) => {
+                btn.className = idx === 0 ? 'filtro-biomecanico-pill activo-todos' : 'filtro-biomecanico-pill';
+            });
+            document.querySelectorAll('#filtros-clinicos-container .filtro-biomecanico-pill').forEach((btn, idx) => {
+                btn.className = idx === 0 ? 'filtro-biomecanico-pill activo-todos' : 'filtro-biomecanico-pill';
+            });
+
+            aplicarFiltros();
         }
 
         function filtrarPorZona(zona, botonElemento) {
@@ -563,6 +660,7 @@
         }
 
         function aplicarFiltros() {
+            actualizarBotonLimpiar();
             const inputTexto = document.getElementById('input-buscar-catalogo');
             const termino = normalizarTexto(inputTexto ? inputTexto.value.trim() : '');
 
