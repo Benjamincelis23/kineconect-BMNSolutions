@@ -1,4 +1,4 @@
-const BASE_URL = 'https://kineconect-bmnsolutions.onrender.com/api/v1';
+const API_BASE_URL = 'https://kineconect-bmnsolutions.onrender.com/api/v1';
 const api = {
     // ==========================================
     // GESTIÓN DE TOKENS Y SESIÓN
