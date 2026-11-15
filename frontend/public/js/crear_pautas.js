@@ -1,7 +1,7 @@
 let todosLosEjercicios = [];
 let ejerciciosFiltrados = [];
-let todasLasPautas = [];      // todas las pautas (para "Usar en nueva prescripción")
-let todasLasPlantillas = [];  // solo protocolos maestros
+let todasLasPautas = [];
+let todasLasPlantillas = [];
 let carrito = [];
 let zonaSeleccionadaActual = '';
 let areaClinicaActual = 'todos';
@@ -33,6 +33,15 @@ function aEntero(valor, defecto, minimo = 0) {
     return Number.isNaN(n) ? defecto : Math.max(minimo, n);
 }
 
+function normalizarTexto(txt) {
+    return String(txt ?? '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[-_]+/g, ' ')
+        .trim();
+}
+
 function obtenerGrupoZona(item) {
     const z = normalizarTexto(item.zona_corporal || item.zona_cuerpo || item.grupo_muscular);
     if (z.includes('cuello') || z.includes('cervical')) return 'Cuello';
@@ -45,15 +54,6 @@ function obtenerGrupoZona(item) {
     if (z.includes('pierna') || z.includes('rodilla') || z.includes('cuadriceps')) return 'Piernas / Rodilla';
     if (z.includes('tobillo') || z.includes('pie')) return 'Tobillo / Pie';
     return 'Otras Zonas';
-}
-
-function ordenarListaEjercicios(lista) {
-    return [...lista].sort((a, b) => {
-        const va = resolverUrlMedia(a) ? 1 : 0;
-        const vb = resolverUrlMedia(b) ? 1 : 0;
-        if (vb !== va) return vb - va;
-        return (a.nombre || a.titulo || '').localeCompare(b.nombre || b.titulo || '', 'es');
-    });
 }
 
 function resolverUrlMedia(ej) {
@@ -78,6 +78,15 @@ function resolverUrlMedia(ej) {
     if (!rawUrl) return '';
     if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) return rawUrl;
     return `${BACKEND_ORIGIN}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
+}
+
+function ordenarListaEjercicios(lista) {
+    return [...lista].sort((a, b) => {
+        const va = resolverUrlMedia(a) ? 1 : 0;
+        const vb = resolverUrlMedia(b) ? 1 : 0;
+        if (vb !== va) return vb - va;
+        return (a.nombre || a.titulo || '').localeCompare(b.nombre || b.titulo || '', 'es');
+    });
 }
 
 function formatearDescripcionClinica(texto) {
@@ -142,15 +151,6 @@ const ALIAS_ZONAS_ANATOMICAS = {
     gemelos: ['gemelo', 'gemelos', 'pantorrilla', 'pantorrillas', 'soleo', 'pierna', 'piernas'],
     tobillo: ['tobillo', 'tobillos', 'pie', 'pies', 'plantar', 'aquiles']
 };
-
-function normalizarTexto(txt) {
-    return String(txt ?? '')
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[-_]+/g, ' ')
-        .trim();
-}
 
 function obtenerAreasEjercicio(item) {
     if (Array.isArray(item.area_clinica) && item.area_clinica.length > 0) {
@@ -277,7 +277,7 @@ async function inicializarCatalogo() {
     if (noData) noData.style.display = 'none';
 
     try {
-       const resp = await api.getEjercicios();
+        const resp = await api.getEjercicios();
         let acumulados = [];
 
         if (Array.isArray(resp)) {
@@ -285,14 +285,26 @@ async function inicializarCatalogo() {
         } else if (resp && Array.isArray(resp.results)) {
             acumulados = [...resp.results];
             let siguienteUrl = resp.next;
-            while (siguienteUrl && typeof api.request === 'function') {
-                const urlObj = new URL(siguienteUrl, BACKEND_ORIGIN);
-                const endpointRelativo = urlObj.pathname.replace(/^\/api\/v1/, '') + urlObj.search;
-                const paginaSig = await api.request(endpointRelativo);
-                if (paginaSig && Array.isArray(paginaSig.results)) {
-                    acumulados.push(...paginaSig.results);
-                    siguienteUrl = paginaSig.next;
-                } else {
+            let guard = 0;
+
+            while (siguienteUrl && guard < 10) {
+                guard++;
+                try {
+                    const urlSegura = siguienteUrl.replace(/^http:\/\//i, 'https://');
+                    const urlObj = new URL(urlSegura, BACKEND_ORIGIN);
+                    const endpointRelativo = urlObj.pathname.replace(/^\/api\/v1/, '') + urlObj.search;
+                    const paginaSig = typeof api.request === 'function'
+                        ? await api.request(endpointRelativo)
+                        : null;
+
+                    if (paginaSig && Array.isArray(paginaSig.results)) {
+                        acumulados.push(...paginaSig.results);
+                        siguienteUrl = paginaSig.next;
+                    } else {
+                        break;
+                    }
+                } catch (errPag) {
+                    console.warn('No se pudo cargar página adicional:', errPag);
                     break;
                 }
             }
@@ -301,6 +313,7 @@ async function inicializarCatalogo() {
         }
 
         todosLosEjercicios = acumulados;
+        filtrarYRenderizarEjercicios();
     } catch (error) {
         console.error('Error cargando ejercicios:', error);
         if (noData) {
@@ -313,7 +326,6 @@ async function inicializarCatalogo() {
     }
 }
 
-// Un solo listener para los botones de la lista (evita onclick inline con texto del usuario)
 function inicializarAccionesCatalogo() {
     const container = document.getElementById('lista-ejercicios-disponibles');
     if (!container) return;
@@ -453,7 +465,6 @@ function filtrarYRenderizarEjercicios() {
     container.style.display = 'flex';
     container.innerHTML = '';
 
-    // Agrupación céfalo-caudal cuando se muestra Cuerpo Completo sin búsqueda de texto
     if (!zonaSeleccionadaActual && !terminoNorm) {
         const grupos = {};
         ORDEN_ZONAS_CLINICAS.forEach(z => { grupos[z] = []; });
@@ -497,7 +508,6 @@ function filtrarYRenderizarEjercicios() {
         return;
     }
 
-    // Vista directa cuando hay un músculo seleccionado en el mapa o texto en el buscador
     ordenarListaEjercicios(ejerciciosFiltrados).forEach(ej => {
         container.appendChild(crearItemTarjetaCatalogo(ej, areaClave));
     });
