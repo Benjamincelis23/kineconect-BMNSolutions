@@ -3,6 +3,8 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import models, transaction
 from api.models import Ejercicio
+
+
 AREAS_CLINICAS = [
     'Rehabilitación General',
     'Traumatología',
@@ -13,7 +15,62 @@ AREAS_CLINICAS = [
     'Adulto Mayor / Geriatría',
 ]
 
+VIDEOS_CONFIRMADOS = {
+    'videos_ejercicios/bird_dog.mp4',
+    'videos_ejercicios/clamshell.mp4',
+    'videos_ejercicios/tobillo_abecedario.mp4',
+}
+
 ejercicios_data = [
+    # =========================================================================
+    # 0. EJERCICIOS BASE CON VIDEO DEMOSTRATIVO
+    # =========================================================================
+    {
+        'nombre': 'Bird Dog (Perro de Caza)',
+        'descripcion': (
+            'Posición inicial: en cuatro apoyos (cuadrupedia) con manos alineadas bajo los hombros, '
+            'rodillas bajo las caderas y columna en posición neutra. '
+            'Ejecución: extiende simultáneamente un brazo hacia adelante y la pierna contraria hacia atrás '
+            'hasta alinearlos con el tronco, regresa al centro con control y alterna de lado. '
+            'Ritmo y respiración: exhala durante los 3 segundos de extensión, sostén 2 segundos arriba e inhala al volver. '
+            'Precaución postural: evita arquear la zona lumbar o rotar la pelvis al elevar la pierna.'
+        ),
+        'zona_corporal': 'Core / Lumbar',
+        'dificultad': 'Básico',
+        'video': 'videos_ejercicios/bird_dog.mp4',
+        'areas': ['Rehabilitación General', 'Traumatología', 'Neurorehabilitación', 'Adulto Mayor / Geriatría'],
+    },
+    {
+        'nombre': 'Clamshell (Almeja)',
+        'descripcion': (
+            'Posición inicial: acostado de lado con caderas flexionadas a 45 grados, rodillas dobladas a 90 grados '
+            'y ambos pies juntos uno sobre el otro. '
+            'Ejecución: eleva la rodilla superior separándola de la inferior como una almeja mientras mantienes '
+            'los pies en contacto, y desciende lentamente a la posición inicial. '
+            'Ritmo y respiración: exhala al abrir la rodilla en 2 segundos, pausa 2 segundos arriba e inhala al bajar en 3 segundos. '
+            'Precaución postural: mantén la pelvis completamente estable sin dejar que la cadera caiga hacia atrás.'
+        ),
+        'zona_corporal': 'Cadera / Glúteos',
+        'dificultad': 'Básico',
+        'video': 'videos_ejercicios/clamshell.mp4',
+        'areas': ['Rehabilitación General', 'Traumatología', 'Post-Operatorio', 'Adulto Mayor / Geriatría'],
+    },
+    {
+        'nombre': 'Abecedario de Tobillo',
+        'descripcion': (
+            'Posición inicial: sentado con la espalda apoyada y la pierna elevada (puedes sostener el muslo con ambas manos) '
+            'dejando el tobillo libre en el aire. '
+            'Ejecución: dibuja lentamente en el aire las letras del abecedario en mayúscula moviendo únicamente el pie '
+            'en todo su rango articular sin mover la rodilla. '
+            'Ritmo y respiración: trazos amplios y continuos de 2 a 3 segundos por letra manteniendo respiración tranquila. '
+            'Precaución postural: detén o reduce la amplitud si aparece dolor agudo o chasquido articular.'
+        ),
+        'zona_corporal': 'Tobillo / Pie',
+        'dificultad': 'Básico',
+        'video': 'videos_ejercicios/tobillo_abecedario.mp4',
+        'areas': ['Rehabilitación General', 'Traumatología', 'Post-Operatorio', 'Neurorehabilitación', 'Adulto Mayor / Geriatría'],
+    },
+
     # =========================================================================
     # 1. CUELLO
     # =========================================================================
@@ -572,6 +629,8 @@ ejercicios_data = [
         'areas': ['Neurorehabilitación', 'Adulto Mayor / Geriatría', 'Inmunología / VIH-SIDA'],
     },
 ]
+
+
 class Command(BaseCommand):
     help = 'Pobla o actualiza las áreas clínicas y el catálogo de ejercicios terapéuticos en KineConnect.'
 
@@ -682,7 +741,10 @@ class Command(BaseCommand):
             if campo_video_ej:
                 ruta_relativa = item.get('video', '')
                 ruta_fisica = os.path.join(settings.MEDIA_ROOT, ruta_relativa) if ruta_relativa else ''
-                defaults[campo_video_ej] = ruta_relativa if (ruta_fisica and os.path.exists(ruta_fisica)) else ''
+                if ruta_relativa in VIDEOS_CONFIRMADOS or (ruta_fisica and os.path.exists(ruta_fisica)):
+                    defaults[campo_video_ej] = ruta_relativa
+                else:
+                    defaults[campo_video_ej] = ''
 
             if not es_m2m:
                 defaults[area_field.name] = areas_map[item['areas'][0]]
