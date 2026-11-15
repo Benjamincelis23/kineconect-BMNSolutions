@@ -18,7 +18,7 @@
                 <div class="page-header" style="flex-wrap: wrap; gap: 12px;">
                     <div>
                         <h2>Monitoreo de Dolor y Rutinas</h2>
-                        <p>Visualiza y evalúa la escala de dolor (EVA) que tus pacientes reportan desde la aplicación móvil.</p>
+                        <p>Visualiza la adherencia, series ejecutadas y escala EVA reportadas por tus pacientes desde la app móvil.</p>
                     </div>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                         <a id="btn-ver-todas-pautas" href="pautas.html" class="btn btn-secondary is-hidden">
@@ -33,26 +33,77 @@
                     </div>
                 </div>
 
+                <!-- TARJETAS RESUMEN DEL MONITOREO -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px;">
+                    <div class="card" style="padding: 16px 18px; display: flex; align-items: center; gap: 14px; border-left: 4px solid #0284c7;">
+                        <div style="width: 42px; height: 42px; border-radius: 12px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">
+                            <i class='bx bx-bar-chart-alt-2'></i>
+                        </div>
+                        <div>
+                            <span style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--gris-600);">Reportes Recibidos</span>
+                            <strong id="kpi-total-reportes" style="font-size: 1.45rem; color: var(--azul-900);">0</strong>
+                        </div>
+                    </div>
+
+                    <div class="card" style="padding: 16px 18px; display: flex; align-items: center; gap: 14px; border-left: 4px solid #10b981;">
+                        <div style="width: 42px; height: 42px; border-radius: 12px; background: #d1fae5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">
+                            <i class='bx bx-check-double'></i>
+                        </div>
+                        <div>
+                            <span style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--gris-600);">Sesiones Completas</span>
+                            <strong id="kpi-completadas" style="font-size: 1.45rem; color: var(--azul-900);">0</strong>
+                        </div>
+                    </div>
+
+                    <div class="card" style="padding: 16px 18px; display: flex; align-items: center; gap: 14px; border-left: 4px solid #f59e0b;">
+                        <div style="width: 42px; height: 42px; border-radius: 12px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">
+                            <i class='bx bx-pulse'></i>
+                        </div>
+                        <div>
+                            <span style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--gris-600);">Promedio Dolor (EVA)</span>
+                            <strong id="kpi-promedio-eva" style="font-size: 1.45rem; color: var(--azul-900);">0.0 / 10</strong>
+                        </div>
+                    </div>
+
+                    <div class="card" style="padding: 16px 18px; display: flex; align-items: center; gap: 14px; border-left: 4px solid #ef4444;">
+                        <div style="width: 42px; height: 42px; border-radius: 12px; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">
+                            <i class='bx bx-error-circle'></i>
+                        </div>
+                        <div>
+                            <span style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--gris-600);">Alertas Dolor (EVA ≥ 6)</span>
+                            <strong id="kpi-alertas-eva" style="font-size: 1.45rem; color: var(--azul-900);">0</strong>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- SECCIÓN 1: EVALUACIONES DE DOLOR -->
                 <div class="card" style="margin-bottom: 24px;">
-                    <h3 style="margin-top: 0; margin-bottom: 12px; font-size: 1.05rem; color: var(--azul-900); display: flex; align-items: center; gap: 8px;">
-                        <i class='bx bx-pulse' style="color: var(--rojo-500);"></i> Evaluaciones de Dolor Recibidas (App Móvil)
-                    </h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+                        <h3 style="margin: 0; font-size: 1.05rem; color: var(--azul-900); display: flex; align-items: center; gap: 8px;">
+                            <i class='bx bx-pulse' style="color: var(--rojo-500);"></i> Evaluaciones de Dolor y Ejecución (App Móvil)
+                        </h3>
+
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;" id="filtros-feedback-container">
+                            <button type="button" class="filtro-biomecanico-pill activo-todos" onclick="filtrarFeedback('todos', this)">Todos</button>
+                            <button type="button" class="filtro-biomecanico-pill" onclick="filtrarFeedback('alertas', this)">Alertas EVA ≥ 6</button>
+                            <button type="button" class="filtro-biomecanico-pill" onclick="filtrarFeedback('completados', this)">Rutina Completa</button>
+                        </div>
+                    </div>
 
                     <div id="loading-feedback" class="empty-state">
                         <i class='bx bx-loader-alt bx-spin loading-icon'></i>
                         <p class="loading-text">Cargando reportes de dolor...</p>
                     </div>
 
-                    <div id="container-tabla-feedback" class="is-hidden">
+                    <div id="container-tabla-feedback" class="is-hidden" style="overflow-x: auto;">
                         <table>
                             <thead>
                                 <tr>
                                     <th>Fecha Ejecución</th>
-                                    <th>Pauta ID</th>
-                                    <th>Completado</th>
+                                    <th>Paciente y Rutina</th>
+                                    <th>Cumplimiento</th>
                                     <th>Escala Dolor (EVA)</th>
-                                    <th>Comentarios del Paciente</th>
+                                    <th>Sensaciones y Observaciones</th>
                                 </tr>
                             </thead>
                             <tbody id="tbody-feedback"></tbody>
@@ -61,7 +112,7 @@
 
                     <div id="no-feedback" class="empty-state is-hidden">
                         <i class='bx bx-check-circle' style="font-size: 2.2rem; color: var(--verde-500); margin-bottom: 8px;"></i>
-                        <p class="empty-text" style="margin: 0; font-size: 0.9rem;">No hay reportes de dolor recientes registrados por pacientes.</p>
+                        <p class="empty-text" style="margin: 0; font-size: 0.9rem;">No hay reportes registrados con el filtro seleccionado.</p>
                     </div>
                 </div>
 
@@ -77,7 +128,7 @@
                     </div>
 
                     <!-- Tabla de pautas -->
-                    <div id="container-tabla-pautas" class="is-hidden">
+                    <div id="container-tabla-pautas" class="is-hidden" style="overflow-x: auto;">
                         <table id="tabla-pautas">
                             <thead>
                                 <tr>
@@ -139,13 +190,66 @@
     <script src="js/layout.js"></script>
     <script>
         let pautasCargadas = [];
+        let mapaPautas = {};
         let mapaEjercicios = {};
+        let reportesCargados = [];
+        let filtroFeedbackActual = 'todos';
+
+        function escaparHtml(txt) {
+            return String(txt ?? '').replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[c]));
+        }
+
+        function parsearComentarioApp(raw) {
+            let texto = String(raw || '').trim();
+            let seriesInfo = '';
+            let tags = [];
+
+            const matchSeries = texto.match(/(?:\|\s*)?(Series:\s*[^|]+)\.?$/i);
+            if (matchSeries) {
+                seriesInfo = matchSeries[1].trim();
+                texto = texto.slice(0, matchSeries.index).trim();
+            }
+
+            const matchTags = texto.match(/^\[([^\]]+)\]\s*(.*)$/);
+            if (matchTags) {
+                tags = matchTags[1].split(',').map(t => t.trim()).filter(Boolean);
+                texto = matchTags[2].trim();
+            }
+
+            return { tags, seriesInfo, textoLibre: texto };
+        }
+
+        function describirNivelEva(dolor) {
+            if (dolor === 0) return 'Sin dolor';
+            if (dolor <= 3) return 'Leve';
+            if (dolor <= 5) return 'Moderado';
+            if (dolor <= 7) return 'Fuerte';
+            return 'Severo';
+        }
 
         async function asegurarCatalogoEjercicios() {
             if (Object.keys(mapaEjercicios).length > 0) return;
             try {
                 const resp = await api.getEjercicios();
-                const lista = Array.isArray(resp) ? resp : (resp?.results || []);
+                let lista = Array.isArray(resp) ? resp : (resp?.results || []);
+                let nextUrl = resp?.next;
+                let guard = 0;
+
+                while (nextUrl && guard < 10 && typeof api.request === 'function') {
+                    guard++;
+                    const urlObj = new URL(nextUrl.replace(/^http:\/\//i, 'https://'), BACKEND_ORIGIN);
+                    const rel = urlObj.pathname.replace(/^\/api\/v1/, '') + urlObj.search;
+                    const pag = await api.request(rel);
+                    if (pag && Array.isArray(pag.results)) {
+                        lista = lista.concat(pag.results);
+                        nextUrl = pag.next;
+                    } else {
+                        break;
+                    }
+                }
+
                 lista.forEach(ej => {
                     mapaEjercicios[ej.id] = {
                         nombre: ej.nombre || ej.titulo || `Ejercicio #${ej.id}`,
@@ -157,12 +261,9 @@
             }
         }
 
-       function verDetallePauta(pautaId) {
+        function verDetallePauta(pautaId) {
             const pauta = pautasCargadas.find(item => item.id === pautaId);
             if (!pauta) return;
-
-            // Inspecciona esto en F12 (Consola) si quieres ver exactamente qué claves envía Django
-            console.log("Pauta seleccionada desde la API:", pauta);
 
             const esPlantilla = pauta.es_plantilla === true;
             const fecha = pauta.creado_en ? new Date(pauta.creado_en).toLocaleDateString('es-CL') : 'Reciente';
@@ -180,11 +281,11 @@
             document.getElementById('detalle-pauta-titulo').textContent = pauta.titulo || 'Sin Título';
             document.getElementById('detalle-pauta-subtitulo').textContent = `${destinatario} | Creada el ${fecha}`;
 
-            // Busca en todas las posibles variantes de nombres de campo del backend
-           const indicaciones = (pauta.notas || pauta.descripcion || pauta.objetivo || '').trim();
+            const indicaciones = (pauta.notas || pauta.descripcion || pauta.objetivo || '').trim();
             document.getElementById('detalle-pauta-indicaciones').innerHTML = indicaciones
-                ? `<strong>Indicaciones / Objetivo:</strong> ${indicaciones}`
+                ? `<strong>Indicaciones / Objetivo:</strong> ${escaparHtml(indicaciones)}`
                 : `<span style="color: var(--gris-500); font-style: italic;">Sin indicaciones adicionales.</span>`;
+
             const listaEl = document.getElementById('detalle-pauta-lista-ejercicios');
             const detalles = Array.isArray(pauta.ejercicios_detalle) ? pauta.ejercicios_detalle : [];
 
@@ -203,8 +304,8 @@
                     return `
                         <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--gris-200); border-radius: 8px; background: #fff;">
                             <div>
-                                <strong style="color: var(--azul-900); font-size: 0.92rem; display: block;">${idx + 1}. ${nombreEj}</strong>
-                                ${zonaEj ? `<span class="badge badge-neutro" style="font-size: 0.7rem; margin-top: 4px; display: inline-block;">${zonaEj}</span>` : ''}
+                                <strong style="color: var(--azul-900); font-size: 0.92rem; display: block;">${idx + 1}. ${escaparHtml(nombreEj)}</strong>
+                                ${zonaEj ? `<span class="badge badge-neutro" style="font-size: 0.7rem; margin-top: 4px; display: inline-block;">${escaparHtml(zonaEj)}</span>` : ''}
                             </div>
                             <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; flex-shrink: 0;">
                                 <span class="badge badge-ok">${series} series</span>
@@ -229,6 +330,103 @@
             if (modal) modal.style.display = 'none';
         }
 
+        function actualizarKpisMonitoreo(lista) {
+            const total = lista.length;
+            const completadas = lista.filter(f => Boolean(f.completado)).length;
+            const alertas = lista.filter(f => Number(f.escala_dolor ?? 0) >= 6).length;
+            const sumaEva = lista.reduce((acc, f) => acc + Number(f.escala_dolor ?? 0), 0);
+            const promedio = total > 0 ? (sumaEva / total).toFixed(1) : '0.0';
+
+            document.getElementById('kpi-total-reportes').textContent = total;
+            document.getElementById('kpi-completadas').textContent = `${completadas} / ${total}`;
+            document.getElementById('kpi-promedio-eva').textContent = `${promedio} / 10`;
+            document.getElementById('kpi-alertas-eva').textContent = alertas;
+        }
+
+        function filtrarFeedback(tipo, btnEl) {
+            filtroFeedbackActual = tipo;
+            document.querySelectorAll('#filtros-feedback-container .filtro-biomecanico-pill').forEach(b => {
+                b.className = 'filtro-biomecanico-pill';
+            });
+            if (btnEl) btnEl.classList.add('activo-todos');
+            renderizarTablaFeedback();
+        }
+
+        function renderizarTablaFeedback() {
+            const containerFeed = document.getElementById('container-tabla-feedback');
+            const tbodyFeed = document.getElementById('tbody-feedback');
+            const noFeed = document.getElementById('no-feedback');
+
+            let listaFiltrada = [...reportesCargados];
+            if (filtroFeedbackActual === 'alertas') {
+                listaFiltrada = listaFiltrada.filter(f => Number(f.escala_dolor ?? 0) >= 6);
+            } else if (filtroFeedbackActual === 'completados') {
+                listaFiltrada = listaFiltrada.filter(f => Boolean(f.completado));
+            }
+
+            if (listaFiltrada.length === 0) {
+                containerFeed.classList.add('is-hidden');
+                noFeed.classList.remove('is-hidden');
+                return;
+            }
+
+            noFeed.classList.add('is-hidden');
+            containerFeed.classList.remove('is-hidden');
+            tbodyFeed.innerHTML = '';
+
+            listaFiltrada.forEach(f => {
+                const dolor = Number(f.escala_dolor ?? 0);
+                const badgeColor = dolor >= 6 ? 'badge-alerta' : (dolor >= 4 ? 'badge-neutro' : 'badge-ok');
+                const textoEva = describirNivelEva(dolor);
+
+                const pautaId = typeof f.pauta === 'object' && f.pauta !== null ? f.pauta.id : f.pauta;
+                const infoPauta = mapaPautas[pautaId] || {};
+                const tituloRutina = infoPauta.titulo || `Pauta #${pautaId || 'N/A'}`;
+                const nombrePaciente = f.paciente_nombre || infoPauta.paciente_nombre || '';
+
+                const parsed = parsearComentarioApp(f.comentario);
+                const completadoBadge = f.completado
+                    ? '<span class="badge badge-ok">100% Completa</span>'
+                    : '<span class="badge badge-alerta">Incompleta</span>';
+
+                const tagsHtml = parsed.tags.length > 0
+                    ? `<div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: ${parsed.textoLibre ? '5px' : '0'};">
+                        ${parsed.tags.map(t => `<span class="badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 0.72rem;">${escaparHtml(t)}</span>`).join('')}
+                       </div>`
+                    : '';
+
+                const textoHtml = parsed.textoLibre
+                    ? `<span style="color: var(--azul-900); font-size: 0.86rem;">${escaparHtml(parsed.textoLibre)}</span>`
+                    : (!tagsHtml ? `<span style="color: var(--gris-400); font-style: italic; font-size: 0.84rem;">Sin observaciones adicionales</span>` : '');
+
+                const fecha = f.fecha_ejecucion
+                    ? new Date(f.fecha_ejecucion).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })
+                    : 'N/A';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="white-space: nowrap; font-size: 0.85rem; color: var(--gris-700);">${fecha}</td>
+                    <td>
+                        <strong style="color: var(--azul-900); display: block; font-size: 0.9rem;">${escaparHtml(tituloRutina)}</strong>
+                        <span style="font-size: 0.78rem; color: var(--gris-600);">
+                            ${nombrePaciente ? `<i class='bx bx-user'></i> ${escaparHtml(nombrePaciente)} • ` : ''}ID #${pautaId || 'N/A'}
+                        </span>
+                    </td>
+                    <td>
+                        <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">
+                            ${completadoBadge}
+                            ${parsed.seriesInfo ? `<span style="font-size: 0.76rem; color: var(--gris-600); font-weight: 600;">${escaparHtml(parsed.seriesInfo)}</span>` : ''}
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge ${badgeColor}" style="font-weight: 700;">EVA ${dolor}/10 • ${textoEva}</span>
+                    </td>
+                    <td>${tagsHtml}${textoHtml}</td>
+                `;
+                tbodyFeed.appendChild(tr);
+            });
+        }
+
         async function cargarTodo() {
             const loadingPautas = document.getElementById('loading-pautas');
             const containerPautas = document.getElementById('container-tabla-pautas');
@@ -249,10 +447,14 @@
             try {
                 await asegurarCatalogoEjercicios();
                 let pautas = await api.getPautas();
-                let listaPautas = Array.isArray(pautas) ? pautas : (pautas?.results || []);
+                let todasPautas = Array.isArray(pautas) ? pautas : (pautas?.results || []);
 
+                mapaPautas = {};
+                todasPautas.forEach(p => { mapaPautas[p.id] = p; });
+
+                let listaPautas = todasPautas;
                 if (pacienteFiltro) {
-                    listaPautas = listaPautas.filter(p => {
+                    listaPautas = todasPautas.filter(p => {
                         const idPac = typeof p.paciente === 'object' && p.paciente !== null ? p.paciente.id : p.paciente;
                         return String(idPac) === String(pacienteFiltro) || String(p.paciente_user_id) === String(pacienteFiltro);
                     });
@@ -275,13 +477,13 @@
                             const esPlantilla = p.es_plantilla === true;
                             const pacienteBadge = esPlantilla
                                 ? '<span class="badge" style="background-color: #e0f2fe; color: #0369a1; font-weight: 600;"><i class="bx bx-bookmark-alt"></i> Plantilla Maestra</span>'
-                                : (p.paciente_nombre || 'Paciente');
+                                : escaparHtml(p.paciente_nombre || 'Paciente');
 
                             const tituloIcon = esPlantilla ? "<i class='bx bx-book-content' style='color: #0284c7; margin-right: 4px;'></i>" : "";
 
                             const tr = document.createElement('tr');
                             tr.innerHTML = `
-                                <td><strong>${tituloIcon}${p.titulo || 'Sin Título'}</strong></td>
+                                <td><strong>${tituloIcon}${escaparHtml(p.titulo || 'Sin Título')}</strong></td>
                                 <td>${pacienteBadge}</td>
                                 <td><span class="badge badge-neutro">${cant} ejercicios</span></td>
                                 <td>${fecha}</td>
@@ -304,7 +506,6 @@
 
             const loadingFeed = document.getElementById('loading-feedback');
             const containerFeed = document.getElementById('container-tabla-feedback');
-            const tbodyFeed = document.getElementById('tbody-feedback');
             const noFeed = document.getElementById('no-feedback');
 
             if (loadingFeed) loadingFeed.classList.remove('is-hidden');
@@ -313,34 +514,21 @@
 
             try {
                 let feeds = await api.getReportesDolor();
-                const listaFeed = Array.isArray(feeds) ? feeds : (feeds?.results || []);
+                let listaFeed = Array.isArray(feeds) ? feeds : (feeds?.results || []);
+
+                if (pacienteFiltro) {
+                    const idsPautasPaciente = new Set(pautasCargadas.map(p => p.id));
+                    listaFeed = listaFeed.filter(f => {
+                        const pid = typeof f.pauta === 'object' && f.pauta !== null ? f.pauta.id : f.pauta;
+                        return idsPautasPaciente.has(pid);
+                    });
+                }
+
+                reportesCargados = listaFeed;
+                actualizarKpisMonitoreo(reportesCargados);
 
                 if (loadingFeed) loadingFeed.classList.add('is-hidden');
-
-                if (listaFeed.length === 0) {
-                    if (noFeed) noFeed.classList.remove('is-hidden');
-                } else {
-                    if (containerFeed) containerFeed.classList.remove('is-hidden');
-                    if (tbodyFeed) {
-                        tbodyFeed.innerHTML = '';
-                        listaFeed.forEach(f => {
-                            const dolor = f.escala_dolor ?? 0;
-                            const badgeColor = dolor >= 6 ? 'badge-alerta' : (dolor >= 4 ? 'badge-neutro' : 'badge-ok');
-                            const completado = f.completado ? '<span class="badge badge-ok">SÍ</span>' : '<span class="badge badge-alerta">NO</span>';
-                            const fecha = f.fecha_ejecucion ? new Date(f.fecha_ejecucion).toLocaleString('es-CL') : 'N/A';
-
-                            const tr = document.createElement('tr');
-                            tr.innerHTML = `
-                                <td>${fecha}</td>
-                                <td>#${f.pauta || 'N/A'}</td>
-                                <td>${completado}</td>
-                                <td><span class="badge ${badgeColor}">EVA: ${dolor} / 10</span></td>
-                                <td>${f.comentario || '<em>Sin comentarios</em>'}</td>
-                            `;
-                            tbodyFeed.appendChild(tr);
-                        });
-                    }
-                }
+                renderizarTablaFeedback();
             } catch (e) {
                 if (loadingFeed) loadingFeed.classList.add('is-hidden');
                 if (noFeed) noFeed.classList.remove('is-hidden');
