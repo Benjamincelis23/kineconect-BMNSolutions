@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KineConnect</title>
+    <link rel="icon" type="image/svg+xml" href="public/favicon.svg">
+    <link rel="stylesheet" href="public/css/style.css">
+    <style>
+        .kc-logo-sidebar {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            text-decoration: none;
+            margin-bottom: 24px;
+            padding: 4px 2px;
+        }
+
+        .kc-logo-sidebar svg {
+            width: 38px;
+            height: 38px;
+            flex-shrink: 0;
+            transition: transform 0.25s ease;
+        }
+
+        .kc-logo-sidebar:hover svg {
+            transform: scale(1.06);
+        }
+
+        .kc-logo-sidebar .brand {
+            margin-bottom: 0;
+            font-size: 1.35rem;
+            line-height: 1;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-shell">
+        <!-- Sidebar de Navegación -->
+        <aside class="sidebar">
+            <a href="/inicio.html" class="kc-logo-sidebar">
+                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <defs>
+                        <linearGradient id="waveCyanSidebar" x1="14" y1="14" x2="46" y2="38" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#7DD3FC" />
+                            <stop offset="100%" stop-color="#38BDF8" />
+                        </linearGradient>
+                        <linearGradient id="waveWhiteSidebar" x1="50" y1="50" x2="18" y2="26" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#FFFFFF" />
+                            <stop offset="100%" stop-color="#BAE6FD" />
+                        </linearGradient>
+                    </defs>
+
+                    <!-- Círculo contenedor translúcido -->
+                    <circle cx="32" cy="32" r="28" fill="#FFFFFF" fill-opacity="0.06" stroke="#38BDF8"
+                        stroke-opacity="0.28" stroke-width="1.5" />
+
+                    <!-- Onda superior celeste -->
+                    <path d="M16 36C16 20 26 14 46 20C36 21 27 27 24 38C20.5 38.5 17.5 37.5 16 36Z"
+                        fill="url(#waveCyanSidebar)" />
+
+                    <!-- Onda inferior blanca -->
+                    <path d="M48 28C48 44 38 50 18 44C28 43 37 37 40 26C43.5 25.5 46.5 26.5 48 28Z"
+                        fill="url(#waveWhiteSidebar)" />
+
+                    <!-- Núcleo central -->
+                    <circle cx="32" cy="32" r="7.5" fill="#38BDF8" fill-opacity="0.22" />
+                    <circle cx="32" cy="32" r="4.2" fill="#38BDF8" />
+                </svg>
+                <a href="/inicio.html" class="kc-logo-sidebar"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="waveCyanSidebar" x1="14" y1="14" x2="46" y2="38" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#7DD3FC"/><stop offset="100%" stop-color="#38BDF8"/></linearGradient><linearGradient id="waveWhiteSidebar" x1="50" y1="50" x2="18" y2="26" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#FFFFFF"/><stop offset="100%" stop-color="#BAE6FD"/></linearGradient></defs><circle cx="32" cy="32" r="28" fill="#FFFFFF" fill-opacity="0.06" stroke="#38BDF8" stroke-opacity="0.28" stroke-width="1.5"/><path d="M16 36C16 20 26 14 46 20C36 21 27 27 24 38C20.5 38.5 17.5 37.5 16 36Z" fill="url(#waveCyanSidebar)"/><path d="M48 28C48 44 38 50 18 44C28 43 37 37 40 26C43.5 25.5 46.5 26.5 48 28Z" fill="url(#waveWhiteSidebar)"/><circle cx="32" cy="32" r="7.5" fill="#38BDF8" fill-opacity="0.22"/><circle cx="32" cy="32" r="4.2" fill="#38BDF8"/></svg><div class="brand">Kine<span>Connect</span></div></a>
+            </a>
+
+            <nav>
+                <!-- Las rutas ahora apuntan a los archivos físicos .html -->
+                <a href="/inicio.html" id="nav-dashboard">Dashboard</a>
+                <a href="/crear_pauta.html" id="nav-crear-pauta">Mapa Anatómico</a>
+                <a href="/ejercicios.html" id="nav-ejercicios">Catálogo de Ejercicios</a>
+                <a href="/pautas.html" id="nav-pautas">Pautas y Dolor</a>
+                <a href="/pacientes.html" id="nav-pacientes">Gestión de Pacientes</a>
+            </nav>
+            <div class="sidebar-footer">
+                <button type="button" class="btn-logout" id="btn-cerrar-sesion" onclick="api.logout()">
+                    Cerrar Sesión
+                </button>
+            </div>
+        </aside>
+
+        <!-- Contenido Principal -->
+        <main class="main">
+            <header class="topbar">
+                <!-- Este título cambiará en cada página -->
+                <h1>Panel Principal</h1>
+                <div class="user-tag" id="user-display">Usuario Conectado</div>
+            </header>
+
+            <div class="content">
+                <!-- ========================================== -->
+                <!-- AQUÍ VA EL CONTENIDO ESPECÍFICO DE LA PÁGINA -->
+                <!-- (Por ejemplo, el mapa anatómico o las tarjetas del inicio) -->
+                <!-- ========================================== -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Cliente API de Frontend servido por Vite -->
+    <script src="/js/api.js"></script>
+    <script>
+        // Lógica común de autenticación para todas las páginas protegidas
+        document.addEventListener('DOMContentLoaded', () => {
+            // Nota: debes asegurarte de que isAuthenticated() y getUser() 
+            // existan en tu archivo api.js
+            if (!api.isAuthenticated()) {
+                window.location.href = '/index.html'; // Redirige al login (.html)
+                return;
+            }
+            const user = api.getUser();
+            const userTag = document.getElementById('user-display');
+            if (user && userTag) {
+                userTag.textContent = user.nombre_completo || user.username || 'Usuario';
+            }
+        });
+    </script>
+
+    <!-- Aquí irán los scripts específicos de cada página (ej: pacientes.js) -->
+</body>
+
+</html>

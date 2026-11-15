@@ -1,0 +1,1 @@
+export const API_URL = 'https://kineconect-bmnsolutions.onrender.com/api/v1';
