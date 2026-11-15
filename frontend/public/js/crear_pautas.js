@@ -40,12 +40,16 @@ function resolverUrlMedia(ej) {
 
     if (!rawUrl) return '';
     if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) return rawUrl;
+<<<<<<< HEAD
 
     const origen = typeof BACKEND_ORIGIN !== 'undefined'
         ? BACKEND_ORIGIN
         : (typeof API_BASE_URL !== 'undefined' ? API_BASE_URL.replace(/\/api\/v1\/?$/, '') : '');
 
     return `${origen}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
+=======
+    return `${BACKEND_ORIGIN}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
+>>>>>>> 86de9de564b188a1b476e9f6e00a6cb85d613fb0
 }
 
 function obtenerTextareaNotas() {
