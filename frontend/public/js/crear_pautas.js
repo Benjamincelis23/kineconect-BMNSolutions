@@ -5,7 +5,21 @@ let todasLasPlantillas = [];  // solo protocolos maestros
 let carrito = [];
 let zonaSeleccionadaActual = '';
 let areaClinicaActual = 'todos';
+let soloConVideoPauta = false;
 let vistaActual = 'frontal';
+
+const ORDEN_ZONAS_CLINICAS = [
+    'Cuello',
+    'Hombro',
+    'Brazos / Muñeca',
+    'Pecho',
+    'Espalda',
+    'Core / Lumbar',
+    'Cadera / Glúteos',
+    'Piernas / Rodilla',
+    'Tobillo / Pie',
+    'Otras Zonas',
+];
 
 // ---------- Utilidades ----------
 function esc(valor) {
@@ -17,6 +31,29 @@ function esc(valor) {
 function aEntero(valor, defecto, minimo = 0) {
     const n = parseInt(valor, 10);
     return Number.isNaN(n) ? defecto : Math.max(minimo, n);
+}
+
+function obtenerGrupoZona(item) {
+    const z = normalizarTexto(item.zona_corporal || item.zona_cuerpo || item.grupo_muscular);
+    if (z.includes('cuello') || z.includes('cervical')) return 'Cuello';
+    if (z.includes('hombro') || z.includes('escapul')) return 'Hombro';
+    if (z.includes('brazo') || z.includes('muneca') || z.includes('mano') || z.includes('antebrazo') || z.includes('biceps')) return 'Brazos / Muñeca';
+    if (z.includes('pecho') || z.includes('pectoral') || z.includes('torax') || z.includes('costal')) return 'Pecho';
+    if (z.includes('espalda') || z.includes('dorsal') || z.includes('toracic')) return 'Espalda';
+    if (z.includes('core') || z.includes('lumbar') || z.includes('pelv')) return 'Core / Lumbar';
+    if (z.includes('cadera') || z.includes('gluteo')) return 'Cadera / Glúteos';
+    if (z.includes('pierna') || z.includes('rodilla') || z.includes('cuadriceps')) return 'Piernas / Rodilla';
+    if (z.includes('tobillo') || z.includes('pie')) return 'Tobillo / Pie';
+    return 'Otras Zonas';
+}
+
+function ordenarListaEjercicios(lista) {
+    return [...lista].sort((a, b) => {
+        const va = resolverUrlMedia(a) ? 1 : 0;
+        const vb = resolverUrlMedia(b) ? 1 : 0;
+        if (vb !== va) return vb - va;
+        return (a.nombre || a.titulo || '').localeCompare(b.nombre || b.titulo || '', 'es');
+    });
 }
 
 function resolverUrlMedia(ej) {
@@ -41,6 +78,24 @@ function resolverUrlMedia(ej) {
     if (!rawUrl) return '';
     if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) return rawUrl;
     return `${BACKEND_ORIGIN}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
+}
+
+function formatearDescripcionClinica(texto) {
+    let html = esc(texto || 'Sin descripción disponible para este ejercicio terapéutico.');
+    const secciones = [
+        'Posición inicial:',
+        'Ejecución:',
+        'Ritmo y respiración:',
+        'Precaución postural:'
+    ];
+    secciones.forEach((titulo, idx) => {
+        const salto = idx === 0 ? '' : '<br><br>';
+        html = html.replace(
+            titulo,
+            `${salto}<strong style="color: var(--azul-900);">${titulo}</strong>`
+        );
+    });
+    return html;
 }
 
 function obtenerTextareaNotas() {
@@ -181,11 +236,41 @@ function inicializarFiltrosBiomecanicos() {
     });
 }
 
+function inicializarBarraControlCatalogo() {
+    const inputBuscar = document.getElementById('input-buscar-ejercicio');
+    if (!inputBuscar || document.getElementById('barra-control-catalogo-pauta')) return;
+
+    const barra = document.createElement('div');
+    barra.id = 'barra-control-catalogo-pauta';
+    barra.style.cssText = 'display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 8px 0 12px 0; flex-wrap: wrap;';
+    barra.innerHTML = `
+        <span id="contador-ejercicios-pauta" style="font-size: 0.78rem; font-weight: 600; color: var(--gris-600);">
+            Cargando...
+        </span>
+        <button type="button" id="btn-solo-video-pauta" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 4px 10px;">
+            <i class='bx bx-video'></i> Solo con video
+        </button>
+    `;
+
+    inputBuscar.insertAdjacentElement('afterend', barra);
+
+    const btnVideo = document.getElementById('btn-solo-video-pauta');
+    if (btnVideo) {
+        btnVideo.addEventListener('click', () => {
+            soloConVideoPauta = !soloConVideoPauta;
+            btnVideo.className = soloConVideoPauta ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
+            filtrarYRenderizarEjercicios();
+        });
+    }
+}
+
 // ---------- 4. Catálogo de ejercicios ----------
 async function inicializarCatalogo() {
     const loading = document.getElementById('loading-ejercicios');
     const container = document.getElementById('lista-ejercicios-disponibles');
     const noData = document.getElementById('no-ejercicios');
+
+    inicializarBarraControlCatalogo();
 
     if (loading) loading.style.display = 'block';
     if (container) container.style.display = 'none';
@@ -222,6 +307,9 @@ function inicializarAccionesCatalogo() {
         } else if (accion === 'media') {
             const ej = todosLosEjercicios.find(x => x.id === Number(btn.dataset.id));
             if (ej) verMultimedia(ej.nombre || ej.titulo || 'Ejercicio', resolverUrlMedia(ej));
+        } else if (accion === 'info') {
+            const ej = todosLosEjercicios.find(x => x.id === Number(btn.dataset.id));
+            if (ej) verInfoEjercicio(ej);
         } else if (accion === 'areas') {
             const extra = btn.nextElementSibling;
             if (!extra) return;
@@ -232,36 +320,105 @@ function inicializarAccionesCatalogo() {
     });
 }
 
+function crearItemTarjetaCatalogo(ej, areaClave) {
+    const estiloBadgeArea = 'font-size: 0.7rem; padding: 2px 8px; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; border-radius: 999px; font-weight: 600;';
+
+    const div = document.createElement('div');
+    div.className = 'ejercicio-item-card';
+    div.style.cssText = 'display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding: 13px 14px; text-align: left;';
+
+    const nombre = ej.nombre || ej.titulo || 'Ejercicio';
+    const zona = ej.zona_corporal || ej.zona_cuerpo || ej.grupo_muscular || 'General';
+    const tieneMedia = !!resolverUrlMedia(ej);
+
+    let areas = [...obtenerAreasEjercicio(ej)].sort((a, b) => a.localeCompare(b, 'es'));
+    if (areaClinicaActual !== 'todos') {
+        areas.sort((a, b) => (normalizarTexto(b).includes(areaClave) ? 1 : 0) - (normalizarTexto(a).includes(areaClave) ? 1 : 0));
+    }
+
+    const visibles = areas.slice(0, 2);
+    const ocultas = areas.slice(2);
+
+    let areasHtml = visibles.map(a => `<span style="${estiloBadgeArea}">${esc(a)}</span>`).join('');
+    if (ocultas.length > 0) {
+        const labelExtra = `+${ocultas.length} más`;
+        areasHtml += `
+            <button type="button" data-accion="areas" data-label="${esc(labelExtra)}" title="${esc(ocultas.join(', '))}"
+                style="font-size: 0.7rem; padding: 2px 8px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 999px; cursor: pointer; font-weight: 600;">
+                ${esc(labelExtra)}
+            </button>
+            <span style="display: none;">
+                ${ocultas.map(a => `<span style="${estiloBadgeArea}">${esc(a)}</span>`).join('')}
+            </span>
+        `;
+    }
+
+    div.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; width: 100%;">
+            <div style="display: flex; flex-direction: column; align-items: flex-start; text-align: left; min-width: 0; flex: 1; gap: 5px;">
+                <strong style="color: var(--azul-900); font-size: 0.92rem; line-height: 1.3; word-break: break-word;">
+                    ${esc(nombre)}
+                </strong>
+                <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 5px;">
+                    <span class="badge badge-neutro" style="font-size: 0.68rem;">${esc(zona)}</span>
+                    ${tieneMedia ? `<span class="badge badge-ok" style="font-size: 0.66rem; white-space: nowrap;">Con Video</span>` : ''}
+                </div>
+            </div>
+            <div style="display: flex; gap: 5px; align-items: center; justify-content: flex-end; flex-shrink: 0;">
+                <button type="button" class="btn btn-secondary btn-sm" data-accion="info" data-id="${ej.id}" title="Ver ficha clínica">
+                    <i class='bx bx-info-circle'></i>
+                </button>
+                ${tieneMedia ? `
+                    <button type="button" class="btn btn-secondary btn-sm" data-accion="media" data-id="${ej.id}" title="Ver video demostrativo">
+                        <i class='bx bx-video'></i>
+                    </button>
+                ` : ''}
+                <button type="button" class="btn btn-primary btn-sm" data-accion="agregar" data-id="${ej.id}" title="Añadir a la pauta" style="white-space: nowrap;">
+                    <i class='bx bx-plus'></i> Añadir
+                </button>
+            </div>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; justify-content: flex-start; align-items: center; gap: 5px; width: 100%; padding-top: 8px; border-top: 1px solid var(--gris-100); text-align: left;">
+            ${areasHtml}
+        </div>
+    `;
+    return div;
+}
+
 function filtrarYRenderizarEjercicios() {
     const inputBuscar = document.getElementById('input-buscar-ejercicio');
     const termino = inputBuscar ? inputBuscar.value.trim() : '';
     const container = document.getElementById('lista-ejercicios-disponibles');
     const noData = document.getElementById('no-ejercicios');
+    const contadorEl = document.getElementById('contador-ejercicios-pauta');
     const terminoNorm = normalizarTexto(termino);
     const areaClave = normalizarTexto(areaClinicaActual);
 
-    ejerciciosFiltrados = todosLosEjercicios
-        .filter(item => {
-            const nombre = normalizarTexto(item.nombre || item.titulo);
-            const grupo = normalizarTexto(item.zona_corporal || item.zona_cuerpo || item.grupo_muscular);
-            const listaAreasNorm = obtenerAreasEjercicio(item).map(a => normalizarTexto(a));
+    ejerciciosFiltrados = todosLosEjercicios.filter(item => {
+        const nombre = normalizarTexto(item.nombre || item.titulo);
+        const grupo = normalizarTexto(item.zona_corporal || item.zona_cuerpo || item.grupo_muscular);
+        const listaAreasNorm = obtenerAreasEjercicio(item).map(a => normalizarTexto(a));
 
-            const coincideTexto = !terminoNorm ||
-                nombre.includes(terminoNorm) ||
-                grupo.includes(terminoNorm) ||
-                listaAreasNorm.some(a => a.includes(terminoNorm));
+        const coincideTexto = !terminoNorm ||
+            nombre.includes(terminoNorm) ||
+            grupo.includes(terminoNorm) ||
+            listaAreasNorm.some(a => a.includes(terminoNorm));
 
-            let coincideZona = true;
-            if (zonaSeleccionadaActual) {
-                const claves = ALIAS_ZONAS_ANATOMICAS[zonaSeleccionadaActual] || [normalizarTexto(zonaSeleccionadaActual)];
-                coincideZona = claves.some(clave => grupo.includes(clave) || nombre.includes(clave));
-            }
+        let coincideZona = true;
+        if (zonaSeleccionadaActual) {
+            const claves = ALIAS_ZONAS_ANATOMICAS[zonaSeleccionadaActual] || [normalizarTexto(zonaSeleccionadaActual)];
+            coincideZona = claves.some(clave => grupo.includes(clave) || nombre.includes(clave));
+        }
 
-            const coincideArea = areaClinicaActual === 'todos' || listaAreasNorm.some(a => a.includes(areaClave));
+        const coincideArea = areaClinicaActual === 'todos' || listaAreasNorm.some(a => a.includes(areaClave));
+        const coincideVideo = !soloConVideoPauta || Boolean(resolverUrlMedia(item));
 
-            return coincideTexto && coincideZona && coincideArea;
-        })
-        .sort((a, b) => (a.nombre || a.titulo || '').localeCompare(b.nombre || b.titulo || '', 'es'));
+        return coincideTexto && coincideZona && coincideArea && coincideVideo;
+    });
+
+    if (contadorEl) {
+        contadorEl.textContent = `${ejerciciosFiltrados.length} de ${todosLosEjercicios.length} ejercicios`;
+    }
 
     if (!container || !noData) return;
 
@@ -275,66 +432,82 @@ function filtrarYRenderizarEjercicios() {
     container.style.display = 'flex';
     container.innerHTML = '';
 
-    const estiloBadgeArea = 'font-size: 0.7rem; padding: 2px 8px; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; border-radius: 999px; font-weight: 600;';
+    // Agrupación céfalo-caudal cuando se muestra Cuerpo Completo sin búsqueda de texto
+    if (!zonaSeleccionadaActual && !terminoNorm) {
+        const grupos = {};
+        ORDEN_ZONAS_CLINICAS.forEach(z => { grupos[z] = []; });
 
-    ejerciciosFiltrados.forEach(ej => {
-        const div = document.createElement('div');
-        div.className = 'ejercicio-item-card';
-        div.style.cssText = 'display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding: 14px 16px; text-align: left;';
+        ejerciciosFiltrados.forEach(ej => {
+            const g = obtenerGrupoZona(ej);
+            if (!grupos[g]) grupos[g] = [];
+            grupos[g].push(ej);
+        });
 
-        const nombre = ej.nombre || ej.titulo || 'Ejercicio';
-        const zona = ej.zona_corporal || ej.zona_cuerpo || ej.grupo_muscular || 'General';
-        const tieneMedia = !!resolverUrlMedia(ej);
+        ORDEN_ZONAS_CLINICAS.forEach((nombreZona, idx) => {
+            const listaZona = grupos[nombreZona];
+            if (!listaZona || listaZona.length === 0) return;
 
-        let areas = [...obtenerAreasEjercicio(ej)].sort((a, b) => a.localeCompare(b, 'es'));
-        if (areaClinicaActual !== 'todos') {
-            areas.sort((a, b) => (normalizarTexto(b).includes(areaClave) ? 1 : 0) - (normalizarTexto(a).includes(areaClave) ? 1 : 0));
-        }
-
-        const visibles = areas.slice(0, 2);
-        const ocultas = areas.slice(2);
-
-        let areasHtml = visibles.map(a => `<span style="${estiloBadgeArea}">${esc(a)}</span>`).join('');
-        if (ocultas.length > 0) {
-            const labelExtra = `+${ocultas.length} más`;
-            areasHtml += `
-                <button type="button" data-accion="areas" data-label="${esc(labelExtra)}" title="${esc(ocultas.join(', '))}"
-                    style="font-size: 0.7rem; padding: 2px 8px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 999px; cursor: pointer; font-weight: 600;">
-                    ${esc(labelExtra)}
-                </button>
-                <span style="display: none;">
-                    ${ocultas.map(a => `<span style="${estiloBadgeArea}">${esc(a)}</span>`).join('')}
+            const cabecera = document.createElement('div');
+            cabecera.style.cssText = `
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 6px 10px;
+                margin-top: ${idx === 0 ? '2px' : '12px'};
+                margin-bottom: 4px;
+                background: #f1f5f9;
+                border-left: 3px solid var(--azul-900);
+                border-radius: 6px;
+            `;
+            cabecera.innerHTML = `
+                <span style="font-size: 0.78rem; font-weight: 700; color: var(--azul-900); text-transform: uppercase; letter-spacing: 0.03em;">
+                    ${esc(nombreZona)}
+                </span>
+                <span style="font-size: 0.72rem; font-weight: 600; color: var(--gris-600);">
+                    ${listaZona.length}
                 </span>
             `;
-        }
+            container.appendChild(cabecera);
 
-        div.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%;">
-                <div style="display: flex; flex-direction: column; align-items: flex-start; text-align: left; min-width: 0; flex: 1; gap: 4px;">
-                    <strong style="color: var(--azul-900); font-size: 0.95rem; line-height: 1.25; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                        ${esc(nombre)}
-                    </strong>
-                    <span class="badge badge-neutro" style="font-size: 0.7rem;">${esc(zona)}</span>
-                </div>
-                <div style="display: flex; gap: 6px; align-items: center; justify-content: flex-end; flex-shrink: 0;">
-                    <button type="button" class="btn btn-secondary btn-sm" data-accion="media" data-id="${ej.id}"
-                        ${!tieneMedia ? 'disabled style="opacity: 0.5; cursor: not-allowed;" title="Sin demostración"' : 'title="Ver demostración"'}>
-                        <i class='bx bx-video'></i>
-                    </button>
-                    <button type="button" class="btn btn-primary btn-sm" data-accion="agregar" data-id="${ej.id}" title="Añadir a la pauta">
-                        <i class='bx bx-plus'></i> Añadir
-                    </button>
-                </div>
-            </div>
-            <div style="display: flex; flex-wrap: wrap; justify-content: flex-start; align-items: center; gap: 5px; width: 100%; padding-top: 8px; border-top: 1px solid var(--gris-100); text-align: left;">
-                ${areasHtml}
-            </div>
-        `;
-        container.appendChild(div);
+            ordenarListaEjercicios(listaZona).forEach(ej => {
+                container.appendChild(crearItemTarjetaCatalogo(ej, areaClave));
+            });
+        });
+        return;
+    }
+
+    // Vista directa cuando hay un músculo seleccionado en el mapa o texto en el buscador
+    ordenarListaEjercicios(ejerciciosFiltrados).forEach(ej => {
+        container.appendChild(crearItemTarjetaCatalogo(ej, areaClave));
     });
 }
 
-// ---------- 5. Modal multimedia ----------
+// ---------- 5. Modal multimedia e información clínica ----------
+window.verInfoEjercicio = function (ej) {
+    const modal = document.getElementById('modal-multimedia');
+    const contenedor = document.getElementById('modal-multimedia-contenedor');
+    const titulo = document.getElementById('modal-multimedia-titulo');
+    if (!modal || !contenedor) return;
+
+    const nombre = ej.nombre || ej.titulo || 'Ficha Clínica';
+    const zona = ej.zona_corporal || ej.zona_cuerpo || ej.grupo_muscular || 'General';
+    const areas = obtenerAreasEjercicio(ej);
+
+    if (titulo) titulo.textContent = nombre;
+    contenedor.innerHTML = `
+        <div style="padding: 18px 20px; text-align: left; background: #fff; width: 100%; max-height: 70vh; overflow-y: auto;">
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--gris-100);">
+                <span class="badge badge-neutro"><i class='bx bx-body'></i> ${esc(zona)}</span>
+                ${areas.map(a => `<span class="badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;"><i class='bx bx-plus-medical'></i> ${esc(a)}</span>`).join('')}
+            </div>
+            <div style="font-size: 0.9rem; color: var(--gris-700); line-height: 1.6;">
+                ${formatearDescripcionClinica(ej.descripcion)}
+            </div>
+        </div>
+    `;
+    modal.style.display = 'flex';
+};
+
 window.verMultimedia = function (nombre, url) {
     if (!url) return;
 
@@ -473,7 +646,6 @@ function renderizarCarrito() {
 }
 
 // ---------- 7. Plantillas / protocolos rápidos ----------
-// Carga una pauta (plantilla o pauta existente) en el formulario.
 function aplicarPautaAlFormulario(pauta) {
     const inputNombre = document.getElementById('pauta-nombre');
     if (inputNombre) {
@@ -515,7 +687,6 @@ async function cargarSelectorPlantillas() {
             select.appendChild(opt);
         });
 
-        // El listener se registra ANTES de usar el parámetro de la URL
         select.addEventListener('change', (e) => {
             const id = parseInt(e.target.value, 10);
             if (!id) return;
@@ -523,7 +694,6 @@ async function cargarSelectorPlantillas() {
             if (pauta) aplicarPautaAlFormulario(pauta);
         });
 
-        // ?plantilla=ID puede apuntar a una plantilla O a una pauta normal
         const idUrl = parseInt(new URLSearchParams(window.location.search).get('plantilla'), 10);
         if (idUrl) {
             const pauta = todasLasPautas.find(p => p.id === idUrl);
@@ -558,7 +728,7 @@ async function cargarSelectorPacientes() {
             const nombre = p.nombre_completo ||
                 (p.user && typeof p.user === 'object' ? `${p.user.first_name} ${p.user.last_name}`.trim() : '') ||
                 'Paciente';
-            opt.textContent = `${nombre} (${p.rut || 'Sin RUT'})`; // textContent: seguro
+            opt.textContent = `${nombre} (${p.rut || 'Sin RUT'})`;
 
             if (pacienteUrlParam && (String(userId) === String(pacienteUrlParam) || String(p.id) === String(pacienteUrlParam))) {
                 opt.selected = true;
@@ -570,7 +740,7 @@ async function cargarSelectorPacientes() {
     }
 }
 
-// 9. Envío y Creación de la Pauta / Plantilla Maestra
+// ---------- 9. Envío y Creación de la Pauta / Plantilla Maestra ----------
 function inicializarFormularioPauta() {
     const form = document.getElementById('form-guardar-pauta');
     const checkSoloPlantilla = document.getElementById('check-solo-plantilla');
@@ -579,7 +749,6 @@ function inicializarFormularioPauta() {
 
     if (!form) return;
 
-    // Si marca "Guardar exclusivamente como Plantilla Maestra", liberamos y deshabilitamos el selector de paciente
     if (checkSoloPlantilla && selectPaciente) {
         checkSoloPlantilla.addEventListener('change', () => {
             if (checkSoloPlantilla.checked) {
@@ -609,7 +778,6 @@ function inicializarFormularioPauta() {
         const titulo = inputNombre ? inputNombre.value.trim() : '';
         const textoNotas = inputDescripcion ? inputDescripcion.value.trim() : '';
 
-        // Solo exigimos paciente si NO es plantilla maestra
         if (!esSoloPlantilla && !pacienteId) {
             alert('Por favor, selecciona un paciente en el menú superior o marca la casilla para guardar como Plantilla.');
             if (selectPaciente) selectPaciente.focus();
@@ -677,7 +845,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     inicializarFormularioPauta();
     await inicializarCatalogo();
     await cargarSelectorPacientes();
-    await cargarSelectorPlantillas(); // el catálogo ya está cargado: se puede rellenar el carrito
+    await cargarSelectorPlantillas();
 
     const inputBuscar = document.getElementById('input-buscar-ejercicio');
     if (inputBuscar) inputBuscar.addEventListener('input', filtrarYRenderizarEjercicios);
