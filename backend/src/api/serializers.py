@@ -3,11 +3,12 @@ import string
 import threading
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.mail import send_mail
+from django.utils.html import escape
 from django.db import transaction
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import Perfil, Ejercicio, Pauta, PautaEjercicio, RegistroFeedback
+from .emails import enviar_email
 
 
 def validar_rut_chileno(rut: str) -> str:
@@ -69,24 +70,25 @@ class PacienteRegistroSerializer(serializers.ModelSerializer):
             }
         )
 
-        destinatarios = [getattr(settings, 'ADMIN_EMAIL', None) or 'benj.celis@duocuc.cl']
-
-        email_thread = threading.Thread(
-            target=send_mail,
-            args=(
-                f'[Kineconect] Credenciales - Paciente: {user.get_full_name()} (RUT: {rut})',
-                f'Hola,\n\nSe ha registrado el acceso a Kineconect para {user.get_full_name()}.\n\n'
-                f'Correo del paciente (para reenviar): {correo_paciente or "no indicado"}\n\n'
-                f'Datos de acceso generados:\n'
-                f'- Usuario (RUT sin puntos ni guion): {username}\n'
-                f'- Contraseña temporal: {password_temporal}\n\n'
-                f'Te recomendamos cambiar tu contraseña al ingresar a la aplicación móvil.',
-                None,
-                destinatarios
-            ),
-            kwargs={'fail_silently': False}
-        )
-        email_thread.start()
+        if correo_paciente:
+            html_content = (
+                f'<p>Hola <b>{escape(user.get_full_name())}</b>, tu cuenta en <strong>KineConnect</strong> ha sido creada exitosamente.</p>'
+                f'<p>Descarga la aplicación móvil e ingresa con los siguientes datos:</p>'
+                f'<ul>'
+                f'<li><b>Usuario (RUT sin puntos ni guión):</b> {escape(username)}</li>'
+                f'<li><b>Contraseña temporal:</b> {escape(password_temporal)}</li>'
+                f'</ul>'
+                f'<p>Te recomendamos cambiar tu contraseña una vez que ingreses a la plataforma.</p>'
+            )
+            email_thread = threading.Thread(
+                target=enviar_email,
+                args=(
+                    correo_paciente,
+                    'Tus credenciales de acceso a KineConnect',
+                    html_content
+                )
+            )
+            email_thread.start()
 
         return user
 
@@ -230,7 +232,6 @@ def _a_entero(valor, defecto):
 class PautaCreateSerializer(serializers.ModelSerializer):
     """Serializador transaccional para crear Pautas o Plantillas y su detalle en un solo POST"""
 
-    # El front puede mandar los ejercicios con cualquiera de estas dos claves.
     ejercicios = serializers.ListField(child=serializers.DictField(), required=False, write_only=True)
     ejercicios_detalle = serializers.ListField(child=serializers.DictField(), required=False, write_only=True)
 
@@ -248,7 +249,6 @@ class PautaCreateSerializer(serializers.ModelSerializer):
         read_only_fields = ('id',)
 
     def to_internal_value(self, data):
-        # Si el front manda el texto con otro nombre, lo aceptamos como 'notas'.
         if hasattr(data, 'copy'):
             data = data.copy()
         if not data.get('notas'):
