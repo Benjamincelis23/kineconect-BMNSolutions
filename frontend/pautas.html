@@ -570,6 +570,23 @@
         }[c]));
     }
 
+    function extraerEva(item) {
+        return Number(item?.nivel_dolor ?? item?.escala_dolor ?? item?.dolor_eva ?? 0);
+    }
+
+    function obtenerTokenJWT() {
+        const clavesComunes = ['access_token', 'access', 'token', 'kc_token', 'jwt'];
+        for (const k of clavesComunes) {
+            const val = localStorage.getItem(k);
+            if (val) return val.replace(/^"|"$/g, '');
+        }
+        for (let i = 0; i < localStorage.length; i++) {
+            const val = (localStorage.getItem(localStorage.key(i)) || '').replace(/^"|"$/g, '');
+            if (val.startsWith('eyJ') && val.split('.').length === 3) return val;
+        }
+        return null;
+    }
+
     function reproducirAvisoSonoro() {
         try {
             const Ctx = window.AudioContext || window.webkitAudioContext;
@@ -590,13 +607,13 @@
                 osc.stop(audioCtx.currentTime + i * 0.16 + 0.36);
             });
         } catch {
-            // El navegador bloqueó audio sin interacción previa
+            // Bloqueado hasta interacción del usuario
         }
     }
 
     function lanzarNotificacionEscritorio(alerta) {
         if (!('Notification' in window) || Notification.permission !== 'granted') return;
-        const eva = alerta.escala_dolor ?? alerta.dolor_eva ?? 6;
+        const eva = extraerEva(alerta);
         const paciente = alerta.paciente_nombre || alerta.nombre_paciente || 'Paciente';
         const pauta = alerta.pauta_titulo || alerta.titulo_pauta || 'Rutina asignada';
         new Notification(`⚠️ Alerta de Dolor EVA ${eva}/10`, {
@@ -620,16 +637,21 @@
     };
 
     async function obtenerFeedbacks() {
-        if (typeof api !== 'undefined') {
-            if (typeof api.getFeedbacks === 'function') return await api.getFeedbacks();
-            if (typeof api.request === 'function') return await api.request('/api/v1/feedback/');
-        }
-        const token = localStorage.getItem('access_token') || localStorage.getItem('token');
+        const token = obtenerTokenJWT();
         const base = window.API_BASE_URL || 'https://kineconect-bmnsolutions.onrender.com';
-        const res = await fetch(`${base}/api/v1/feedback/`, {
-            headers: token ? { Authorization: `Bearer ${token}` } : {}
-        });
-        return res.ok ? await res.json() : [];
+        const rutas = ['/api/v1/feedback/', '/api/feedback/'];
+
+        for (const ruta of rutas) {
+            try {
+                const res = await fetch(`${base}${ruta}`, {
+                    headers: token ? { Authorization: `Bearer ${token}` } : {}
+                });
+                if (res.ok) return await res.json();
+            } catch {
+                // Intenta la siguiente ruta
+            }
+        }
+        return [];
     }
 
     function renderizarBannerAlertas(alertasActivas) {
@@ -669,8 +691,9 @@
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 8px;">
-                    ${alertasActivas.map(a => {
-                        const eva = a.escala_dolor ?? a.dolor_eva ?? 6;
+                    ${alertasActivas.map((a, idx) => {
+                        const idAlerta = a.id ?? `${a.pauta}_${a.fecha_ejecucion || idx}`;
+                        const eva = extraerEva(a);
                         const paciente = a.paciente_nombre || a.nombre_paciente || 'Paciente';
                         const pauta = a.pauta_titulo || a.titulo_pauta || 'Pauta';
                         const obs = a.comentario || a.notas || 'Sin observaciones';
@@ -691,7 +714,7 @@
                                             <i class='bx bx-edit'></i> Ajustar Pauta
                                         </a>
                                     ` : ''}
-                                    <button type="button" onclick="marcarAlertaDolorRevisada('${escapar(a.id)}')" class="btn btn-primary btn-sm">
+                                    <button type="button" onclick="marcarAlertaDolorRevisada('${escapar(idAlerta)}')" class="btn btn-primary btn-sm">
                                         <i class='bx bx-check'></i> Marcar revisada
                                     </button>
                                 </div>
@@ -710,17 +733,17 @@
             const revisadas = obtenerSet(STORAGE_REVISADAS);
             const anunciadas = obtenerSet(STORAGE_ANUNCIADAS);
 
-            const alertasActivas = lista.filter(item => {
-                const eva = Number(item.escala_dolor ?? item.dolor_eva ?? 0);
-                return eva >= 6 && !revisadas.has(String(item.id));
+            const alertasActivas = lista.filter((item, idx) => {
+                const idAlerta = String(item.id ?? `${item.pauta}_${item.fecha_ejecucion || idx}`);
+                return extraerEva(item) >= 6 && !revisadas.has(idAlerta);
             });
 
             renderizarBannerAlertas(alertasActivas);
 
             if (notificarNuevas) {
                 let huboNueva = false;
-                alertasActivas.forEach(alerta => {
-                    const idStr = String(alerta.id);
+                alertasActivas.forEach((alerta, idx) => {
+                    const idStr = String(alerta.id ?? `${alerta.pauta}_${alerta.fecha_ejecucion || idx}`);
                     if (!anunciadas.has(idStr)) {
                         anunciadas.add(idStr);
                         huboNueva = true;
@@ -732,11 +755,14 @@
                     guardarSet(STORAGE_ANUNCIADAS, anunciadas);
                 }
             } else {
-                alertasActivas.forEach(a => anunciadas.add(String(a.id)));
+                alertasActivas.forEach((a, idx) => {
+                    const idStr = String(a.id ?? `${a.pauta}_${a.fecha_ejecucion || idx}`);
+                    anunciadas.add(idStr);
+                });
                 guardarSet(STORAGE_ANUNCIADAS, anunciadas);
             }
-        } catch {
-            // Falla silenciosamente si no hay red en ese ciclo
+        } catch (err) {
+            console.warn('Error verificando alertas de dolor:', err);
         }
     }
 

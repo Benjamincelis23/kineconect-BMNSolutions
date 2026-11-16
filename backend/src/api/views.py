@@ -297,7 +297,12 @@ class PautaDetailView(generics.RetrieveAPIView):
 
 
 def _notificar_alerta_dolor(feedback):
-    eva = int(getattr(feedback, 'escala_dolor', None) or getattr(feedback, 'dolor_eva', 0) or 0)
+    eva = int(
+        getattr(feedback, 'nivel_dolor', None)
+        or getattr(feedback, 'escala_dolor', None)
+        or getattr(feedback, 'dolor_eva', 0)
+        or 0
+    )
     if eva < 6:
         return
 
