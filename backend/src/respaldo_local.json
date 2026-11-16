@@ -1,0 +1,607 @@
+[
+{
+  "model": "auth.user",
+  "fields": {
+    "password": "pbkdf2_sha256$1500000$xdCuBvzxRP0i5ch0uDgQmk$brqB9e4akkXL223dommn7rK5D4sgaveGJqv0wsI7Ekw=",
+    "last_login": "2026-10-31T19:47:37.021Z",
+    "is_superuser": true,
+    "username": "palme",
+    "first_name": "",
+    "last_name": "",
+    "email": "papalme14@gmail.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-10-02T21:09:03Z",
+    "groups": [],
+    "user_permissions": [
+      [
+        "add_logentry",
+        "admin",
+        "logentry"
+      ],
+      [
+        "change_logentry",
+        "admin",
+        "logentry"
+      ],
+      [
+        "delete_logentry",
+        "admin",
+        "logentry"
+      ],
+      [
+        "view_logentry",
+        "admin",
+        "logentry"
+      ],
+      [
+        "add_ejercicio",
+        "api",
+        "ejercicio"
+      ],
+      [
+        "change_ejercicio",
+        "api",
+        "ejercicio"
+      ],
+      [
+        "delete_ejercicio",
+        "api",
+        "ejercicio"
+      ],
+      [
+        "view_ejercicio",
+        "api",
+        "ejercicio"
+      ],
+      [
+        "add_pauta",
+        "api",
+        "pauta"
+      ],
+      [
+        "change_pauta",
+        "api",
+        "pauta"
+      ],
+      [
+        "delete_pauta",
+        "api",
+        "pauta"
+      ],
+      [
+        "view_pauta",
+        "api",
+        "pauta"
+      ],
+      [
+        "add_perfil",
+        "api",
+        "perfil"
+      ],
+      [
+        "change_perfil",
+        "api",
+        "perfil"
+      ],
+      [
+        "delete_perfil",
+        "api",
+        "perfil"
+      ],
+      [
+        "view_perfil",
+        "api",
+        "perfil"
+      ],
+      [
+        "add_registrofeedback",
+        "api",
+        "registrofeedback"
+      ],
+      [
+        "change_registrofeedback",
+        "api",
+        "registrofeedback"
+      ],
+      [
+        "delete_registrofeedback",
+        "api",
+        "registrofeedback"
+      ],
+      [
+        "view_registrofeedback",
+        "api",
+        "registrofeedback"
+      ],
+      [
+        "add_group",
+        "auth",
+        "group"
+      ],
+      [
+        "change_group",
+        "auth",
+        "group"
+      ],
+      [
+        "delete_group",
+        "auth",
+        "group"
+      ],
+      [
+        "view_group",
+        "auth",
+        "group"
+      ],
+      [
+        "add_permission",
+        "auth",
+        "permission"
+      ],
+      [
+        "change_permission",
+        "auth",
+        "permission"
+      ],
+      [
+        "delete_permission",
+        "auth",
+        "permission"
+      ],
+      [
+        "view_permission",
+        "auth",
+        "permission"
+      ],
+      [
+        "add_user",
+        "auth",
+        "user"
+      ],
+      [
+        "change_user",
+        "auth",
+        "user"
+      ],
+      [
+        "delete_user",
+        "auth",
+        "user"
+      ],
+      [
+        "view_user",
+        "auth",
+        "user"
+      ],
+      [
+        "add_contenttype",
+        "contenttypes",
+        "contenttype"
+      ],
+      [
+        "change_contenttype",
+        "contenttypes",
+        "contenttype"
+      ],
+      [
+        "delete_contenttype",
+        "contenttypes",
+        "contenttype"
+      ],
+      [
+        "view_contenttype",
+        "contenttypes",
+        "contenttype"
+      ],
+      [
+        "add_session",
+        "sessions",
+        "session"
+      ],
+      [
+        "change_session",
+        "sessions",
+        "session"
+      ],
+      [
+        "delete_session",
+        "sessions",
+        "session"
+      ],
+      [
+        "view_session",
+        "sessions",
+        "session"
+      ]
+    ]
+  }
+},
+{
+  "model": "auth.user",
+  "fields": {
+    "password": "pbkdf2_sha256$1500000$8pSwwDRgYNNikqLRxaMioq$3IeQc+xlC2Z5eV7pZpZmrs3pd7YNJxgW2av2ge90qkY=",
+    "last_login": null,
+    "is_superuser": true,
+    "username": "admin",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-10-02T21:16:14Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "fields": {
+    "password": "pbkdf2_sha256$1500000$a2NunuizXv1Z8zmb8QjCkg$i9KEEhDkHxoO+EXMATzLPEvup1OBFBNxsHm9Hcb+nVc=",
+    "last_login": null,
+    "is_superuser": true,
+    "username": "administrador",
+    "first_name": "",
+    "last_name": "",
+    "email": "admin123@gmail.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-10-16T18:11:46.431Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "fields": {
+    "password": "pbkdf2_sha256$1500000$2ei502tQwTPwE7MeBhSl2o$GmCjMKDAetkGtG30ICHfQR0PUVa5KioM3+1utFhG6pM=",
+    "last_login": null,
+    "is_superuser": true,
+    "username": "adminp",
+    "first_name": "",
+    "last_name": "",
+    "email": "admin1234@gmail.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-10-16T22:36:17.128Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "fields": {
+    "password": "pbkdf2_sha256$1500000$suoZSwhV8WGgmq7yDlQrxa$ofIZ+Fl3F6fE7cvthCUVkqGg7dRSo852PjdpbIhzHis=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "21671721K",
+    "first_name": "Benjamin",
+    "last_name": "Celis Poblete",
+    "email": "papalme14@gmail.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-11-14T17:09:28.770Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "fields": {
+    "password": "pbkdf2_sha256$1500000$xKNv21KDRozDsEfZHc9LhJ$fpnOPluWeOva/23f2RAOVwFba+DrUYfer3Qgr1wwzpE=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "123456789",
+    "first_name": "palme",
+    "last_name": "Poblete",
+    "email": "1233456544@gmail.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-11-14T18:27:56.558Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "fields": {
+    "password": "pbkdf2_sha256$1500000$mdABA09B9RCYcWJo3VgH4U$MluEPbb/ZjiZQAjqnJBzDmjyjZubiKiC8ShOc4MBs1U=",
+    "last_login": "2026-11-14T20:10:50.668Z",
+    "is_superuser": true,
+    "username": "Causadmin",
+    "first_name": "",
+    "last_name": "",
+    "email": "palmexd12@gmail.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-11-14T20:10:11.331Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "04gtj8n6701mwrnansgy62dxt2xxdu6r",
+  "fields": {
+    "session_data": ".eJxVjMsOgjAQAP9lz6YpfawtR-98Q7NtdwU1kFA4Gf_dkHDQ68xk3pBo38a0N17TVKGHDi6_LFN58nyI-qD5vqiyzNs6ZXUk6rRNDUvl1-1s_wYjtRF6sLZEycgiQaoP5Fxg1iZaccg-oNbZuhhNLsawaKHYdYRUAjryeGX4fAHzwDgW:1xCkVm:vpXjFOiXBC5ytY_Hl0e-_g5YCnIHbGXS_sjVwd1Ip2U",
+    "expire_date": "2026-10-16T21:09:46.158Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "3iwcpns7sa611n374hlavs6sns91d94x",
+  "fields": {
+    "session_data": ".eJxVjMsOgjAQAP9lz6YpfawtR-98Q7NtdwU1kFA4Gf_dkHDQ68xk3pBo38a0N17TVKGHDi6_LFN58nyI-qD5vqiyzNs6ZXUk6rRNDUvl1-1s_wYjtRF6sLZEycgiQaoP5Fxg1iZaccg-oNbZuhhNLsawaKHYdYRUAjryeGX4fAHzwDgW:1xCkXY:Jg8xdeQBFCZWAmeUxDH3h3DcQVsanCJ91meFsxj8RYY",
+    "expire_date": "2026-10-16T21:11:36.874Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "8n2g4klo09c00r76efxmrqwjaxqyr80f",
+  "fields": {
+    "session_data": ".eJxVjMsOgjAQAP9lz6YpfawtR-98Q7NtdwU1kFA4Gf_dkHDQ68xk3pBo38a0N17TVKGHDi6_LFN58nyI-qD5vqiyzNs6ZXUk6rRNDUvl1-1s_wYjtRF6sLZEycgiQaoP5Fxg1iZaccg-oNbZuhhNLsawaKHYdYRUAjryeGX4fAHzwDgW:1xHrLv:_byHXFQ-yBbkRgmpqF3zLMpJWKL04B46cykuZavLexk",
+    "expire_date": "2026-10-30T23:28:43.021Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "8nh6u1ye2lvmb6a266eqsy2g94ga3r09",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQAP-yZ0OgWyj06N03kAUWqRpISnsy_t006UGvM5N5g6d9K37vvPolwQyo4fILA8Un18OkB9V7E7HVbV2COBJx2i5uLfHrerZ_g0K9wAzWKaIknTURbcyZ85DViFKRQ6NsSJFYTpaC0RyD0RMrHiTaMSiJCRE-XxmtOCw:1xSK5K:N6PHkgGOMgfk3TQuzSc46NVlrbXc7ARtfsds1OJhFcw",
+    "expire_date": "2026-11-28T20:10:50.670Z"
+  }
+},
+{
+  "model": "api.perfil",
+  "pk": 1,
+  "fields": {
+    "user": [
+      "palme"
+    ],
+    "rut": "123456789",
+    "rol": "KINE",
+    "kinesiologo_asignado": null
+  }
+},
+{
+  "model": "api.perfil",
+  "pk": 3,
+  "fields": {
+    "user": [
+      "adminp"
+    ],
+    "rut": "216717211",
+    "rol": "KINE",
+    "kinesiologo_asignado": null
+  }
+},
+{
+  "model": "api.perfil",
+  "pk": 30,
+  "fields": {
+    "user": [
+      "21671721K"
+    ],
+    "rut": "21671721-K",
+    "rol": "PACIENTE",
+    "kinesiologo_asignado": [
+      "administrador"
+    ]
+  }
+},
+{
+  "model": "api.perfil",
+  "pk": 31,
+  "fields": {
+    "user": [
+      "administrador"
+    ],
+    "rut": "135554928",
+    "rol": "KINE",
+    "kinesiologo_asignado": null
+  }
+},
+{
+  "model": "api.perfil",
+  "pk": 32,
+  "fields": {
+    "user": [
+      "123456789"
+    ],
+    "rut": "12345678-9",
+    "rol": "PACIENTE",
+    "kinesiologo_asignado": [
+      "administrador"
+    ]
+  }
+},
+{
+  "model": "api.areaclinica",
+  "pk": 1,
+  "fields": {
+    "nombre": "Rehabilitación General"
+  }
+},
+{
+  "model": "api.areaclinica",
+  "pk": 2,
+  "fields": {
+    "nombre": "Traumatología / Lesiones"
+  }
+},
+{
+  "model": "api.areaclinica",
+  "pk": 3,
+  "fields": {
+    "nombre": "Inmunología / VIH-SIDA"
+  }
+},
+{
+  "model": "api.areaclinica",
+  "pk": 4,
+  "fields": {
+    "nombre": "Neurorehabilitación"
+  }
+},
+{
+  "model": "api.areaclinica",
+  "pk": 5,
+  "fields": {
+    "nombre": "Post-Operatorio"
+  }
+},
+{
+  "model": "api.areaclinica",
+  "pk": 6,
+  "fields": {
+    "nombre": "Cardiorrespiratorio"
+  }
+},
+{
+  "model": "api.areaclinica",
+  "pk": 7,
+  "fields": {
+    "nombre": "Adulto Mayor / Geriatría"
+  }
+},
+{
+  "model": "api.ejercicio",
+  "pk": 3,
+  "fields": {
+    "nombre": "Bird Dog",
+    "descripcion": "Extensión alterna de brazo y pierna en cuadrupedia para estabilidad lumbar.",
+    "zona_cuerpo": "Zona Lumbar / Core",
+    "video_url": null,
+    "video": "videos_ejercicios/bird_dog.mp4",
+    "imagen": "",
+    "gif_url": null,
+    "area_clinica": []
+  }
+},
+{
+  "model": "api.ejercicio",
+  "pk": 4,
+  "fields": {
+    "nombre": "Clamshell (Almeja)",
+    "descripcion": "Rotación externa de cadera en decúbito lateral para fortalecimiento de glúteo medio.",
+    "zona_cuerpo": "Cadera / Glúteos",
+    "video_url": null,
+    "video": "videos_ejercicios/clamshell.mp4",
+    "imagen": "",
+    "gif_url": null,
+    "area_clinica": [
+      7,
+      6,
+      3,
+      4,
+      5,
+      1,
+      2
+    ]
+  }
+},
+{
+  "model": "api.pauta",
+  "pk": 16,
+  "fields": {
+    "titulo": "prueba 1",
+    "kinesiologo": [
+      "administrador"
+    ],
+    "paciente": [
+      "21671721K"
+    ],
+    "es_plantilla": false,
+    "activo": true,
+    "creado_en": "2026-11-14T18:02:32.615Z",
+    "notas": ""
+  }
+},
+{
+  "model": "api.pauta",
+  "pk": 17,
+  "fields": {
+    "titulo": "[Protocolo] p2",
+    "kinesiologo": [
+      "administrador"
+    ],
+    "paciente": null,
+    "es_plantilla": true,
+    "activo": true,
+    "creado_en": "2026-11-14T18:04:43.147Z",
+    "notas": ""
+  }
+},
+{
+  "model": "api.pauta",
+  "pk": 18,
+  "fields": {
+    "titulo": "prueba 2",
+    "kinesiologo": [
+      "administrador"
+    ],
+    "paciente": [
+      "21671721K"
+    ],
+    "es_plantilla": false,
+    "activo": true,
+    "creado_en": "2026-11-14T18:26:58.137Z",
+    "notas": ""
+  }
+},
+{
+  "model": "api.pautaejercicio",
+  "pk": 26,
+  "fields": {
+    "pauta": 16,
+    "ejercicio": 3,
+    "series": 3,
+    "repeticiones": 12,
+    "tiempo_descanso_segundos": 60
+  }
+},
+{
+  "model": "api.pautaejercicio",
+  "pk": 27,
+  "fields": {
+    "pauta": 17,
+    "ejercicio": 3,
+    "series": 3,
+    "repeticiones": 12,
+    "tiempo_descanso_segundos": 60
+  }
+},
+{
+  "model": "api.pautaejercicio",
+  "pk": 28,
+  "fields": {
+    "pauta": 17,
+    "ejercicio": 4,
+    "series": 3,
+    "repeticiones": 12,
+    "tiempo_descanso_segundos": 60
+  }
+},
+{
+  "model": "api.pautaejercicio",
+  "pk": 29,
+  "fields": {
+    "pauta": 18,
+    "ejercicio": 4,
+    "series": 4,
+    "repeticiones": 12,
+    "tiempo_descanso_segundos": 60
+  }
+},
+{
+  "model": "api.pautaejercicio",
+  "pk": 30,
+  "fields": {
+    "pauta": 18,
+    "ejercicio": 3,
+    "series": 3,
+    "repeticiones": 12,
+    "tiempo_descanso_segundos": 60
+  }
+}
+]

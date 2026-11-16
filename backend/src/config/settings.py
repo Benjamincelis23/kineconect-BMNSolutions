@@ -145,10 +145,11 @@ EMAIL_HOST_USER = 'resend'
 EMAIL_HOST_PASSWORD = os.environ.get('RESEND_API_KEY')
 DEFAULT_FROM_EMAIL = os.environ.get('RESEND_FROM', 'Kineconect <onboarding@resend.dev>')
 
-RESEND_API_KEY = os.environ.get('RESEND_API_KEY')
-RESEND_FROM = os.environ.get('RESEND_FROM', 'Kineconect <onboarding@resend.dev>')
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
+RESEND_FROM = os.environ.get('RESEND_FROM', 'KineConnect <onboarding@resend.dev>')
+ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'benj.celis@duocuc.cl')
 PUBLIC_BASE_URL = os.environ.get('PUBLIC_BASE_URL', 'http://127.0.0.1:8000')
-ADMIN_EMAIL = 'benj.celis@duocuc.cl'
+EMAIL_RELAY_GMAIL = os.environ.get('EMAIL_RELAY_GMAIL', 'False') == 'True'
 
 # CORS y CSRF
 CORS_ALLOW_ALL_ORIGINS = True
