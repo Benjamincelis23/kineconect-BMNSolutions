@@ -14,19 +14,17 @@ from django.http import HttpResponse
 from django.utils import timezone
 from django.utils.html import escape
 from django.views.decorators.csrf import csrf_exempt
-from .emails import enviar_email_en_segundo_plano
-from django.utils.html import escape
 
 from rest_framework import generics, permissions, serializers, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError as DRFValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .emails import enviar_email
+from .emails import enviar_email, enviar_email_en_segundo_plano
 from .models import Ejercicio, Pauta, Perfil, RegistroFeedback, SolicitudRegistro
 from .serializers import (
     EjercicioSerializer,
@@ -296,6 +294,22 @@ class PautaDetailView(generics.RetrieveAPIView):
         )
 
 
+def _validar_limite_sesiones(pauta):
+    """Impide registrar más sesiones si el paciente ya cumplió su meta semanal."""
+    hace_7_dias = timezone.now() - timedelta(days=7)
+    sesiones_semana = RegistroFeedback.objects.filter(
+        pauta=pauta,
+        fecha_ejecucion__gte=hace_7_dias,
+    ).count()
+
+    meta_semanal = getattr(pauta, 'frecuencia_semanal', None) or 3
+    if sesiones_semana >= meta_semanal:
+        raise DRFValidationError(
+            f'Ya cumpliste las {meta_semanal} sesiones prescritas para esta semana. '
+            'Descansa y espera el siguiente ciclo o una nueva indicación de tu kinesiólogo.'
+        )
+
+
 def _notificar_alerta_dolor(feedback):
     eva = int(
         getattr(feedback, 'nivel_dolor', None)
@@ -342,8 +356,10 @@ class FeedbackCreateView(generics.CreateAPIView):
         pauta = serializer.validated_data['pauta']
         if pauta.paciente_id != self.request.user.id:
             raise PermissionDenied('Esa pauta no es tuya.')
+        _validar_limite_sesiones(pauta)
         feedback = serializer.save()
         _notificar_alerta_dolor(feedback)
+
 
 class CambiarPasswordView(APIView):
     permission_classes = [IsAuthenticated]
@@ -475,7 +491,7 @@ class PautaViewSet(viewsets.ModelViewSet):
     permission_classes = [SoloLecturaParaPacientes]
 
     def get_serializer_class(self):
-        if self.action == 'create':
+        if self.action in ['create', 'update', 'partial_update']:
             return PautaCreateSerializer
         if self.action == 'list':
             return PautaListSerializer
@@ -509,6 +525,25 @@ class PautaViewSet(viewsets.ModelViewSet):
             qs = qs.filter(es_plantilla=es_plantilla_param.lower() in ['true', '1'])
 
         return qs
+
+    def perform_update(self, serializer):
+        user = self.request.user
+        instance = serializer.instance
+        if not _es_admin(user) and instance.kinesiologo_id and instance.kinesiologo_id != user.id:
+            raise PermissionDenied('Solo el kinesiólogo que creó esta pauta puede modificarla.')
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        user = self.request.user
+        if not _es_admin(user) and instance.kinesiologo_id and instance.kinesiologo_id != user.id:
+            raise PermissionDenied('Solo el kinesiólogo que creó esta pauta puede eliminarla.')
+
+        # Si ya tiene reportes clínicos asociados, la desactiva para no perder trazabilidad
+        if RegistroFeedback.objects.filter(pauta=instance).exists():
+            instance.activo = False
+            instance.save(update_fields=['activo'])
+        else:
+            instance.delete()
 
     @action(detail=False, methods=['get'], url_path='alertas-abandono')
     def alertas_abandono(self, request):
@@ -545,8 +580,6 @@ class RegistroFeedbackViewSet(viewsets.ModelViewSet):
         pauta = serializer.validated_data['pauta']
         if _rol(user) == 'PACIENTE' and not _es_admin(user) and pauta.paciente_id != user.id:
             raise PermissionDenied('Esa pauta no es tuya.')
-        serializer.save()
-
-    def perform_create(self, serializer):
+        _validar_limite_sesiones(pauta)
         feedback = serializer.save()
         _notificar_alerta_dolor(feedback)
