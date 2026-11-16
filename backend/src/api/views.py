@@ -570,12 +570,22 @@ class PautaViewSet(viewsets.ModelViewSet):
         if not _es_admin(user) and instance.kinesiologo_id and instance.kinesiologo_id != user.id:
             raise PermissionDenied('Solo el kinesiólogo que creó esta pauta puede eliminarla.')
 
-        # Si ya tiene reportes clínicos asociados, la desactiva para no perder trazabilidad
-        if RegistroFeedback.objects.filter(pauta=instance).exists():
+        forzar = self.request.query_params.get('forzar', '').lower() in ('true', '1', 'yes')
+
+        # Si ya estaba archivada o se pide borrado forzado, elimina reportes y pauta por completo
+        if forzar or not instance.activo:
+            RegistroFeedback.objects.filter(pauta=instance).delete()
+            instance.delete()
+        elif RegistroFeedback.objects.filter(pauta=instance).exists():
+            # Primer borrado con historial clínico: archiva para conservar trazabilidad
             instance.activo = False
             instance.save(update_fields=['activo'])
         else:
             instance.delete()
+
+    @action(detail=False, methods=['get'], url_path='alertas-abandono')
+    def alertas_abandono(self, request):
+        return Response(_calcular_alertas_abandono(request.user), status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'], url_path='alertas-abandono')
     def alertas_abandono(self, request):
