@@ -14,6 +14,8 @@ from django.http import HttpResponse
 from django.utils import timezone
 from django.utils.html import escape
 from django.views.decorators.csrf import csrf_exempt
+from .emails import enviar_email_en_segundo_plano
+from django.utils.html import escape
 
 from rest_framework import generics, permissions, serializers, status, viewsets
 from rest_framework.decorators import action
@@ -294,6 +296,39 @@ class PautaDetailView(generics.RetrieveAPIView):
         )
 
 
+def _notificar_alerta_dolor(feedback):
+    eva = int(getattr(feedback, 'escala_dolor', None) or getattr(feedback, 'dolor_eva', 0) or 0)
+    if eva < 6:
+        return
+
+    pauta = feedback.pauta
+    kine = getattr(pauta, 'kinesiologo', None)
+    admin_email = getattr(settings, 'ADMIN_EMAIL', 'benj.celis@duocuc.cl')
+    destino_kine = (getattr(kine, 'email', '') or '').strip() or admin_email
+
+    paciente = pauta.paciente
+    nombre_pac = f"{paciente.first_name} {paciente.last_name}".strip() or paciente.username
+    observacion = (
+        getattr(feedback, 'comentario', '')
+        or getattr(feedback, 'notas', '')
+        or 'Sin observaciones adicionales'
+    )
+
+    cuerpo = (
+        f"<p><strong>Alerta Clínica KineConnect:</strong> El paciente <b>{escape(nombre_pac)}</b> "
+        f"reportó dolor <b>EVA {eva}/10</b> en la pauta <i>{escape(pauta.titulo)}</i>.</p>"
+        f"<p><b>Sensación / Observación:</b> {escape(observacion)}</p>"
+        f"<p>Ingresa al portal web para revisar su evolución o ajustar su pauta.</p>"
+    )
+    html_relay = f"<p>PARA: {escape(destino_kine)}</p><p>KC-INICIO</p>{cuerpo}<p>KC-FIN</p>"
+
+    enviar_email_en_segundo_plano(
+        admin_email,
+        f"[KC-ENVIAR] Alerta Dolor EVA {eva}/10 - {nombre_pac}",
+        html_relay,
+    )
+
+
 class FeedbackCreateView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = RegistroFeedbackSerializer
@@ -302,8 +337,8 @@ class FeedbackCreateView(generics.CreateAPIView):
         pauta = serializer.validated_data['pauta']
         if pauta.paciente_id != self.request.user.id:
             raise PermissionDenied('Esa pauta no es tuya.')
-        serializer.save()
-
+        feedback = serializer.save()
+        _notificar_alerta_dolor(feedback)
 
 class CambiarPasswordView(APIView):
     permission_classes = [IsAuthenticated]
