@@ -535,33 +535,35 @@ class PautaViewSet(viewsets.ModelViewSet):
             raise PermissionDenied('Solo el kinesiólogo que creó esta pauta puede modificarla.')
 
         data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
-        ejercicios_data = data.pop('ejercicios', None)
+        ejercicios_data = data.get('ejercicios', None)
 
         with transaction.atomic():
             serializer = self.get_serializer(instance, data=data, partial=partial)
             serializer.is_valid(raise_exception=True)
-            serializer.save()
+            instance = serializer.save()
 
-            if ejercicios_data is not None and hasattr(instance, 'ejercicios_detalle'):
+            # Si el serializer no reemplazó los detalles por sí solo, los sincroniza explícitamente
+            if isinstance(ejercicios_data, list) and hasattr(instance, 'ejercicios_detalle'):
                 DetalleModel = instance.ejercicios_detalle.model
-                instance.ejercicios_detalle.all().delete()
-                campos_validos = {f.name for f in DetalleModel._meta.get_fields()}
-                for idx, item in enumerate(ejercicios_data):
-                    ej_id = item.get('ejercicio') or item.get('ejercicio_id')
-                    if not ej_id:
-                        continue
-                    kwargs_det = {'pauta': instance}
-                    if 'ejercicio_id' in campos_validos or 'ejercicio' in campos_validos:
-                        kwargs_det['ejercicio_id'] = int(ej_id)
-                    if 'series' in campos_validos:
-                        kwargs_det['series'] = int(item.get('series', 3))
-                    if 'repeticiones' in campos_validos:
-                        kwargs_det['repeticiones'] = int(item.get('repeticiones', 12))
-                    if 'tiempo_descanso_segundos' in campos_validos:
-                        kwargs_det['tiempo_descanso_segundos'] = int(item.get('tiempo_descanso_segundos', 60))
-                    if 'orden' in campos_validos:
-                        kwargs_det['orden'] = int(item.get('orden', idx + 1))
-                    DetalleModel.objects.create(**kwargs_det)
+                if instance.ejercicios_detalle.count() != len(ejercicios_data):
+                    instance.ejercicios_detalle.all().delete()
+                    campos_validos = {f.name for f in DetalleModel._meta.get_fields()}
+                    for idx, item in enumerate(ejercicios_data):
+                        ej_id = item.get('ejercicio') or item.get('ejercicio_id')
+                        if not ej_id:
+                            continue
+                        kwargs_det = {'pauta': instance}
+                        if 'ejercicio_id' in campos_validos or 'ejercicio' in campos_validos:
+                            kwargs_det['ejercicio_id'] = int(ej_id)
+                        if 'series' in campos_validos:
+                            kwargs_det['series'] = int(item.get('series', 3))
+                        if 'repeticiones' in campos_validos:
+                            kwargs_det['repeticiones'] = int(item.get('repeticiones', 12))
+                        if 'tiempo_descanso_segundos' in campos_validos:
+                            kwargs_det['tiempo_descanso_segundos'] = int(item.get('tiempo_descanso_segundos', 60))
+                        if 'orden' in campos_validos:
+                            kwargs_det['orden'] = int(item.get('orden', idx + 1))
+                        DetalleModel.objects.create(**kwargs_det)
 
         return Response(PautaDetailSerializer(instance, context={'request': request}).data)
 
