@@ -58,12 +58,34 @@ body {
     color: var(--gris-900);
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
 }
 
 /* App Shell Layout */
 .app-shell {
     display: flex;
     min-height: 100vh;
+}
+
+/* Backdrop para menú móvil */
+.btn-close-sidebar-mobile {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.08);
+    color: #e2e8f0;
+    font-size: 1.35rem;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.btn-close-sidebar-mobile:hover {
+    background: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
 }
 
 /* Sidebar */
@@ -100,6 +122,7 @@ body {
     padding: 16px 12px;
     gap: 6px;
     flex: 1;
+    overflow-y: auto;
 }
 
 .sidebar nav a {
@@ -165,6 +188,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
     position: sticky;
     top: 0;
     z-index: 40;
@@ -189,6 +213,7 @@ body {
     display: flex;
     align-items: center;
     gap: 6px;
+    white-space: nowrap;
 }
 
 .content {
@@ -342,6 +367,7 @@ body {
     transition: all 0.2s ease;
     outline: none;
     font-family: inherit;
+    max-width: 100%;
 }
 
 .field input:focus,
@@ -585,6 +611,10 @@ tbody tr:hover {
 @media (max-width: 1200px) {
     .pauta-builder-grid {
         grid-template-columns: 1fr;
+    }
+
+    .carrito-card {
+        position: static !important;
     }
 }
 
@@ -838,9 +868,28 @@ tbody tr:hover {
     gap: 20px;
 }
 
+.btn-close-sidebar-mobile {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.08);
+    color: #e2e8f0;
+    font-size: 1.35rem;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
 @media (max-width: 768px) {
     .grid-dos-columnas {
         grid-template-columns: 1fr;
+    }
+
+    .btn-close-sidebar-mobile {
+        display: inline-flex;
     }
 }
 
@@ -951,12 +1000,9 @@ tbody tr:hover {
     }
 }
 
-
 /* ==========================================================================
-   Modo Oscuro 
+   Modo Oscuro
    ========================================================================== */
-
-/* Variables para Modo Oscuro */
 html[data-theme="dark"] {
     --azul-950: #030712;
     --azul-900: #38bdf8;
@@ -988,7 +1034,6 @@ html[data-theme="dark"] {
     --ambar-500: #fbbf24;
 }
 
-/* Transiciones suaves al alternar temas */
 body,
 .card,
 .topbar,
@@ -1005,7 +1050,6 @@ table td,
     transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
 }
 
-/* Reglas visuales específicas del tema oscuro */
 html[data-theme="dark"] body {
     background-color: #0b1120;
     color: #f1f5f9;
@@ -1230,7 +1274,7 @@ html[data-theme="dark"] .empty-text {
     transition: margin-left 0.3s ease, width 0.3s ease;
 }
 
-/* Ocultar barra lateral */
+/* Ocultar barra lateral en escritorio */
 .sidebar.is-collapsed {
     transform: translateX(-100%);
     position: absolute;
@@ -1260,6 +1304,7 @@ html[data-theme="dark"] .empty-text {
     left: 0;
     width: 100vw;
     height: 100vh;
+    padding: 16px;
     background: rgba(0, 0, 0, 0.65);
     display: flex;
     justify-content: center;
@@ -1272,6 +1317,8 @@ html[data-theme="dark"] .empty-text {
     background: var(--bg-card, #ffffff);
     border-radius: 12px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    max-height: 92vh;
+    overflow-y: auto;
 }
 
 .kc-logo-sidebar {
@@ -1298,4 +1345,172 @@ html[data-theme="dark"] .empty-text {
     margin-bottom: 0;
     font-size: 1.35rem;
     line-height: 1;
+}
+
+/* ==========================================================================
+   ADAPTACIÓN RESPONSIVE PARA TELÉFONOS Y TABLETS
+   ========================================================================== */
+@media (max-width: 768px) {
+    /* Drawer lateral flotante en móvil */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 265px;
+        max-width: 82vw;
+        height: 100dvh;
+        z-index: 1000;
+        transform: translateX(-105%);
+        box-shadow: 12px 0 32px rgba(0, 0, 0, 0.45);
+    }
+
+    .sidebar.is-open {
+        transform: translateX(0);
+    }
+
+    .sidebar.is-collapsed {
+        position: fixed;
+        transform: translateX(-105%);
+    }
+
+    /* Cabecera superior compacta */
+    .topbar {
+        padding: 12px 16px;
+    }
+
+    .topbar h1,
+    .topbar-title {
+        font-size: 1.02rem !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .user-tag {
+        padding: 5px 10px;
+        font-size: 0.78rem;
+        max-width: 125px;
+    }
+
+    .user-tag span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Contenedor y tarjetas más cómodas */
+    .content {
+        padding: 16px;
+    }
+
+    .card {
+        padding: 16px;
+        border-radius: 14px;
+    }
+
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+
+    .page-header h2 {
+        font-size: 1.28rem;
+    }
+
+    .page-header p {
+        font-size: 0.86rem;
+    }
+
+    .header-pacientes {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+
+    /* Tablas con celdas compactas y scroll horizontal fluido */
+    th {
+        padding: 10px 12px;
+        font-size: 0.74rem;
+        white-space: nowrap;
+    }
+
+    td {
+        padding: 11px 12px;
+        font-size: 0.84rem;
+    }
+
+    /* Barra de herramientas y selectores en crear_pauta */
+    .biomecanico-toolbar {
+        padding: 14px;
+    }
+
+    .biomecanico-group-wrapper,
+    .biomecanico-toolbar-inner > div {
+        min-width: 100% !important;
+        width: 100%;
+    }
+
+    .biomecanico-toolbar-inner .field {
+        min-width: 100% !important;
+        width: 100%;
+    }
+
+    .mapa-svg-container {
+        min-height: 340px;
+        padding: 12px 8px;
+    }
+
+    #svg-anatomia {
+        max-height: 330px !important;
+    }
+
+    .ejercicio-item-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .ejercicio-item-card button,
+    .ejercicio-item-card > div:last-child {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    /* Modales adaptados al ancho del teléfono */
+    .modal-overlay {
+        padding: 10px;
+    }
+
+    .modal-card {
+        width: 96% !important;
+        max-width: 96% !important;
+        padding: 16px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .login-card {
+        padding: 26px 20px;
+    }
+
+    .login-card .brand {
+        font-size: 1.55rem;
+    }
+
+    .acciones-registro,
+    .form-actions-full {
+        flex-direction: column;
+    }
+
+    .acciones-registro .btn,
+    .form-actions-full .btn {
+        width: 100%;
+    }
+
+    .user-tag span {
+        display: none;
+    }
 }
