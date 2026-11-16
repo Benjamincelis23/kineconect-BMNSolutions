@@ -80,6 +80,8 @@
                 <div class="card" style="margin-bottom: 24px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
                         <h3 style="margin: 0; font-size: 1.05rem; color: var(--azul-900); display: flex; align-items: center; gap: 8px;">
+                            <!-- BANNER DE ALERTAS DE DOLOR ACTIVAS (EVA >= 6) -->
+<div id="contenedor-alertas-dolor" style="display: none; margin-bottom: 20px;"></div>
                             <i class='bx bx-pulse' style="color: var(--rojo-500);"></i> Evaluaciones de Dolor y Ejecución (App Móvil)
                         </h3>
 
@@ -544,6 +546,206 @@
             cargarTodo();
         });
     </script>
+    <script>
+(function iniciarMonitorAlertasDolor() {
+    const STORAGE_REVISADAS = 'kc_alertas_dolor_revisadas';
+    const STORAGE_ANUNCIADAS = 'kc_alertas_dolor_anunciadas';
+    let audioCtx = null;
+
+    function obtenerSet(key) {
+        try {
+            return new Set(JSON.parse(localStorage.getItem(key) || '[]'));
+        } catch {
+            return new Set();
+        }
+    }
+
+    function guardarSet(key, set) {
+        localStorage.setItem(key, JSON.stringify([...set]));
+    }
+
+    function escapar(txt) {
+        return String(txt ?? '').replace(/[&<>"']/g, c => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[c]));
+    }
+
+    function reproducirAvisoSonoro() {
+        try {
+            const Ctx = window.AudioContext || window.webkitAudioContext;
+            if (!Ctx) return;
+            if (!audioCtx) audioCtx = new Ctx();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            [880, 1174.66].forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.18, audioCtx.currentTime + i * 0.16);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.16 + 0.35);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(audioCtx.currentTime + i * 0.16);
+                osc.stop(audioCtx.currentTime + i * 0.16 + 0.36);
+            });
+        } catch {
+            // El navegador bloqueó audio sin interacción previa
+        }
+    }
+
+    function lanzarNotificacionEscritorio(alerta) {
+        if (!('Notification' in window) || Notification.permission !== 'granted') return;
+        const eva = alerta.escala_dolor ?? alerta.dolor_eva ?? 6;
+        const paciente = alerta.paciente_nombre || alerta.nombre_paciente || 'Paciente';
+        const pauta = alerta.pauta_titulo || alerta.titulo_pauta || 'Rutina asignada';
+        new Notification(`⚠️ Alerta de Dolor EVA ${eva}/10`, {
+            body: `${paciente} reportó dolor severo en "${pauta}".`,
+        });
+    }
+
+    window.activarAvisosNavegador = async function () {
+        reproducirAvisoSonoro();
+        if ('Notification' in window && Notification.permission === 'default') {
+            await Notification.requestPermission();
+        }
+        verificarAlertasDolor(false);
+    };
+
+    window.marcarAlertaDolorRevisada = function (id) {
+        const revisadas = obtenerSet(STORAGE_REVISADAS);
+        revisadas.add(String(id));
+        guardarSet(STORAGE_REVISADAS, revisadas);
+        verificarAlertasDolor(false);
+    };
+
+    async function obtenerFeedbacks() {
+        if (typeof api !== 'undefined') {
+            if (typeof api.getFeedbacks === 'function') return await api.getFeedbacks();
+            if (typeof api.request === 'function') return await api.request('/api/v1/feedback/');
+        }
+        const token = localStorage.getItem('access_token') || localStorage.getItem('token');
+        const base = window.API_BASE_URL || 'https://kineconect-bmnsolutions.onrender.com';
+        const res = await fetch(`${base}/api/v1/feedback/`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        return res.ok ? await res.json() : [];
+    }
+
+    function renderizarBannerAlertas(alertasActivas) {
+        const cont = document.getElementById('contenedor-alertas-dolor');
+        if (!cont) return;
+
+        if (alertasActivas.length === 0) {
+            cont.style.display = 'none';
+            cont.innerHTML = '';
+            return;
+        }
+
+        const permisoPendiente = 'Notification' in window && Notification.permission !== 'granted';
+
+        cont.style.display = 'block';
+        cont.innerHTML = `
+            <div style="background: #fef2f2; border: 1.5px solid #fca5a5; border-left: 6px solid #dc2626; border-radius: 14px; padding: 16px 18px; box-shadow: 0 4px 14px rgba(220,38,38,0.08);">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="width: 34px; height: 34px; border-radius: 10px; background: #fee2e2; color: #dc2626; display: inline-flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                            <i class='bx bx-bell-ring bx-tada'></i>
+                        </span>
+                        <div>
+                            <strong style="color: #991b1b; font-size: 0.98rem;">
+                                ${alertasActivas.length} ${alertasActivas.length === 1 ? 'Alerta Clínica de Dolor Activa' : 'Alertas Clínicas de Dolor Activas'} (EVA ≥ 6)
+                            </strong>
+                            <p style="margin: 2px 0 0; font-size: 0.8rem; color: #b91c1c;">
+                                Requieren revisión clínica o ajuste de carga en la pauta del paciente.
+                            </p>
+                        </div>
+                    </div>
+                    ${permisoPendiente ? `
+                        <button type="button" onclick="activarAvisosNavegador()" class="btn btn-sm" style="background: #dc2626; color: #fff; border: none;">
+                            <i class='bx bx-volume-full'></i> Activar sonido y avisos de escritorio
+                        </button>
+                    ` : ''}
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    ${alertasActivas.map(a => {
+                        const eva = a.escala_dolor ?? a.dolor_eva ?? 6;
+                        const paciente = a.paciente_nombre || a.nombre_paciente || 'Paciente';
+                        const pauta = a.pauta_titulo || a.titulo_pauta || 'Pauta';
+                        const obs = a.comentario || a.notas || 'Sin observaciones';
+                        const pacId = a.paciente_id || a.paciente || '';
+                        return `
+                            <div style="background: #ffffff; border: 1px solid #fecaca; border-radius: 10px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                                <div>
+                                    <span style="background: #dc2626; color: #fff; font-size: 0.74rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; margin-right: 6px;">
+                                        EVA ${escapar(eva)}/10
+                                    </span>
+                                    <strong style="color: #0f172a; font-size: 0.88rem;">${escapar(paciente)}</strong>
+                                    <span style="color: #64748b; font-size: 0.82rem;"> • ${escapar(pauta)}</span>
+                                    <div style="font-size: 0.8rem; color: #475569; margin-top: 3px;">"${escapar(obs)}"</div>
+                                </div>
+                                <div style="display: flex; gap: 6px;">
+                                    ${pacId ? `
+                                        <a href="crear_pauta.html?paciente=${encodeURIComponent(pacId)}" class="btn btn-secondary btn-sm">
+                                            <i class='bx bx-edit'></i> Ajustar Pauta
+                                        </a>
+                                    ` : ''}
+                                    <button type="button" onclick="marcarAlertaDolorRevisada('${escapar(a.id)}')" class="btn btn-primary btn-sm">
+                                        <i class='bx bx-check'></i> Marcar revisada
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    async function verificarAlertasDolor(notificarNuevas = true) {
+        try {
+            const raw = await obtenerFeedbacks();
+            const lista = Array.isArray(raw) ? raw : (raw?.results || []);
+            const revisadas = obtenerSet(STORAGE_REVISADAS);
+            const anunciadas = obtenerSet(STORAGE_ANUNCIADAS);
+
+            const alertasActivas = lista.filter(item => {
+                const eva = Number(item.escala_dolor ?? item.dolor_eva ?? 0);
+                return eva >= 6 && !revisadas.has(String(item.id));
+            });
+
+            renderizarBannerAlertas(alertasActivas);
+
+            if (notificarNuevas) {
+                let huboNueva = false;
+                alertasActivas.forEach(alerta => {
+                    const idStr = String(alerta.id);
+                    if (!anunciadas.has(idStr)) {
+                        anunciadas.add(idStr);
+                        huboNueva = true;
+                        lanzarNotificacionEscritorio(alerta);
+                    }
+                });
+                if (huboNueva) {
+                    reproducirAvisoSonoro();
+                    guardarSet(STORAGE_ANUNCIADAS, anunciadas);
+                }
+            } else {
+                alertasActivas.forEach(a => anunciadas.add(String(a.id)));
+                guardarSet(STORAGE_ANUNCIADAS, anunciadas);
+            }
+        } catch {
+            // Falla silenciosamente si no hay red en ese ciclo
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        verificarAlertasDolor(true);
+        setInterval(() => verificarAlertasDolor(true), 45000);
+    });
+})();
+</script>
 </body>
 
 </html>

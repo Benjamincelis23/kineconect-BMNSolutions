@@ -541,3 +541,7 @@ class RegistroFeedbackViewSet(viewsets.ModelViewSet):
         if _rol(user) == 'PACIENTE' and not _es_admin(user) and pauta.paciente_id != user.id:
             raise PermissionDenied('Esa pauta no es tuya.')
         serializer.save()
+
+    def perform_create(self, serializer):
+        feedback = serializer.save()
+        _notificar_alerta_dolor(feedback)
