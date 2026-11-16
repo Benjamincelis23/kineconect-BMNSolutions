@@ -77,11 +77,13 @@
                 </div>
 
                 <!-- SECCIÓN 1: EVALUACIONES DE DOLOR -->
+                 <!-- BANNER DE ALERTAS DE DOLOR ACTIVAS (EVA >= 6) -->
+<div id="contenedor-alertas-dolor" style="display: none; width: 100%; margin-bottom: 18px;"></div>
                 <div class="card" style="margin-bottom: 24px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
                         <h3 style="margin: 0; font-size: 1.05rem; color: var(--azul-900); display: flex; align-items: center; gap: 8px;">
                             <!-- BANNER DE ALERTAS DE DOLOR ACTIVAS (EVA >= 6) -->
-<div id="contenedor-alertas-dolor" style="display: none; margin-bottom: 20px;"></div>
+
                             <i class='bx bx-pulse' style="color: var(--rojo-500);"></i> Evaluaciones de Dolor y Ejecución (App Móvil)
                         </h3>
 
@@ -546,7 +548,7 @@
             cargarTodo();
         });
     </script>
-    <script>
+   <script>
 (function iniciarMonitorAlertasDolor() {
     const STORAGE_REVISADAS = 'kc_alertas_dolor_revisadas';
     const STORAGE_ANUNCIADAS = 'kc_alertas_dolor_anunciadas';
@@ -574,6 +576,19 @@
         return Number(item?.nivel_dolor ?? item?.escala_dolor ?? item?.dolor_eva ?? 0);
     }
 
+    function esModoOscuro() {
+        const htmlTheme = document.documentElement.getAttribute('data-theme') || document.body.getAttribute('data-theme');
+        if (htmlTheme) return htmlTheme === 'dark';
+        if (document.body.classList.contains('dark') || document.documentElement.classList.contains('dark')) return true;
+        const bg = getComputedStyle(document.body).backgroundColor;
+        const rgb = bg.match(/\d+/g);
+        if (rgb && rgb.length >= 3) {
+            const brillo = (Number(rgb[0]) * 299 + Number(rgb[1]) * 587 + Number(rgb[2]) * 114) / 1000;
+            return brillo < 128;
+        }
+        return true;
+    }
+
     function obtenerTokenJWT() {
         const clavesComunes = ['access_token', 'access', 'token', 'kc_token', 'jwt'];
         for (const k of clavesComunes) {
@@ -585,6 +600,25 @@
             if (val.startsWith('eyJ') && val.split('.').length === 3) return val;
         }
         return null;
+    }
+
+    async function fetchListaApi(rutas) {
+        const token = obtenerTokenJWT();
+        const base = window.API_BASE_URL || 'https://kineconect-bmnsolutions.onrender.com';
+        for (const ruta of rutas) {
+            try {
+                const res = await fetch(`${base}${ruta}`, {
+                    headers: token ? { Authorization: `Bearer ${token}` } : {}
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    return Array.isArray(data) ? data : (data?.results || []);
+                }
+            } catch {
+                // Intenta la siguiente ruta
+            }
+        }
+        return [];
     }
 
     function reproducirAvisoSonoro() {
@@ -599,25 +633,22 @@
                 const gain = audioCtx.createGain();
                 osc.type = 'sine';
                 osc.frequency.value = freq;
-                gain.gain.setValueAtTime(0.18, audioCtx.currentTime + i * 0.16);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.16 + 0.35);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime + i * 0.16);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.16 + 0.32);
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
                 osc.start(audioCtx.currentTime + i * 0.16);
-                osc.stop(audioCtx.currentTime + i * 0.16 + 0.36);
+                osc.stop(audioCtx.currentTime + i * 0.16 + 0.34);
             });
         } catch {
-            // Bloqueado hasta interacción del usuario
+            // Bloqueado hasta interacción previa
         }
     }
 
     function lanzarNotificacionEscritorio(alerta) {
         if (!('Notification' in window) || Notification.permission !== 'granted') return;
-        const eva = extraerEva(alerta);
-        const paciente = alerta.paciente_nombre || alerta.nombre_paciente || 'Paciente';
-        const pauta = alerta.pauta_titulo || alerta.titulo_pauta || 'Rutina asignada';
-        new Notification(`⚠️ Alerta de Dolor EVA ${eva}/10`, {
-            body: `${paciente} reportó dolor severo en "${pauta}".`,
+        new Notification(`⚠️ Alerta Dolor EVA ${alerta._eva}/10`, {
+            body: `${alerta._paciente} reportó dolor severo en "${alerta._pauta}".`,
         });
     }
 
@@ -636,27 +667,26 @@
         verificarAlertasDolor(false);
     };
 
-    async function obtenerFeedbacks() {
-        const token = obtenerTokenJWT();
-        const base = window.API_BASE_URL || 'https://kineconect-bmnsolutions.onrender.com';
-        const rutas = ['/api/v1/feedback/', '/api/feedback/'];
-
-        for (const ruta of rutas) {
-            try {
-                const res = await fetch(`${base}${ruta}`, {
-                    headers: token ? { Authorization: `Bearer ${token}` } : {}
-                });
-                if (res.ok) return await res.json();
-            } catch {
-                // Intenta la siguiente ruta
-            }
+    function formatearFechaCorta(fechaIso) {
+        if (!fechaIso) return '';
+        try {
+            return new Date(fechaIso).toLocaleString('es-CL', {
+                day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+            });
+        } catch {
+            return '';
         }
-        return [];
     }
 
     function renderizarBannerAlertas(alertasActivas) {
         const cont = document.getElementById('contenedor-alertas-dolor');
         if (!cont) return;
+
+        // Si el contenedor quedó dentro de un flex-row por error, lo saca justo antes de su tarjeta padre
+        const parentCard = cont.closest('.card');
+        if (parentCard && parentCard.parentElement) {
+            parentCard.parentElement.insertBefore(cont, parentCard);
+        }
 
         if (alertasActivas.length === 0) {
             cont.style.display = 'none';
@@ -664,63 +694,98 @@
             return;
         }
 
+        const dark = esModoOscuro();
         const permisoPendiente = 'Notification' in window && Notification.permission !== 'granted';
+
+        const st = dark ? {
+            wrapBg: 'rgba(127, 29, 29, 0.22)',
+            wrapBorder: 'rgba(248, 113, 113, 0.35)',
+            title: '#FCA5A5',
+            sub: '#CBD5E1',
+            rowBg: 'rgba(15, 23, 42, 0.72)',
+            rowBorder: 'rgba(51, 65, 85, 0.85)',
+            textMain: '#F8FAFC',
+            textMuted: '#94A3B8',
+            pillSeriesBg: '#1E293B',
+            pillSeriesText: '#38BDF8',
+        } : {
+            wrapBg: '#FEF2F2',
+            wrapBorder: '#FECACA',
+            title: '#991B1B',
+            sub: '#B91C1C',
+            rowBg: '#FFFFFF',
+            rowBorder: '#FEE2E2',
+            textMain: '#0F172A',
+            textMuted: '#64748B',
+            pillSeriesBg: '#F1F5F9',
+            pillSeriesText: '#0369A1',
+        };
 
         cont.style.display = 'block';
         cont.innerHTML = `
-            <div style="background: #fef2f2; border: 1.5px solid #fca5a5; border-left: 6px solid #dc2626; border-radius: 14px; padding: 16px 18px; box-shadow: 0 4px 14px rgba(220,38,38,0.08);">
+            <div style="background: ${st.wrapBg}; border: 1px solid ${st.wrapBorder}; border-left: 4px solid #EF4444; border-radius: 14px; padding: 14px 18px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
                     <div style="display: flex; align-items: center; gap: 10px;">
-                        <span style="width: 34px; height: 34px; border-radius: 10px; background: #fee2e2; color: #dc2626; display: inline-flex; align-items: center; justify-content: center; font-size: 1.25rem;">
-                            <i class='bx bx-bell-ring bx-tada'></i>
+                        <span style="width: 32px; height: 32px; border-radius: 9px; background: rgba(239, 68, 68, 0.18); color: #F87171; display: inline-flex; align-items: center; justify-content: center; font-size: 1.15rem;">
+                            <i class='bx bx-error-circle'></i>
                         </span>
                         <div>
-                            <strong style="color: #991b1b; font-size: 0.98rem;">
-                                ${alertasActivas.length} ${alertasActivas.length === 1 ? 'Alerta Clínica de Dolor Activa' : 'Alertas Clínicas de Dolor Activas'} (EVA ≥ 6)
-                            </strong>
-                            <p style="margin: 2px 0 0; font-size: 0.8rem; color: #b91c1c;">
-                                Requieren revisión clínica o ajuste de carga en la pauta del paciente.
-                            </p>
+                            <div style="color: ${st.title}; font-weight: 700; font-size: 0.92rem;">
+                                ${alertasActivas.length} ${alertasActivas.length === 1 ? 'Alerta clínica de dolor activa' : 'Alertas clínicas de dolor activas'} (EVA ≥ 6)
+                            </div>
+                            <div style="color: ${st.sub}; font-size: 0.78rem;">
+                                Reportes recientes con dolor elevado pendientes de revisión.
+                            </div>
                         </div>
                     </div>
+
                     ${permisoPendiente ? `
-                        <button type="button" onclick="activarAvisosNavegador()" class="btn btn-sm" style="background: #dc2626; color: #fff; border: none;">
-                            <i class='bx bx-volume-full'></i> Activar sonido y avisos de escritorio
+                        <button type="button" onclick="activarAvisosNavegador()" class="btn btn-sm"
+                            style="background: rgba(239, 68, 68, 0.16); color: ${st.title}; border: 1px solid ${st.wrapBorder}; font-size: 0.78rem; padding: 5px 10px;">
+                            <i class='bx bx-bell'></i> Activar sonido y avisos
                         </button>
                     ` : ''}
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 8px;">
-                    ${alertasActivas.map((a, idx) => {
-                        const idAlerta = a.id ?? `${a.pauta}_${a.fecha_ejecucion || idx}`;
-                        const eva = extraerEva(a);
-                        const paciente = a.paciente_nombre || a.nombre_paciente || 'Paciente';
-                        const pauta = a.pauta_titulo || a.titulo_pauta || 'Pauta';
-                        const obs = a.comentario || a.notas || 'Sin observaciones';
-                        const pacId = a.paciente_id || a.paciente || '';
-                        return `
-                            <div style="background: #ffffff; border: 1px solid #fecaca; border-radius: 10px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    ${alertasActivas.map(a => `
+                        <div style="background: ${st.rowBg}; border: 1px solid ${st.rowBorder}; border-radius: 10px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1; min-width: 240px;">
+                                <span style="background: rgba(239, 68, 68, 0.18); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.4); font-size: 0.74rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; white-space: nowrap;">
+                                    EVA ${escapar(a._eva)}/10
+                                </span>
+
                                 <div>
-                                    <span style="background: #dc2626; color: #fff; font-size: 0.74rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; margin-right: 6px;">
-                                        EVA ${escapar(eva)}/10
-                                    </span>
-                                    <strong style="color: #0f172a; font-size: 0.88rem;">${escapar(paciente)}</strong>
-                                    <span style="color: #64748b; font-size: 0.82rem;"> • ${escapar(pauta)}</span>
-                                    <div style="font-size: 0.8rem; color: #475569; margin-top: 3px;">"${escapar(obs)}"</div>
-                                </div>
-                                <div style="display: flex; gap: 6px;">
-                                    ${pacId ? `
-                                        <a href="crear_pauta.html?paciente=${encodeURIComponent(pacId)}" class="btn btn-secondary btn-sm">
-                                            <i class='bx bx-edit'></i> Ajustar Pauta
-                                        </a>
-                                    ` : ''}
-                                    <button type="button" onclick="marcarAlertaDolorRevisada('${escapar(idAlerta)}')" class="btn btn-primary btn-sm">
-                                        <i class='bx bx-check'></i> Marcar revisada
-                                    </button>
+                                    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                        <strong style="color: ${st.textMain}; font-size: 0.88rem;">${escapar(a._paciente)}</strong>
+                                        <span style="color: ${st.textMuted}; font-size: 0.8rem;">• ${escapar(a._pauta)}</span>
+                                        ${a._fecha ? `<span style="color: ${st.textMuted}; font-size: 0.75rem;">(${escapar(a._fecha)})</span>` : ''}
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 3px;">
+                                        ${a._series ? `
+                                            <span style="background: ${st.pillSeriesBg}; color: ${st.pillSeriesText}; font-size: 0.73rem; font-weight: 600; padding: 1px 7px; border-radius: 5px;">
+                                                ${escapar(a._series)}
+                                            </span>
+                                        ` : ''}
+                                        <span style="color: ${st.textMuted}; font-size: 0.79rem;">
+                                            ${escapar(a._observacion)}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
-                        `;
-                    }).join('')}
+
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                ${a._pacienteId ? `
+                                    <a href="crear_pauta.html?paciente=${encodeURIComponent(a._pacienteId)}" class="btn btn-secondary btn-sm" style="font-size: 0.78rem; padding: 5px 10px;">
+                                        <i class='bx bx-slider-alt'></i> Ajustar pauta
+                                    </a>
+                                ` : ''}
+                                <button type="button" onclick="marcarAlertaDolorRevisada('${escapar(a._id)}')" class="btn btn-primary btn-sm" style="font-size: 0.78rem; padding: 5px 11px;">
+                                    <i class='bx bx-check'></i> Revisada
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
                 </div>
             </div>
         `;
@@ -728,24 +793,82 @@
 
     async function verificarAlertasDolor(notificarNuevas = true) {
         try {
-            const raw = await obtenerFeedbacks();
-            const lista = Array.isArray(raw) ? raw : (raw?.results || []);
+            const [feedbacks, pautas] = await Promise.all([
+                fetchListaApi(['/api/v1/feedback/', '/api/feedback/']),
+                fetchListaApi(['/api/pautas/', '/api/v1/pautas/']),
+            ]);
+
+            const mapaPautas = {};
+            pautas.forEach(p => {
+                if (p && p.id != null) mapaPautas[String(p.id)] = p;
+            });
+
             const revisadas = obtenerSet(STORAGE_REVISADAS);
             const anunciadas = obtenerSet(STORAGE_ANUNCIADAS);
 
-            const alertasActivas = lista.filter((item, idx) => {
+            const alertasActivas = [];
+            feedbacks.forEach((item, idx) => {
+                const eva = extraerEva(item);
                 const idAlerta = String(item.id ?? `${item.pauta}_${item.fecha_ejecucion || idx}`);
-                return extraerEva(item) >= 6 && !revisadas.has(idAlerta);
+                if (eva < 6 || revisadas.has(idAlerta)) return;
+
+                const pautaId = typeof item.pauta === 'object' ? item.pauta?.id : item.pauta;
+                const pautaInfo = (pautaId != null && mapaPautas[String(pautaId)]) || (typeof item.pauta === 'object' ? item.pauta : {}) || {};
+
+                const pacienteNombre =
+                    item.paciente_nombre ||
+                    item.nombre_paciente ||
+                    pautaInfo.paciente_nombre ||
+                    (pautaInfo.paciente && typeof pautaInfo.paciente === 'object'
+                        ? `${pautaInfo.paciente.first_name || ''} ${pautaInfo.paciente.last_name || ''}`.trim()
+                        : '') ||
+                    'Paciente';
+
+                const pautaTitulo =
+                    item.pauta_titulo ||
+                    item.titulo_pauta ||
+                    pautaInfo.titulo ||
+                    (pautaId ? `Pauta #${pautaId}` : 'Pauta asignada');
+
+                const pacienteId =
+                    item.paciente_id ||
+                    (typeof pautaInfo.paciente === 'object' ? pautaInfo.paciente?.id : pautaInfo.paciente) ||
+                    '';
+
+                // Separa observación clínica del resumen automático "Series: X/Y..."
+                const rawObs = String(item.comentario || item.notas || '').trim();
+                let observacion = 'Sin observaciones adicionales';
+                let seriesTexto = '';
+
+                if (rawObs.includes('| Series:')) {
+                    const partes = rawObs.split('| Series:');
+                    observacion = partes[0].trim() || observacion;
+                    seriesTexto = `Series: ${partes[1].trim()}`;
+                } else if (rawObs.startsWith('Series:')) {
+                    seriesTexto = rawObs;
+                } else if (rawObs) {
+                    observacion = rawObs;
+                }
+
+                alertasActivas.push({
+                    _id: idAlerta,
+                    _eva: eva,
+                    _paciente: pacienteNombre,
+                    _pauta: pautaTitulo,
+                    _pacienteId: pacienteId,
+                    _observacion: observacion,
+                    _series: seriesTexto,
+                    _fecha: formatearFechaCorta(item.fecha_ejecucion || item.created_at),
+                });
             });
 
             renderizarBannerAlertas(alertasActivas);
 
             if (notificarNuevas) {
                 let huboNueva = false;
-                alertasActivas.forEach((alerta, idx) => {
-                    const idStr = String(alerta.id ?? `${alerta.pauta}_${alerta.fecha_ejecucion || idx}`);
-                    if (!anunciadas.has(idStr)) {
-                        anunciadas.add(idStr);
+                alertasActivas.forEach(alerta => {
+                    if (!anunciadas.has(alerta._id)) {
+                        anunciadas.add(alerta._id);
                         huboNueva = true;
                         lanzarNotificacionEscritorio(alerta);
                     }
@@ -755,10 +878,7 @@
                     guardarSet(STORAGE_ANUNCIADAS, anunciadas);
                 }
             } else {
-                alertasActivas.forEach((a, idx) => {
-                    const idStr = String(a.id ?? `${a.pauta}_${a.fecha_ejecucion || idx}`);
-                    anunciadas.add(idStr);
-                });
+                alertasActivas.forEach(a => anunciadas.add(a._id));
                 guardarSet(STORAGE_ANUNCIADAS, anunciadas);
             }
         } catch (err) {
