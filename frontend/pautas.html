@@ -76,14 +76,13 @@
                     </div>
                 </div>
 
+                <!-- BANNER DE ALERTAS DE DOLOR ACTIVAS (EVA >= 6) -->
+                <div id="contenedor-alertas-dolor" style="display: none; width: 100%; margin-bottom: 18px;"></div>
+
                 <!-- SECCIÓN 1: EVALUACIONES DE DOLOR -->
-                 <!-- BANNER DE ALERTAS DE DOLOR ACTIVAS (EVA >= 6) -->
-<div id="contenedor-alertas-dolor" style="display: none; width: 100%; margin-bottom: 18px;"></div>
                 <div class="card" style="margin-bottom: 24px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
                         <h3 style="margin: 0; font-size: 1.05rem; color: var(--azul-900); display: flex; align-items: center; gap: 8px;">
-                            <!-- BANNER DE ALERTAS DE DOLOR ACTIVAS (EVA >= 6) -->
-
                             <i class='bx bx-pulse' style="color: var(--rojo-500);"></i> Evaluaciones de Dolor y Ejecución (App Móvil)
                         </h3>
 
@@ -180,7 +179,10 @@
             <div id="detalle-pauta-lista-ejercicios" style="display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto;">
             </div>
 
-            <div style="margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--gris-100); display: flex; justify-content: flex-end; gap: 8px;">
+            <div style="margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--gris-100); display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap;">
+                <a id="btn-editar-desde-modal" href="crear_pauta.html" class="btn btn-secondary btn-sm">
+                    <i class='bx bx-edit'></i> Editar Pauta
+                </a>
                 <a id="btn-usar-como-base" href="crear_pauta.html" class="btn btn-primary btn-sm">
                     <i class='bx bx-copy'></i> Usar en Nueva Prescripción
                 </a>
@@ -203,6 +205,19 @@
             return String(txt ?? '').replace(/[&<>"']/g, c => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
             }[c]));
+        }
+
+        function obtenerTokenLocal() {
+            const clavesComunes = ['access_token', 'access', 'token', 'kc_token', 'jwt'];
+            for (const k of clavesComunes) {
+                const val = localStorage.getItem(k);
+                if (val) return val.replace(/^"|"$/g, '');
+            }
+            for (let i = 0; i < localStorage.length; i++) {
+                const val = (localStorage.getItem(localStorage.key(i)) || '').replace(/^"|"$/g, '');
+                if (val.startsWith('eyJ') && val.split('.').length === 3) return val;
+            }
+            return null;
         }
 
         function parsearComentarioApp(raw) {
@@ -265,6 +280,33 @@
             }
         }
 
+        async function eliminarPauta(pautaId, titulo) {
+            const confirmado = window.confirm(
+                `¿Seguro que deseas eliminar la pauta "${titulo}"?\n\n` +
+                `• Si el paciente aún no tiene sesiones registradas, se borrará por completo.\n` +
+                `• Si ya tiene reportes clínicos, se archivará como INACTIVA para conservar su historial.`
+            );
+            if (!confirmado) return;
+
+            try {
+                const token = obtenerTokenLocal();
+                const base = (typeof BACKEND_ORIGIN !== 'undefined' ? BACKEND_ORIGIN : 'https://kineconect-bmnsolutions.onrender.com');
+                const res = await fetch(`${base}/api/pautas/${pautaId}/`, {
+                    method: 'DELETE',
+                    headers: token ? { Authorization: `Bearer ${token}` } : {}
+                });
+
+                if (!res.ok && res.status !== 204) {
+                    const errData = await res.json().catch(() => ({}));
+                    throw new Error(errData.detail || `Error ${res.status}`);
+                }
+
+                await cargarTodo();
+            } catch (err) {
+                alert(`No se pudo eliminar la pauta: ${err.message}`);
+            }
+        }
+
         function verDetallePauta(pautaId) {
             const pauta = pautasCargadas.find(item => item.id === pautaId);
             if (!pauta) return;
@@ -321,6 +363,11 @@
                 }).join('');
             }
 
+            const btnEditarModal = document.getElementById('btn-editar-desde-modal');
+            if (btnEditarModal) {
+                btnEditarModal.href = `crear_pauta.html?editar=${pauta.id}`;
+            }
+
             const btnReutilizar = document.getElementById('btn-usar-como-base');
             if (btnReutilizar) {
                 btnReutilizar.href = `crear_pauta.html?plantilla=${pauta.id}`;
@@ -337,8 +384,8 @@
         function actualizarKpisMonitoreo(lista) {
             const total = lista.length;
             const completadas = lista.filter(f => Boolean(f.completado)).length;
-            const alertas = lista.filter(f => Number(f.escala_dolor ?? 0) >= 6).length;
-            const sumaEva = lista.reduce((acc, f) => acc + Number(f.escala_dolor ?? 0), 0);
+            const alertas = lista.filter(f => Number(f.nivel_dolor ?? f.escala_dolor ?? 0) >= 6).length;
+            const sumaEva = lista.reduce((acc, f) => acc + Number(f.nivel_dolor ?? f.escala_dolor ?? 0), 0);
             const promedio = total > 0 ? (sumaEva / total).toFixed(1) : '0.0';
 
             document.getElementById('kpi-total-reportes').textContent = total;
@@ -363,7 +410,7 @@
 
             let listaFiltrada = [...reportesCargados];
             if (filtroFeedbackActual === 'alertas') {
-                listaFiltrada = listaFiltrada.filter(f => Number(f.escala_dolor ?? 0) >= 6);
+                listaFiltrada = listaFiltrada.filter(f => Number(f.nivel_dolor ?? f.escala_dolor ?? 0) >= 6);
             } else if (filtroFeedbackActual === 'completados') {
                 listaFiltrada = listaFiltrada.filter(f => Boolean(f.completado));
             }
@@ -379,7 +426,7 @@
             tbodyFeed.innerHTML = '';
 
             listaFiltrada.forEach(f => {
-                const dolor = Number(f.escala_dolor ?? 0);
+                const dolor = Number(f.nivel_dolor ?? f.escala_dolor ?? 0);
                 const badgeColor = dolor >= 6 ? 'badge-alerta' : (dolor >= 4 ? 'badge-neutro' : 'badge-ok');
                 const textoEva = describirNivelEva(dolor);
 
@@ -484,6 +531,10 @@
                                 : escaparHtml(p.paciente_nombre || 'Paciente');
 
                             const tituloIcon = esPlantilla ? "<i class='bx bx-book-content' style='color: #0284c7; margin-right: 4px;'></i>" : "";
+                            const estadoBadge = p.activo !== false
+                                ? '<span class="badge badge-ok">ACTIVA</span>'
+                                : '<span class="badge badge-alerta">ARCHIVADA</span>';
+                            const tituloSeguro = escaparHtml(p.titulo || 'Sin Título').replace(/'/g, "\\'");
 
                             const tr = document.createElement('tr');
                             tr.innerHTML = `
@@ -491,11 +542,21 @@
                                 <td>${pacienteBadge}</td>
                                 <td><span class="badge badge-neutro">${cant} ejercicios</span></td>
                                 <td>${fecha}</td>
-                                <td><span class="badge badge-ok">${p.activo !== false ? 'ACTIVA' : 'INACTIVA'}</span></td>
+                                <td>${estadoBadge}</td>
                                 <td>
-                                    <button type="button" class="btn btn-secondary btn-sm" onclick="verDetallePauta(${p.id})">
-                                        <i class='bx bx-show'></i> Ver Detalle
-                                    </button>
+                                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="verDetallePauta(${p.id})" title="Ver detalle">
+                                            <i class='bx bx-show'></i> Ver
+                                        </button>
+                                        <a href="crear_pauta.html?editar=${p.id}" class="btn btn-secondary btn-sm" title="Editar pauta o cambiar paciente">
+                                            <i class='bx bx-edit'></i> Editar
+                                        </a>
+                                        <button type="button" class="btn btn-sm"
+                                            style="background: rgba(239, 68, 68, 0.14); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.35);"
+                                            onclick="eliminarPauta(${p.id}, '${tituloSeguro}')" title="Eliminar o archivar pauta">
+                                            <i class='bx bx-trash'></i>
+                                        </button>
+                                    </div>
                                 </td>
                             `;
                             tbodyPautas.appendChild(tr);
@@ -548,350 +609,345 @@
             cargarTodo();
         });
     </script>
-   <script>
-(function iniciarMonitorAlertasDolor() {
-    const STORAGE_REVISADAS = 'kc_alertas_dolor_revisadas';
-    const STORAGE_ANUNCIADAS = 'kc_alertas_dolor_anunciadas';
-    let audioCtx = null;
 
-    function obtenerSet(key) {
-        try {
-            return new Set(JSON.parse(localStorage.getItem(key) || '[]'));
-        } catch {
-            return new Set();
-        }
-    }
+    <!-- Monitor Activo de Alertas de Dolor (EVA >= 6) -->
+    <script>
+    (function iniciarMonitorAlertasDolor() {
+        const STORAGE_REVISADAS = 'kc_alertas_dolor_revisadas';
+        const STORAGE_ANUNCIADAS = 'kc_alertas_dolor_anunciadas';
+        let audioCtx = null;
 
-    function guardarSet(key, set) {
-        localStorage.setItem(key, JSON.stringify([...set]));
-    }
-
-    function escapar(txt) {
-        return String(txt ?? '').replace(/[&<>"']/g, c => ({
-            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-        }[c]));
-    }
-
-    function extraerEva(item) {
-        return Number(item?.nivel_dolor ?? item?.escala_dolor ?? item?.dolor_eva ?? 0);
-    }
-
-    function esModoOscuro() {
-        const htmlTheme = document.documentElement.getAttribute('data-theme') || document.body.getAttribute('data-theme');
-        if (htmlTheme) return htmlTheme === 'dark';
-        if (document.body.classList.contains('dark') || document.documentElement.classList.contains('dark')) return true;
-        const bg = getComputedStyle(document.body).backgroundColor;
-        const rgb = bg.match(/\d+/g);
-        if (rgb && rgb.length >= 3) {
-            const brillo = (Number(rgb[0]) * 299 + Number(rgb[1]) * 587 + Number(rgb[2]) * 114) / 1000;
-            return brillo < 128;
-        }
-        return true;
-    }
-
-    function obtenerTokenJWT() {
-        const clavesComunes = ['access_token', 'access', 'token', 'kc_token', 'jwt'];
-        for (const k of clavesComunes) {
-            const val = localStorage.getItem(k);
-            if (val) return val.replace(/^"|"$/g, '');
-        }
-        for (let i = 0; i < localStorage.length; i++) {
-            const val = (localStorage.getItem(localStorage.key(i)) || '').replace(/^"|"$/g, '');
-            if (val.startsWith('eyJ') && val.split('.').length === 3) return val;
-        }
-        return null;
-    }
-
-    async function fetchListaApi(rutas) {
-        const token = obtenerTokenJWT();
-        const base = window.API_BASE_URL || 'https://kineconect-bmnsolutions.onrender.com';
-        for (const ruta of rutas) {
+        function obtenerSet(key) {
             try {
-                const res = await fetch(`${base}${ruta}`, {
-                    headers: token ? { Authorization: `Bearer ${token}` } : {}
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    return Array.isArray(data) ? data : (data?.results || []);
-                }
+                return new Set(JSON.parse(localStorage.getItem(key) || '[]'));
             } catch {
-                // Intenta la siguiente ruta
+                return new Set();
             }
         }
-        return [];
-    }
 
-    function reproducirAvisoSonoro() {
-        try {
-            const Ctx = window.AudioContext || window.webkitAudioContext;
-            if (!Ctx) return;
-            if (!audioCtx) audioCtx = new Ctx();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
+        function guardarSet(key, set) {
+            localStorage.setItem(key, JSON.stringify([...set]));
+        }
 
-            [880, 1174.66].forEach((freq, i) => {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'sine';
-                osc.frequency.value = freq;
-                gain.gain.setValueAtTime(0.15, audioCtx.currentTime + i * 0.16);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.16 + 0.32);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start(audioCtx.currentTime + i * 0.16);
-                osc.stop(audioCtx.currentTime + i * 0.16 + 0.34);
+        function escapar(txt) {
+            return String(txt ?? '').replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[c]));
+        }
+
+        function extraerEva(item) {
+            return Number(item?.nivel_dolor ?? item?.escala_dolor ?? item?.dolor_eva ?? 0);
+        }
+
+        function esModoOscuro() {
+            const htmlTheme = document.documentElement.getAttribute('data-theme') || document.body.getAttribute('data-theme');
+            if (htmlTheme) return htmlTheme === 'dark';
+            if (document.body.classList.contains('dark') || document.documentElement.classList.contains('dark')) return true;
+            const bg = getComputedStyle(document.body).backgroundColor;
+            const rgb = bg.match(/\d+/g);
+            if (rgb && rgb.length >= 3) {
+                const brillo = (Number(rgb[0]) * 299 + Number(rgb[1]) * 587 + Number(rgb[2]) * 114) / 1000;
+                return brillo < 128;
+            }
+            return true;
+        }
+
+        function obtenerTokenJWT() {
+            const clavesComunes = ['access_token', 'access', 'token', 'kc_token', 'jwt'];
+            for (const k of clavesComunes) {
+                const val = localStorage.getItem(k);
+                if (val) return val.replace(/^"|"$/g, '');
+            }
+            for (let i = 0; i < localStorage.length; i++) {
+                const val = (localStorage.getItem(localStorage.key(i)) || '').replace(/^"|"$/g, '');
+                if (val.startsWith('eyJ') && val.split('.').length === 3) return val;
+            }
+            return null;
+        }
+
+        async function fetchListaApi(rutas) {
+            const token = obtenerTokenJWT();
+            const base = window.API_BASE_URL || 'https://kineconect-bmnsolutions.onrender.com';
+            for (const ruta of rutas) {
+                try {
+                    const res = await fetch(`${base}${ruta}`, {
+                        headers: token ? { Authorization: `Bearer ${token}` } : {}
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        return Array.isArray(data) ? data : (data?.results || []);
+                    }
+                } catch {
+                    // Intenta la siguiente ruta
+                }
+            }
+            return [];
+        }
+
+        function reproducirAvisoSonoro() {
+            try {
+                const Ctx = window.AudioContext || window.webkitAudioContext;
+                if (!Ctx) return;
+                if (!audioCtx) audioCtx = new Ctx();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                [880, 1174.66].forEach((freq, i) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime + i * 0.16);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.16 + 0.32);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(audioCtx.currentTime + i * 0.16);
+                    osc.stop(audioCtx.currentTime + i * 0.16 + 0.34);
+                });
+            } catch {
+                // Bloqueado hasta interacción previa
+            }
+        }
+
+        function lanzarNotificacionEscritorio(alerta) {
+            if (!('Notification' in window) || Notification.permission !== 'granted') return;
+            new Notification(`⚠️ Alerta Dolor EVA ${alerta._eva}/10`, {
+                body: `${alerta._paciente} reportó dolor severo en "${alerta._pauta}".`,
             });
-        } catch {
-            // Bloqueado hasta interacción previa
-        }
-    }
-
-    function lanzarNotificacionEscritorio(alerta) {
-        if (!('Notification' in window) || Notification.permission !== 'granted') return;
-        new Notification(`⚠️ Alerta Dolor EVA ${alerta._eva}/10`, {
-            body: `${alerta._paciente} reportó dolor severo en "${alerta._pauta}".`,
-        });
-    }
-
-    window.activarAvisosNavegador = async function () {
-        reproducirAvisoSonoro();
-        if ('Notification' in window && Notification.permission === 'default') {
-            await Notification.requestPermission();
-        }
-        verificarAlertasDolor(false);
-    };
-
-    window.marcarAlertaDolorRevisada = function (id) {
-        const revisadas = obtenerSet(STORAGE_REVISADAS);
-        revisadas.add(String(id));
-        guardarSet(STORAGE_REVISADAS, revisadas);
-        verificarAlertasDolor(false);
-    };
-
-    function formatearFechaCorta(fechaIso) {
-        if (!fechaIso) return '';
-        try {
-            return new Date(fechaIso).toLocaleString('es-CL', {
-                day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
-            });
-        } catch {
-            return '';
-        }
-    }
-
-    function renderizarBannerAlertas(alertasActivas) {
-        const cont = document.getElementById('contenedor-alertas-dolor');
-        if (!cont) return;
-
-        // Si el contenedor quedó dentro de un flex-row por error, lo saca justo antes de su tarjeta padre
-        const parentCard = cont.closest('.card');
-        if (parentCard && parentCard.parentElement) {
-            parentCard.parentElement.insertBefore(cont, parentCard);
         }
 
-        if (alertasActivas.length === 0) {
-            cont.style.display = 'none';
-            cont.innerHTML = '';
-            return;
-        }
-
-        const dark = esModoOscuro();
-        const permisoPendiente = 'Notification' in window && Notification.permission !== 'granted';
-
-        const st = dark ? {
-            wrapBg: 'rgba(127, 29, 29, 0.22)',
-            wrapBorder: 'rgba(248, 113, 113, 0.35)',
-            title: '#FCA5A5',
-            sub: '#CBD5E1',
-            rowBg: 'rgba(15, 23, 42, 0.72)',
-            rowBorder: 'rgba(51, 65, 85, 0.85)',
-            textMain: '#F8FAFC',
-            textMuted: '#94A3B8',
-            pillSeriesBg: '#1E293B',
-            pillSeriesText: '#38BDF8',
-        } : {
-            wrapBg: '#FEF2F2',
-            wrapBorder: '#FECACA',
-            title: '#991B1B',
-            sub: '#B91C1C',
-            rowBg: '#FFFFFF',
-            rowBorder: '#FEE2E2',
-            textMain: '#0F172A',
-            textMuted: '#64748B',
-            pillSeriesBg: '#F1F5F9',
-            pillSeriesText: '#0369A1',
+        window.activarAvisosNavegador = async function () {
+            reproducirAvisoSonoro();
+            if ('Notification' in window && Notification.permission === 'default') {
+                await Notification.requestPermission();
+            }
+            verificarAlertasDolor(false);
         };
 
-        cont.style.display = 'block';
-        cont.innerHTML = `
-            <div style="background: ${st.wrapBg}; border: 1px solid ${st.wrapBorder}; border-left: 4px solid #EF4444; border-radius: 14px; padding: 14px 18px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span style="width: 32px; height: 32px; border-radius: 9px; background: rgba(239, 68, 68, 0.18); color: #F87171; display: inline-flex; align-items: center; justify-content: center; font-size: 1.15rem;">
-                            <i class='bx bx-error-circle'></i>
-                        </span>
-                        <div>
-                            <div style="color: ${st.title}; font-weight: 700; font-size: 0.92rem;">
-                                ${alertasActivas.length} ${alertasActivas.length === 1 ? 'Alerta clínica de dolor activa' : 'Alertas clínicas de dolor activas'} (EVA ≥ 6)
-                            </div>
-                            <div style="color: ${st.sub}; font-size: 0.78rem;">
-                                Reportes recientes con dolor elevado pendientes de revisión.
-                            </div>
-                        </div>
-                    </div>
+        window.marcarAlertaDolorRevisada = function (id) {
+            const revisadas = obtenerSet(STORAGE_REVISADAS);
+            revisadas.add(String(id));
+            guardarSet(STORAGE_REVISADAS, revisadas);
+            verificarAlertasDolor(false);
+        };
 
-                    ${permisoPendiente ? `
-                        <button type="button" onclick="activarAvisosNavegador()" class="btn btn-sm"
-                            style="background: rgba(239, 68, 68, 0.16); color: ${st.title}; border: 1px solid ${st.wrapBorder}; font-size: 0.78rem; padding: 5px 10px;">
-                            <i class='bx bx-bell'></i> Activar sonido y avisos
-                        </button>
-                    ` : ''}
-                </div>
+        function formatearFechaCorta(fechaIso) {
+            if (!fechaIso) return '';
+            try {
+                return new Date(fechaIso).toLocaleString('es-CL', {
+                    day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+                });
+            } catch {
+                return '';
+            }
+        }
 
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    ${alertasActivas.map(a => `
-                        <div style="background: ${st.rowBg}; border: 1px solid ${st.rowBorder}; border-radius: 10px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1; min-width: 240px;">
-                                <span style="background: rgba(239, 68, 68, 0.18); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.4); font-size: 0.74rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; white-space: nowrap;">
-                                    EVA ${escapar(a._eva)}/10
-                                </span>
+        function renderizarBannerAlertas(alertasActivas) {
+            const cont = document.getElementById('contenedor-alertas-dolor');
+            if (!cont) return;
 
-                                <div>
-                                    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                                        <strong style="color: ${st.textMain}; font-size: 0.88rem;">${escapar(a._paciente)}</strong>
-                                        <span style="color: ${st.textMuted}; font-size: 0.8rem;">• ${escapar(a._pauta)}</span>
-                                        ${a._fecha ? `<span style="color: ${st.textMuted}; font-size: 0.75rem;">(${escapar(a._fecha)})</span>` : ''}
-                                    </div>
-                                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 3px;">
-                                        ${a._series ? `
-                                            <span style="background: ${st.pillSeriesBg}; color: ${st.pillSeriesText}; font-size: 0.73rem; font-weight: 600; padding: 1px 7px; border-radius: 5px;">
-                                                ${escapar(a._series)}
-                                            </span>
-                                        ` : ''}
-                                        <span style="color: ${st.textMuted}; font-size: 0.79rem;">
-                                            ${escapar(a._observacion)}
-                                        </span>
-                                    </div>
+            const parentCard = cont.closest('.card');
+            if (parentCard && parentCard.parentElement) {
+                parentCard.parentElement.insertBefore(cont, parentCard);
+            }
+
+            if (alertasActivas.length === 0) {
+                cont.style.display = 'none';
+                cont.innerHTML = '';
+                return;
+            }
+
+            const dark = esModoOscuro();
+            const permisoPendiente = 'Notification' in window && Notification.permission !== 'granted';
+
+            const st = dark ? {
+                wrapBg: 'rgba(127, 29, 29, 0.22)',
+                wrapBorder: 'rgba(248, 113, 113, 0.35)',
+                title: '#FCA5A5',
+                sub: '#CBD5E1',
+                rowBg: 'rgba(15, 23, 42, 0.72)',
+                rowBorder: 'rgba(51, 65, 85, 0.85)',
+                textMain: '#F8FAFC',
+                textMuted: '#94A3B8',
+                pillSeriesBg: '#1E293B',
+                pillSeriesText: '#38BDF8',
+            } : {
+                wrapBg: '#FEF2F2',
+                wrapBorder: '#FECACA',
+                title: '#991B1B',
+                sub: '#B91C1C',
+                rowBg: '#FFFFFF',
+                rowBorder: '#FEE2E2',
+                textMain: '#0F172A',
+                textMuted: '#64748B',
+                pillSeriesBg: '#F1F5F9',
+                pillSeriesText: '#0369A1',
+            };
+
+            cont.style.display = 'block';
+            cont.innerHTML = `
+                <div style="background: ${st.wrapBg}; border: 1px solid ${st.wrapBorder}; border-left: 4px solid #EF4444; border-radius: 14px; padding: 14px 18px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="width: 32px; height: 32px; border-radius: 9px; background: rgba(239, 68, 68, 0.18); color: #F87171; display: inline-flex; align-items: center; justify-content: center; font-size: 1.15rem;">
+                                <i class='bx bx-error-circle'></i>
+                            </span>
+                            <div>
+                                <div style="color: ${st.title}; font-weight: 700; font-size: 0.92rem;">
+                                    ${alertasActivas.length} ${alertasActivas.length === 1 ? 'Alerta clínica de dolor activa' : 'Alertas clínicas de dolor activas'} (EVA ≥ 6)
+                                </div>
+                                <div style="color: ${st.sub}; font-size: 0.78rem;">
+                                    Reportes recientes con dolor elevado pendientes de revisión.
                                 </div>
                             </div>
-
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                ${a._pacienteId ? `
-                                    <a href="crear_pauta.html?paciente=${encodeURIComponent(a._pacienteId)}" class="btn btn-secondary btn-sm" style="font-size: 0.78rem; padding: 5px 10px;">
-                                        <i class='bx bx-slider-alt'></i> Ajustar pauta
-                                    </a>
-                                ` : ''}
-                                <button type="button" onclick="marcarAlertaDolorRevisada('${escapar(a._id)}')" class="btn btn-primary btn-sm" style="font-size: 0.78rem; padding: 5px 11px;">
-                                    <i class='bx bx-check'></i> Revisada
-                                </button>
-                            </div>
                         </div>
-                    `).join('')}
+
+                        ${permisoPendiente ? `
+                            <button type="button" onclick="activarAvisosNavegador()" class="btn btn-sm"
+                                style="background: rgba(239, 68, 68, 0.16); color: ${st.title}; border: 1px solid ${st.wrapBorder}; font-size: 0.78rem; padding: 5px 10px;">
+                                <i class='bx bx-bell'></i> Activar sonido y avisos
+                            </button>
+                        ` : ''}
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        ${alertasActivas.map(a => `
+                            <div style="background: ${st.rowBg}; border: 1px solid ${st.rowBorder}; border-radius: 10px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1; min-width: 240px;">
+                                    <span style="background: rgba(239, 68, 68, 0.18); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.4); font-size: 0.74rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; white-space: nowrap;">
+                                        EVA ${escapar(a._eva)}/10
+                                    </span>
+
+                                    <div>
+                                        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                            <strong style="color: ${st.textMain}; font-size: 0.88rem;">${escapar(a._paciente)}</strong>
+                                            <span style="color: ${st.textMuted}; font-size: 0.8rem;">• ${escapar(a._pauta)}</span>
+                                            ${a._fecha ? `<span style="color: ${st.textMuted}; font-size: 0.75rem;">(${escapar(a._fecha)})</span>` : ''}
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 3px;">
+                                            ${a._series ? `
+                                                <span style="background: ${st.pillSeriesBg}; color: ${st.pillSeriesText}; font-size: 0.73rem; font-weight: 600; padding: 1px 7px; border-radius: 5px;">
+                                                    ${escapar(a._series)}
+                                                </span>
+                                            ` : ''}
+                                            <span style="color: ${st.textMuted}; font-size: 0.79rem;">
+                                                ${escapar(a._observacion)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    ${a._pautaId ? `
+                                        <a href="crear_pauta.html?editar=${encodeURIComponent(a._pautaId)}" class="btn btn-secondary btn-sm" style="font-size: 0.78rem; padding: 5px 10px;">
+                                            <i class='bx bx-slider-alt'></i> Ajustar pauta
+                                        </a>
+                                    ` : ''}
+                                    <button type="button" onclick="marcarAlertaDolorRevisada('${escapar(a._id)}')" class="btn btn-primary btn-sm" style="font-size: 0.78rem; padding: 5px 11px;">
+                                        <i class='bx bx-check'></i> Revisada
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
-            </div>
-        `;
-    }
+            `;
+        }
 
-    async function verificarAlertasDolor(notificarNuevas = true) {
-        try {
-            const [feedbacks, pautas] = await Promise.all([
-                fetchListaApi(['/api/v1/feedback/', '/api/feedback/']),
-                fetchListaApi(['/api/pautas/', '/api/v1/pautas/']),
-            ]);
+        async function verificarAlertasDolor(notificarNuevas = true) {
+            try {
+                const [feedbacks, pautas] = await Promise.all([
+                    fetchListaApi(['/api/v1/feedback/', '/api/feedback/']),
+                    fetchListaApi(['/api/pautas/', '/api/v1/pautas/']),
+                ]);
 
-            const mapaPautas = {};
-            pautas.forEach(p => {
-                if (p && p.id != null) mapaPautas[String(p.id)] = p;
-            });
-
-            const revisadas = obtenerSet(STORAGE_REVISADAS);
-            const anunciadas = obtenerSet(STORAGE_ANUNCIADAS);
-
-            const alertasActivas = [];
-            feedbacks.forEach((item, idx) => {
-                const eva = extraerEva(item);
-                const idAlerta = String(item.id ?? `${item.pauta}_${item.fecha_ejecucion || idx}`);
-                if (eva < 6 || revisadas.has(idAlerta)) return;
-
-                const pautaId = typeof item.pauta === 'object' ? item.pauta?.id : item.pauta;
-                const pautaInfo = (pautaId != null && mapaPautas[String(pautaId)]) || (typeof item.pauta === 'object' ? item.pauta : {}) || {};
-
-                const pacienteNombre =
-                    item.paciente_nombre ||
-                    item.nombre_paciente ||
-                    pautaInfo.paciente_nombre ||
-                    (pautaInfo.paciente && typeof pautaInfo.paciente === 'object'
-                        ? `${pautaInfo.paciente.first_name || ''} ${pautaInfo.paciente.last_name || ''}`.trim()
-                        : '') ||
-                    'Paciente';
-
-                const pautaTitulo =
-                    item.pauta_titulo ||
-                    item.titulo_pauta ||
-                    pautaInfo.titulo ||
-                    (pautaId ? `Pauta #${pautaId}` : 'Pauta asignada');
-
-                const pacienteId =
-                    item.paciente_id ||
-                    (typeof pautaInfo.paciente === 'object' ? pautaInfo.paciente?.id : pautaInfo.paciente) ||
-                    '';
-
-                // Separa observación clínica del resumen automático "Series: X/Y..."
-                const rawObs = String(item.comentario || item.notas || '').trim();
-                let observacion = 'Sin observaciones adicionales';
-                let seriesTexto = '';
-
-                if (rawObs.includes('| Series:')) {
-                    const partes = rawObs.split('| Series:');
-                    observacion = partes[0].trim() || observacion;
-                    seriesTexto = `Series: ${partes[1].trim()}`;
-                } else if (rawObs.startsWith('Series:')) {
-                    seriesTexto = rawObs;
-                } else if (rawObs) {
-                    observacion = rawObs;
-                }
-
-                alertasActivas.push({
-                    _id: idAlerta,
-                    _eva: eva,
-                    _paciente: pacienteNombre,
-                    _pauta: pautaTitulo,
-                    _pacienteId: pacienteId,
-                    _observacion: observacion,
-                    _series: seriesTexto,
-                    _fecha: formatearFechaCorta(item.fecha_ejecucion || item.created_at),
+                const mapaPautasLocal = {};
+                pautas.forEach(p => {
+                    if (p && p.id != null) mapaPautasLocal[String(p.id)] = p;
                 });
-            });
 
-            renderizarBannerAlertas(alertasActivas);
+                const revisadas = obtenerSet(STORAGE_REVISADAS);
+                const anunciadas = obtenerSet(STORAGE_ANUNCIADAS);
 
-            if (notificarNuevas) {
-                let huboNueva = false;
-                alertasActivas.forEach(alerta => {
-                    if (!anunciadas.has(alerta._id)) {
-                        anunciadas.add(alerta._id);
-                        huboNueva = true;
-                        lanzarNotificacionEscritorio(alerta);
+                const alertasActivas = [];
+                feedbacks.forEach((item, idx) => {
+                    const eva = extraerEva(item);
+                    const idAlerta = String(item.id ?? `${item.pauta}_${item.fecha_ejecucion || idx}`);
+                    if (eva < 6 || revisadas.has(idAlerta)) return;
+
+                    const pautaId = typeof item.pauta === 'object' ? item.pauta?.id : item.pauta;
+                    const pautaInfo = (pautaId != null && mapaPautasLocal[String(pautaId)]) || (typeof item.pauta === 'object' ? item.pauta : {}) || {};
+
+                    const pacienteNombre =
+                        item.paciente_nombre ||
+                        item.nombre_paciente ||
+                        pautaInfo.paciente_nombre ||
+                        (pautaInfo.paciente && typeof pautaInfo.paciente === 'object'
+                            ? `${pautaInfo.paciente.first_name || ''} ${pautaInfo.paciente.last_name || ''}`.trim()
+                            : '') ||
+                        'Paciente';
+
+                    const pautaTitulo =
+                        item.pauta_titulo ||
+                        item.titulo_pauta ||
+                        pautaInfo.titulo ||
+                        (pautaId ? `Pauta #${pautaId}` : 'Pauta asignada');
+
+                    const rawObs = String(item.comentario || item.notas || '').trim();
+                    let observacion = 'Sin observaciones adicionales';
+                    let seriesTexto = '';
+
+                    if (rawObs.includes('| Series:')) {
+                        const partes = rawObs.split('| Series:');
+                        observacion = partes[0].trim() || observacion;
+                        seriesTexto = `Series: ${partes[1].trim()}`;
+                    } else if (rawObs.startsWith('Series:')) {
+                        seriesTexto = rawObs;
+                    } else if (rawObs) {
+                        observacion = rawObs;
                     }
+
+                    alertasActivas.push({
+                        _id: idAlerta,
+                        _eva: eva,
+                        _paciente: pacienteNombre,
+                        _pauta: pautaTitulo,
+                        _pautaId: pautaId || '',
+                        _observacion: observacion,
+                        _series: seriesTexto,
+                        _fecha: formatearFechaCorta(item.fecha_ejecucion || item.created_at),
+                    });
                 });
-                if (huboNueva) {
-                    reproducirAvisoSonoro();
+
+                renderizarBannerAlertas(alertasActivas);
+
+                if (notificarNuevas) {
+                    let huboNueva = false;
+                    alertasActivas.forEach(alerta => {
+                        if (!anunciadas.has(alerta._id)) {
+                            anunciadas.add(alerta._id);
+                            huboNueva = true;
+                            lanzarNotificacionEscritorio(alerta);
+                        }
+                    });
+                    if (huboNueva) {
+                        reproducirAvisoSonoro();
+                        guardarSet(STORAGE_ANUNCIADAS, anunciadas);
+                    }
+                } else {
+                    alertasActivas.forEach(a => anunciadas.add(a._id));
                     guardarSet(STORAGE_ANUNCIADAS, anunciadas);
                 }
-            } else {
-                alertasActivas.forEach(a => anunciadas.add(a._id));
-                guardarSet(STORAGE_ANUNCIADAS, anunciadas);
+            } catch (err) {
+                console.warn('Error verificando alertas de dolor:', err);
             }
-        } catch (err) {
-            console.warn('Error verificando alertas de dolor:', err);
         }
-    }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        verificarAlertasDolor(true);
-        setInterval(() => verificarAlertasDolor(true), 45000);
-    });
-})();
-</script>
+        document.addEventListener('DOMContentLoaded', () => {
+            verificarAlertasDolor(true);
+            setInterval(() => verificarAlertasDolor(true), 45000);
+        });
+    })();
+    </script>
 </body>
 
 </html>
