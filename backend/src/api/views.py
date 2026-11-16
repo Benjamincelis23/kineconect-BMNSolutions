@@ -558,17 +558,25 @@ class PautaViewSet(viewsets.ModelViewSet):
             serializer.is_valid(raise_exception=True)
             instance = serializer.save()
 
-            # Renueva la fecha de ciclo al editar para habilitar nuevamente la pauta en el móvil
-            ahora = timezone.now()
-            update_fields = []
-            if hasattr(instance, 'actualizado_en'):
-                instance.actualizado_en = ahora
-                update_fields.append('actualizado_en')
-            if hasattr(instance, 'creado_en'):
-                instance.creado_en = ahora
-                update_fields.append('creado_en')
-            if update_fields:
-                instance.save(update_fields=update_fields)
+            # Solo reinicia el contador si la pauta ya había cumplido su meta semanal;
+            # si estaba en desarrollo (ej. 1/3 o 2/3), conserva las sesiones ya realizadas.
+            meta_pauta = getattr(instance, 'frecuencia_semanal', None) or 3
+            hechas_ciclo = RegistroFeedback.objects.filter(
+                pauta=instance,
+                fecha_ejecucion__gte=_inicio_ciclo_pauta(instance),
+            ).count()
+
+            if hechas_ciclo >= meta_pauta:
+                ahora = timezone.now()
+                update_fields = []
+                if hasattr(instance, 'actualizado_en'):
+                    instance.actualizado_en = ahora
+                    update_fields.append('actualizado_en')
+                if hasattr(instance, 'creado_en'):
+                    instance.creado_en = ahora
+                    update_fields.append('creado_en')
+                if update_fields:
+                    instance.save(update_fields=update_fields)
 
             if isinstance(ejercicios_data, list) and hasattr(instance, 'ejercicios_detalle'):
                 DetalleModel = instance.ejercicios_detalle.model
