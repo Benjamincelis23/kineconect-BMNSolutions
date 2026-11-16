@@ -135,14 +135,27 @@ export default function HomeScreen({ navigation }) {
   const metaSemanal = Math.max(1, Number(me.meta_semanal || 3));
   const sesionesSemana = Number(me.sesiones_semana || 0);
   const progreso = Math.min(1, sesionesSemana / metaSemanal);
-  const metaCumplida = sesionesSemana >= metaSemanal;
+  const metaGlobalCumplida = sesionesSemana >= metaSemanal;
   const infoKine = obtenerInfoKinesiologo(me, pautas);
-  const primeraPauta = pautas.length > 0 ? pautas[0] : null;
 
-  const abrirPauta = (pautaId) => {
+  // Evaluación independiente por pauta
+  const esPautaCumplida = (pauta) => {
+    if (!pauta) return metaGlobalCumplida;
+    const metaP = Math.max(1, Number(pauta.meta_semanal || 3));
+    if (pauta.sesiones_semana != null) {
+      return Number(pauta.sesiones_semana) >= metaP;
+    }
+    return metaGlobalCumplida;
+  };
+
+  // El botón principal prioriza la primera pauta que aún tenga sesiones disponibles
+  const pautaPrincipal = pautas.find((p) => !esPautaCumplida(p)) || (pautas.length > 0 ? pautas[0] : null);
+  const principalCumplida = pautaPrincipal ? esPautaCumplida(pautaPrincipal) : metaGlobalCumplida;
+
+  const abrirPauta = (pauta) => {
     navigation.navigate('PautaDetail', {
-      id: pautaId,
-      soloConsulta: metaCumplida,
+      id: pauta.id,
+      soloConsulta: esPautaCumplida(pauta),
     });
   };
 
@@ -196,10 +209,10 @@ export default function HomeScreen({ navigation }) {
         <View style={[styles.heroCard, { backgroundColor: c.surface, borderColor: c.border }]}>
           <View style={styles.statsHeader}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <View style={[styles.miniIconBox, { backgroundColor: metaCumplida ? c.successBg : c.accentBg }]}>
+              <View style={[styles.miniIconBox, { backgroundColor: metaGlobalCumplida ? c.successBg : c.accentBg }]}>
                 <MaterialCommunityIcons
-                  color={metaCumplida ? c.success : c.primary}
-                  name={metaCumplida ? 'trophy-outline' : 'target'}
+                  color={metaGlobalCumplida ? c.success : c.primary}
+                  name={metaGlobalCumplida ? 'trophy-outline' : 'target'}
                   size={18}
                 />
               </View>
@@ -209,17 +222,17 @@ export default function HomeScreen({ navigation }) {
             <View
               style={[
                 styles.goalBadge,
-                { backgroundColor: metaCumplida ? c.successBg : c.surfaceSoft },
+                { backgroundColor: metaGlobalCumplida ? c.successBg : c.surfaceSoft },
               ]}
             >
               <Text
                 style={{
-                  color: metaCumplida ? c.success : c.textSub,
+                  color: metaGlobalCumplida ? c.success : c.textSub,
                   fontSize: 11.5,
                   fontWeight: '700',
                 }}
               >
-                {metaCumplida ? '✓ Meta cumplida' : `${Math.round(progreso * 100)}%`}
+                {metaGlobalCumplida ? '✓ Meta cumplida' : `${Math.round(progreso * 100)}%`}
               </Text>
             </View>
           </View>
@@ -234,12 +247,12 @@ export default function HomeScreen({ navigation }) {
           </View>
 
           <ProgressBar
-            color={metaCumplida ? c.success : c.primary}
+            color={metaGlobalCumplida ? c.success : c.primary}
             progress={progreso}
             style={[styles.thickProgressBar, { backgroundColor: c.surfaceSoft }]}
           />
 
-          {metaCumplida && (
+          {metaGlobalCumplida && (
             <View style={[styles.restNoticeBox, { backgroundColor: c.successBg, borderColor: c.success }]}>
               <MaterialCommunityIcons name="shield-check-outline" size={18} color={c.success} />
               <Text style={{ flex: 1, color: c.success, fontSize: 12.5, fontWeight: '700', lineHeight: 17 }}>
@@ -248,20 +261,22 @@ export default function HomeScreen({ navigation }) {
             </View>
           )}
 
-          {primeraPauta && (
+          {pautaPrincipal && (
             <Button
-              mode={metaCumplida ? 'outlined' : 'contained'}
-              icon={metaCumplida ? 'eye-outline' : 'play'}
-              onPress={() => abrirPauta(primeraPauta.id)}
-              buttonColor={metaCumplida ? c.accentBg : c.primary}
-              textColor={metaCumplida ? c.primary : (isDark ? '#0F172A' : '#FFFFFF')}
+              mode={principalCumplida ? 'outlined' : 'contained'}
+              icon={principalCumplida ? 'eye-outline' : 'play'}
+              onPress={() => abrirPauta(pautaPrincipal)}
+              buttonColor={principalCumplida ? c.accentBg : c.primary}
+              textColor={principalCumplida ? c.primary : (isDark ? '#0F172A' : '#FFFFFF')}
               style={[
                 { marginTop: 16, borderRadius: 14 },
-                metaCumplida && { borderColor: c.primary, borderWidth: 1.5 },
+                principalCumplida && { borderColor: c.primary, borderWidth: 1.5 },
               ]}
               contentStyle={{ paddingVertical: 4 }}
             >
-              {metaCumplida ? `Repasar ejercicios: ${primeraPauta.titulo}` : `Entrenar: ${primeraPauta.titulo}`}
+              {principalCumplida
+                ? `Repasar ejercicios: ${pautaPrincipal.titulo}`
+                : `Entrenar: ${pautaPrincipal.titulo}`}
             </Button>
           )}
         </View>
@@ -283,30 +298,34 @@ export default function HomeScreen({ navigation }) {
             />
           </View>
         ) : (
-          pautas.map((p, idx) => {
+          pautas.map((p) => {
             const totalEj = p.total_ejercicios ?? p.ejercicios_detalle?.length ?? 0;
+            const pautaCumplida = esPautaCumplida(p);
+            const metaP = Math.max(1, Number(p.meta_semanal || 3));
+            const hechasP = p.sesiones_semana != null ? Math.min(Number(p.sesiones_semana), metaP) : null;
+
             return (
               <TouchableOpacity
                 activeOpacity={0.78}
                 key={p.id}
-                onPress={() => abrirPauta(p.id)}
+                onPress={() => abrirPauta(p)}
                 style={[
                   styles.pautaItem,
                   {
                     backgroundColor: c.surface,
-                    borderColor: metaCumplida ? c.success : c.border,
+                    borderColor: pautaCumplida ? c.success : c.border,
                   },
                 ]}
               >
                 <View
                   style={[
                     styles.pautaIconWrapper,
-                    { backgroundColor: metaCumplida ? c.successBg : c.accentBg },
+                    { backgroundColor: pautaCumplida ? c.successBg : c.accentBg },
                   ]}
                 >
                   <MaterialCommunityIcons
-                    color={metaCumplida ? c.success : c.primary}
-                    name={metaCumplida ? 'book-open-page-variant-outline' : 'dumbbell'}
+                    color={pautaCumplida ? c.success : c.primary}
+                    name={pautaCumplida ? 'book-open-page-variant-outline' : 'dumbbell'}
                     size={24}
                   />
                 </View>
@@ -319,8 +338,10 @@ export default function HomeScreen({ navigation }) {
                   </View>
                   <Text style={[styles.pautaSubtitle, { color: c.textSub }]}>
                     {totalEj} {totalEj === 1 ? 'ejercicio' : 'ejercicios'} •{' '}
-                    {metaCumplida
+                    {pautaCumplida
                       ? 'Modo solo consulta (repaso técnico)'
+                      : hechasP != null
+                      ? `${hechasP}/${metaP} sesiones esta semana`
                       : `Asignada el ${new Date(p.fecha_creacion).toLocaleDateString('es-CL')}`}
                   </Text>
                 </View>
@@ -329,25 +350,13 @@ export default function HomeScreen({ navigation }) {
                   style={[
                     styles.playPill,
                     {
-                      backgroundColor: metaCumplida
-                        ? c.accentBg
-                        : idx === 0
-                        ? c.primary
-                        : c.surfaceSoft,
+                      backgroundColor: pautaCumplida ? c.accentBg : c.primary,
                     },
                   ]}
                 >
                   <MaterialCommunityIcons
-                    color={
-                      metaCumplida
-                        ? c.primary
-                        : idx === 0
-                        ? isDark
-                          ? '#0F172A'
-                          : '#FFFFFF'
-                        : c.primary
-                    }
-                    name={metaCumplida ? 'eye-outline' : 'chevron-right'}
+                    color={pautaCumplida ? c.primary : (isDark ? '#0F172A' : '#FFFFFF')}
+                    name={pautaCumplida ? 'eye-outline' : 'chevron-right'}
                     size={20}
                   />
                 </View>

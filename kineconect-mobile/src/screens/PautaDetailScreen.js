@@ -167,7 +167,11 @@ export default function PautaDetailScreen({ route, navigation }) {
       setPauta(resPauta.data);
       cacheSet(`pauta_${id}`, resPauta.data);
 
-      if (resMe?.data) {
+      // Evalúa el límite propio de esta pauta
+      if (resPauta?.data && resPauta.data.sesiones_semana != null) {
+        const metaP = Math.max(1, Number(resPauta.data.meta_semanal || 3));
+        setMetaCumplidaApi(Number(resPauta.data.sesiones_semana) >= metaP);
+      } else if (resMe?.data) {
         const meta = Math.max(1, Number(resMe.data.meta_semanal || 3));
         const sem = Number(resMe.data.sesiones_semana || 0);
         setMetaCumplidaApi(sem >= meta);
@@ -419,7 +423,6 @@ export default function PautaDetailScreen({ route, navigation }) {
 
           {/* Tarjeta principal del ejercicio */}
           <View style={[styles.mainCard, { backgroundColor: c.surface, borderColor: c.border }]}>
-            {/* Demostración: Video MP4 o Guía Paso a Paso */}
             {ej.mediaUrl ? (
               <View>
                 <VideoMedia uri={ej.mediaUrl} />
@@ -479,7 +482,6 @@ export default function PautaDetailScreen({ route, navigation }) {
               </View>
             )}
 
-            {/* Título y Franja Única de Dosificación */}
             <View style={{ padding: 18 }}>
               <Text style={{ color: c.textSub, fontSize: 12, fontWeight: '700', marginBottom: 2 }}>
                 {ej.zona} • Nivel {ej.dificultad}
@@ -488,7 +490,6 @@ export default function PautaDetailScreen({ route, navigation }) {
                 {ej.nombre}
               </Text>
 
-              {/* 3 Métricas limpias */}
               <View style={[styles.metricsStrip, { backgroundColor: c.surfaceSoft, borderColor: c.border, marginBottom: esSoloConsulta ? 0 : 14 }]}>
                 <View style={styles.metricCol}>
                   <Text style={{ color: c.primary, fontSize: 18, fontWeight: '800' }}>{ej.series}</Text>
@@ -506,7 +507,6 @@ export default function PautaDetailScreen({ route, navigation }) {
                 </View>
               </View>
 
-              {/* Controles de ejecución (ocultos en modo solo consulta) */}
               {!esSoloConsulta && (
                 <>
                   <View style={styles.seriesDotsRow}>
@@ -574,7 +574,6 @@ export default function PautaDetailScreen({ route, navigation }) {
             </View>
           </View>
 
-          {/* Navegación Inferior */}
           <View style={styles.footerNav}>
             <Button
               mode="outlined"
@@ -619,7 +618,6 @@ export default function PautaDetailScreen({ route, navigation }) {
             )}
           </View>
 
-          {/* Botón de detención anticipada por dolor (solo en sesión activa) */}
           {!esSoloConsulta && (
             <TouchableOpacity
               activeOpacity={0.75}
@@ -664,7 +662,6 @@ export default function PautaDetailScreen({ route, navigation }) {
 
         {renderBannerSoloConsulta()}
 
-        {/* Tarjeta de inicio rápido */}
         <View style={[styles.summaryBox, { backgroundColor: c.surface, borderColor: c.border }]}>
           {!esSoloConsulta && (
             <>
@@ -702,7 +699,6 @@ export default function PautaDetailScreen({ route, navigation }) {
           </Button>
         </View>
 
-        {/* Lista limpia de ejercicios */}
         {ejercicios.map((ej, index) => {
           const hechas = seriesHechas[ej.key]?.length || 0;
           const listo = !esSoloConsulta && hechas >= ej.series;

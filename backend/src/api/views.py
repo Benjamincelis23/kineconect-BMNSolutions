@@ -66,6 +66,15 @@ def _pacientes_visibles(user):
     return qs
 
 
+def _inicio_ciclo_pauta(pauta):
+    """Determina desde qué fecha se cuentan las sesiones semanales de una pauta."""
+    desde = timezone.now() - timedelta(days=7)
+    marca = getattr(pauta, 'actualizado_en', None) or getattr(pauta, 'creado_en', None)
+    if marca and marca > desde:
+        desde = marca
+    return desde
+
+
 class SoloLecturaParaPacientes(permissions.BasePermission):
     """Los pacientes pueden consultar pautas, pero no crearlas, editarlas ni borrarlas."""
 
@@ -240,26 +249,33 @@ class MeView(APIView):
         perfil = getattr(u, 'perfil', None)
         kine_user = getattr(perfil, 'kinesiologo_asignado', None)
 
-        if not kine_user:
-            ultima = (
-                Pauta.objects.filter(paciente=u, activo=True, es_plantilla=False)
-                .select_related('kinesiologo')
-                .order_by('-creado_en')
-                .first()
-            )
-            if ultima and ultima.kinesiologo:
-                kine_user = ultima.kinesiologo
+        pautas_activas = list(
+            Pauta.objects.filter(paciente=u, activo=True, es_plantilla=False)
+            .select_related('kinesiologo')
+            .order_by('-creado_en')
+        )
+
+        if not kine_user and pautas_activas and pautas_activas[0].kinesiologo:
+            kine_user = pautas_activas[0].kinesiologo
 
         kine = None
         if kine_user:
             nombre = f'{kine_user.first_name} {kine_user.last_name}'.strip() or kine_user.username
             kine = {'nombre': nombre, 'email': kine_user.email}
 
-        semana = RegistroFeedback.objects.filter(
-            pauta__paciente=u,
-            pauta__activo=True,
-            fecha_ejecucion__gte=timezone.now() - timedelta(days=7),
-        ).count()
+        semana = 0
+        meta_total = 0
+
+        for p in pautas_activas:
+            meta_pauta = getattr(p, 'frecuencia_semanal', None) or 3
+            meta_total += meta_pauta
+
+            desde_pauta = _inicio_ciclo_pauta(p)
+            hechas_pauta = RegistroFeedback.objects.filter(
+                pauta=p,
+                fecha_ejecucion__gte=desde_pauta,
+            ).count()
+            semana += min(hechas_pauta, meta_pauta)
 
         return Response({
             'nombre': u.first_name,
@@ -268,7 +284,7 @@ class MeView(APIView):
             'email': u.email,
             'kinesiologo': kine,
             'sesiones_semana': semana,
-            'meta_semanal': 3,
+            'meta_semanal': meta_total or 3,
         })
 
 
@@ -296,17 +312,17 @@ class PautaDetailView(generics.RetrieveAPIView):
 
 
 def _validar_limite_sesiones(pauta):
-    """Impide registrar más sesiones si el paciente ya cumplió su meta semanal."""
-    hace_7_dias = timezone.now() - timedelta(days=7)
+    """Impide registrar más sesiones si el paciente ya cumplió su meta semanal vigente para esta pauta."""
+    desde_fecha = _inicio_ciclo_pauta(pauta)
     sesiones_semana = RegistroFeedback.objects.filter(
         pauta=pauta,
-        fecha_ejecucion__gte=hace_7_dias,
+        fecha_ejecucion__gte=desde_fecha,
     ).count()
 
     meta_semanal = getattr(pauta, 'frecuencia_semanal', None) or 3
     if sesiones_semana >= meta_semanal:
         raise DRFValidationError(
-            f'Ya cumpliste las {meta_semanal} sesiones prescritas para esta semana. '
+            f'Ya cumpliste las {meta_semanal} sesiones prescritas para esta pauta esta semana. '
             'Descansa y espera el siguiente ciclo o una nueva indicación de tu kinesiólogo.'
         )
 
@@ -542,28 +558,38 @@ class PautaViewSet(viewsets.ModelViewSet):
             serializer.is_valid(raise_exception=True)
             instance = serializer.save()
 
-            # Si el serializer no reemplazó los detalles por sí solo, los sincroniza explícitamente
+            # Renueva la fecha de ciclo al editar para habilitar nuevamente la pauta en el móvil
+            ahora = timezone.now()
+            update_fields = []
+            if hasattr(instance, 'actualizado_en'):
+                instance.actualizado_en = ahora
+                update_fields.append('actualizado_en')
+            if hasattr(instance, 'creado_en'):
+                instance.creado_en = ahora
+                update_fields.append('creado_en')
+            if update_fields:
+                instance.save(update_fields=update_fields)
+
             if isinstance(ejercicios_data, list) and hasattr(instance, 'ejercicios_detalle'):
                 DetalleModel = instance.ejercicios_detalle.model
-                if instance.ejercicios_detalle.count() != len(ejercicios_data):
-                    instance.ejercicios_detalle.all().delete()
-                    campos_validos = {f.name for f in DetalleModel._meta.get_fields()}
-                    for idx, item in enumerate(ejercicios_data):
-                        ej_id = item.get('ejercicio') or item.get('ejercicio_id')
-                        if not ej_id:
-                            continue
-                        kwargs_det = {'pauta': instance}
-                        if 'ejercicio_id' in campos_validos or 'ejercicio' in campos_validos:
-                            kwargs_det['ejercicio_id'] = int(ej_id)
-                        if 'series' in campos_validos:
-                            kwargs_det['series'] = int(item.get('series', 3))
-                        if 'repeticiones' in campos_validos:
-                            kwargs_det['repeticiones'] = int(item.get('repeticiones', 12))
-                        if 'tiempo_descanso_segundos' in campos_validos:
-                            kwargs_det['tiempo_descanso_segundos'] = int(item.get('tiempo_descanso_segundos', 60))
-                        if 'orden' in campos_validos:
-                            kwargs_det['orden'] = int(item.get('orden', idx + 1))
-                        DetalleModel.objects.create(**kwargs_det)
+                instance.ejercicios_detalle.all().delete()
+                campos_validos = {f.name for f in DetalleModel._meta.get_fields()}
+                for idx, item in enumerate(ejercicios_data):
+                    ej_id = item.get('ejercicio') or item.get('ejercicio_id')
+                    if not ej_id:
+                        continue
+                    kwargs_det = {'pauta': instance}
+                    if 'ejercicio_id' in campos_validos or 'ejercicio' in campos_validos:
+                        kwargs_det['ejercicio_id'] = int(ej_id)
+                    if 'series' in campos_validos:
+                        kwargs_det['series'] = int(item.get('series', 3))
+                    if 'repeticiones' in campos_validos:
+                        kwargs_det['repeticiones'] = int(item.get('repeticiones', 12))
+                    if 'tiempo_descanso_segundos' in campos_validos:
+                        kwargs_det['tiempo_descanso_segundos'] = int(item.get('tiempo_descanso_segundos', 60))
+                    if 'orden' in campos_validos:
+                        kwargs_det['orden'] = int(item.get('orden', idx + 1))
+                    DetalleModel.objects.create(**kwargs_det)
 
         return Response(PautaDetailSerializer(instance, context={'request': request}).data)
 
@@ -574,20 +600,14 @@ class PautaViewSet(viewsets.ModelViewSet):
 
         forzar = self.request.query_params.get('forzar', '').lower() in ('true', '1', 'yes')
 
-        # Si ya estaba archivada o se pide borrado forzado, elimina reportes y pauta por completo
         if forzar or not instance.activo:
             RegistroFeedback.objects.filter(pauta=instance).delete()
             instance.delete()
         elif RegistroFeedback.objects.filter(pauta=instance).exists():
-            # Primer borrado con historial clínico: archiva para conservar trazabilidad
             instance.activo = False
             instance.save(update_fields=['activo'])
         else:
             instance.delete()
-
-    @action(detail=False, methods=['get'], url_path='alertas-abandono')
-    def alertas_abandono(self, request):
-        return Response(_calcular_alertas_abandono(request.user), status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'], url_path='alertas-abandono')
     def alertas_abandono(self, request):

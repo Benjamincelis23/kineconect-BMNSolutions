@@ -1,8 +1,10 @@
 import secrets
 import string
+from datetime import timedelta
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import Perfil, Ejercicio, Pauta, PautaEjercicio, RegistroFeedback
@@ -68,7 +70,6 @@ class PacienteRegistroSerializer(serializers.ModelSerializer):
             )
         user._password_temporal = password_temporal
 
-        # El correo es un respaldo: si falla, el registro sigue y el modal muestra la clave.
         if correo_paciente:
             enviar_credenciales_en_segundo_plano(
                 correo_paciente, user.get_full_name(), username, password_temporal
@@ -137,6 +138,14 @@ def _nombre_o_username(u):
     return f'{u.first_name} {u.last_name}'.strip() or u.username
 
 
+def _contar_sesiones_pauta(obj):
+    desde = timezone.now() - timedelta(days=7)
+    marca = getattr(obj, 'actualizado_en', None) or getattr(obj, 'creado_en', None)
+    if marca and marca > desde:
+        desde = marca
+    return RegistroFeedback.objects.filter(pauta=obj, fecha_ejecucion__gte=desde).count()
+
+
 class PautaListSerializer(serializers.ModelSerializer):
     total_ejercicios = serializers.IntegerField(source='ejercicios_detalle.count', read_only=True)
     cantidad_ejercicios = serializers.IntegerField(source='ejercicios_detalle.count', read_only=True)
@@ -144,6 +153,8 @@ class PautaListSerializer(serializers.ModelSerializer):
     paciente_nombre = serializers.SerializerMethodField()
     kinesiologo_nombre = serializers.SerializerMethodField()
     ejercicios_detalle = PautaEjercicioSerializer(many=True, read_only=True)
+    sesiones_semana = serializers.SerializerMethodField()
+    meta_semanal = serializers.SerializerMethodField()
 
     class Meta:
         model = Pauta
@@ -151,7 +162,7 @@ class PautaListSerializer(serializers.ModelSerializer):
             'id', 'titulo', 'notas', 'paciente', 'paciente_nombre',
             'kinesiologo_nombre', 'creado_en', 'fecha_creacion', 'activo',
             'total_ejercicios', 'cantidad_ejercicios', 'es_plantilla',
-            'ejercicios_detalle',
+            'sesiones_semana', 'meta_semanal', 'ejercicios_detalle',
         ]
 
     def get_paciente_nombre(self, obj):
@@ -159,6 +170,12 @@ class PautaListSerializer(serializers.ModelSerializer):
 
     def get_kinesiologo_nombre(self, obj):
         return _nombre_o_username(obj.kinesiologo) if obj.kinesiologo else "KineConnect"
+
+    def get_meta_semanal(self, obj):
+        return getattr(obj, 'frecuencia_semanal', None) or 3
+
+    def get_sesiones_semana(self, obj):
+        return _contar_sesiones_pauta(obj)
 
 
 class PautaDetailSerializer(serializers.ModelSerializer):
@@ -167,13 +184,16 @@ class PautaDetailSerializer(serializers.ModelSerializer):
     fecha_creacion = serializers.DateTimeField(source='creado_en', read_only=True)
     paciente_nombre = serializers.SerializerMethodField()
     kinesiologo_nombre = serializers.SerializerMethodField()
+    sesiones_semana = serializers.SerializerMethodField()
+    meta_semanal = serializers.SerializerMethodField()
 
     class Meta:
         model = Pauta
         fields = [
             'id', 'titulo', 'notas', 'paciente', 'paciente_nombre',
             'kinesiologo_nombre', 'es_plantilla', 'activo',
-            'creado_en', 'fecha_creacion', 'ejercicios', 'ejercicios_detalle',
+            'creado_en', 'fecha_creacion', 'sesiones_semana', 'meta_semanal',
+            'ejercicios', 'ejercicios_detalle',
         ]
 
     def get_paciente_nombre(self, obj):
@@ -181,6 +201,12 @@ class PautaDetailSerializer(serializers.ModelSerializer):
 
     def get_kinesiologo_nombre(self, obj):
         return _nombre_o_username(obj.kinesiologo) if obj.kinesiologo else "KineConnect"
+
+    def get_meta_semanal(self, obj):
+        return getattr(obj, 'frecuencia_semanal', None) or 3
+
+    def get_sesiones_semana(self, obj):
+        return _contar_sesiones_pauta(obj)
 
 
 # Alias de compatibilidad
@@ -225,7 +251,6 @@ class PautaCreateSerializer(serializers.ModelSerializer):
         read_only_fields = ('id',)
 
     def to_internal_value(self, data):
-        # Si el front manda el texto con otro nombre, se acepta como 'notas'.
         if hasattr(data, 'copy'):
             data = data.copy()
         if not data.get('notas'):
