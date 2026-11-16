@@ -400,6 +400,7 @@
     <script src="js/crear_pautas.js"></script>
 
     <!-- Soporte para Edición de Pautas Existentes (?editar=<id>) -->
+    <!-- Soporte para Edición de Pautas Existentes (?editar=<id>) -->
     <script>
     (function habilitarModoEdicionPauta() {
         const params = new URLSearchParams(window.location.search);
@@ -501,15 +502,17 @@
 
             const token = obtenerTokenJWT();
             const base = (typeof BACKEND_ORIGIN !== 'undefined' ? BACKEND_ORIGIN : 'https://kineconect-bmnsolutions.onrender.com');
-            const headers = token ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
+            const headers = token
+                ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+                : { 'Content-Type': 'application/json' };
 
             try {
                 const [resPauta, resEjs] = await Promise.all([
-                    fetch(`${base}/api/pautas/${editId}/`, { headers }),
-                    fetch(`${base}/api/ejercicios/`, { headers })
+                    fetch(`${base}/api/v1/pautas/${editId}/`, { headers }),
+                    fetch(`${base}/api/v1/ejercicios/`, { headers })
                 ]);
 
-                if (!resPauta.ok) throw new Error('No se pudo cargar la pauta para editar.');
+                if (!resPauta.ok) throw new Error(`Error ${resPauta.status} al cargar la pauta.`);
                 const pauta = await resPauta.json();
 
                 if (resEjs.ok) {
@@ -567,15 +570,28 @@
                     listaCentral.addEventListener('click', (ev) => {
                         const btn = ev.target.closest('button');
                         if (!btn) return;
-                        const ejId = Number(btn.dataset.id || btn.getAttribute('data-ejercicio-id') || 0);
+                        const onclickAttr = btn.getAttribute('onclick') || '';
+                        const matchOnclick = onclickAttr.match(/\((\d+)\)/);
+                        const ejId = Number(
+                            btn.dataset.id ||
+                            btn.getAttribute('data-ejercicio-id') ||
+                            (matchOnclick ? matchOnclick[1] : 0)
+                        );
                         if (!ejId) return;
+
+                        // Ignora botones de vista previa multimedia
+                        if (onclickAttr.toLowerCase().includes('multimedia') || onclickAttr.toLowerCase().includes('video')) return;
+
                         ev.stopImmediatePropagation();
                         ev.preventDefault();
+
                         const yaExiste = itemsEdicion.some(x => Number(x.ejercicio_id) === ejId);
                         if (!yaExiste) {
+                            const cardDom = btn.closest('div');
+                            const nombreDom = cardDom?.parentElement?.querySelector('strong, h4, h5')?.textContent?.trim();
                             itemsEdicion.push({
                                 ejercicio_id: ejId,
-                                nombre: catalogoCache[ejId] || `Ejercicio #${ejId}`,
+                                nombre: catalogoCache[ejId] || nombreDom || `Ejercicio #${ejId}`,
                                 series: 3,
                                 repeticiones: 12,
                                 tiempo_descanso_segundos: 60,
@@ -585,7 +601,7 @@
                     }, true);
                 }
 
-                // Intercepta el envío del formulario para ejecutar PATCH en vez de POST
+                // Intercepta el envío del formulario para ejecutar PATCH en /api/v1/pautas/<id>/
                 const form = document.getElementById('form-guardar-pauta');
                 if (form) {
                     form.addEventListener('submit', async (ev) => {
@@ -629,7 +645,7 @@
                                 })),
                             };
 
-                            const respPatch = await fetch(`${base}/api/pautas/${editId}/`, {
+                            const respPatch = await fetch(`${base}/api/v1/pautas/${editId}/`, {
                                 method: 'PATCH',
                                 headers,
                                 body: JSON.stringify(payload),

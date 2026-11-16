@@ -291,7 +291,7 @@
             try {
                 const token = obtenerTokenLocal();
                 const base = (typeof BACKEND_ORIGIN !== 'undefined' ? BACKEND_ORIGIN : 'https://kineconect-bmnsolutions.onrender.com');
-                const res = await fetch(`${base}/api/pautas/${pautaId}/`, {
+                const res = await fetch(`${base}/api/v1/pautas/${pautaId}/`, {
                     method: 'DELETE',
                     headers: token ? { Authorization: `Bearer ${token}` } : {}
                 });
