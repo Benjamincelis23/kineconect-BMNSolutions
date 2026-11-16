@@ -2,7 +2,7 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { API_URL } from '../constants/config';
 
-const api = axios.create({ baseURL: API_URL, timeout: 10000 });
+const api = axios.create({ baseURL: API_URL, timeout: 30000 });
 
 let onSessionExpired = () => {};
 export const setSessionExpiredHandler = (fn) => { onSessionExpired = fn; };
