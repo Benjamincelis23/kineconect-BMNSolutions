@@ -474,6 +474,11 @@ def _construir_resumen_clinico(user, pautas_qs):
 
         ultimo_fb = RegistroFeedback.objects.filter(pauta=pauta).order_by('-fecha_ejecucion').first()
         if ultimo_fb and (ultimo_fb.nivel_dolor or 0) >= 6:
+            # Si el kinesiólogo ya editó/ajustó la pauta después del reporte de dolor, la alerta queda atendida
+            actualizada = getattr(pauta, 'actualizado_en', None)
+            if actualizada and actualizada > ultimo_fb.fecha_ejecucion:
+                continue
+
             pac = pauta.paciente
             rut_pac = pac.perfil.rut if (pac and hasattr(pac, 'perfil')) else ''
             alertas_dolor.append({
@@ -618,15 +623,13 @@ class PautaViewSet(viewsets.ModelViewSet):
 
             if hechas_ciclo >= meta_pauta:
                 ahora = timezone.now()
-                update_fields = []
-                if hasattr(instance, 'actualizado_en'):
-                    instance.actualizado_en = ahora
-                    update_fields.append('actualizado_en')
-                if hasattr(instance, 'creado_en'):
-                    instance.creado_en = ahora
-                    update_fields.append('creado_en')
-                if update_fields:
-                    instance.save(update_fields=update_fields)
+            if hasattr(instance, 'actualizado_en'):
+                instance.actualizado_en = ahora
+                instance.save(update_fields=['actualizado_en'])
+
+            if hechas_ciclo >= meta_pauta and hasattr(instance, 'creado_en'):
+                instance.creado_en = ahora
+                instance.save(update_fields=['creado_en'])
 
             if isinstance(ejercicios_data, list) and hasattr(instance, 'ejercicios_detalle'):
                 DetalleModel = instance.ejercicios_detalle.model

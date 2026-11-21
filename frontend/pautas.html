@@ -387,11 +387,37 @@
             renderizarTablaPautas();
         }
 
+        async function desarchivarPauta(pautaId, titulo) {
+            if (!window.confirm(`¿Deseas reactivar y desarchivar la pauta "${titulo}"?`)) return;
+
+            try {
+                const token = obtenerTokenLocal();
+                const base = (typeof BACKEND_ORIGIN !== 'undefined' ? BACKEND_ORIGIN : 'https://kineconect-bmnsolutions.onrender.com');
+                const res = await fetch(`${base}/api/v1/pautas/${pautaId}/`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(token ? { Authorization: `Bearer ${token}` } : {})
+                    },
+                    body: JSON.stringify({ activo: true })
+                });
+
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => ({}));
+                    throw new Error(errData.detail || `Error ${res.status}`);
+                }
+
+                await cargarTodo();
+            } catch (err) {
+                alert(`No se pudo desarchivar la pauta: ${err.message}`);
+            }
+        }
+
         async function eliminarPauta(pautaId, titulo, esActiva) {
             const mensaje = esActiva
                 ? `¿Qué deseas hacer con la pauta "${titulo}"?\n\n` +
                   `• Si no tiene sesiones registradas, se eliminará de inmediato.\n` +
-                  `• Si ya tiene reportes clínicos, pasará a ARCHIVADA (oculta de la vista principal).`
+                  `• Si ya tiene reportes clínicos, pasará a ARCHIVADA (oculta de la vista principal, pero podrás desarchivarla cuando quieras).`
                 : `⚠️ ELIMINACIÓN DEFINITIVA\n\n` +
                   `La pauta "${titulo}" ya está archivada. Si confirmas, se borrará PERMANENTEMENTE junto con todos sus reportes de dolor asociados.\n\n` +
                   `¿Continuar con el borrado total?`;
@@ -458,9 +484,13 @@
                 const esActiva = p.activo !== false;
                 const esPlantilla = p.es_plantilla === true;
 
+                const rutVisual = p.paciente_rut ? formatearRutVisual(p.paciente_rut) : '';
                 const pacienteBadge = esPlantilla
                     ? '<span class="badge" style="background-color: #e0f2fe; color: #0369a1; font-weight: 600;"><i class="bx bx-bookmark-alt"></i> Plantilla Maestra</span>'
-                    : escaparHtml(p.paciente_nombre || 'Paciente');
+                    : `<div style="display: flex; flex-direction: column; gap: 2px;">
+                        <strong style="color: var(--azul-900); font-size: 0.9rem;"><i class='bx bx-user' style="color: #0284c7;"></i> ${escaparHtml(p.paciente_nombre || 'Paciente')}</strong>
+                        ${rutVisual ? `<span style="font-size: 0.76rem; color: var(--gris-500);">RUT: ${escaparHtml(rutVisual)}</span>` : ''}
+                       </div>`;
 
                 const tituloIcon = esPlantilla ? "<i class='bx bx-book-content' style='color: #0284c7; margin-right: 4px;'></i>" : "";
                 const estadoBadge = esActiva
@@ -472,13 +502,24 @@
                     ? `<span class="badge badge-neutro" style="font-size: 0.72rem; margin-left: 4px;">${p.sesiones_semana ?? 0}/${p.meta_semanal ?? 3} sem.</span>`
                     : '';
                 const evoPill = (evo && !esPlantilla)
-                    ? `<div style="margin-top: 4px; font-size: 0.76rem; font-weight: 600; color: ${evo.estado === 'ALERTA_DOLOR' || evo.estado === 'AUMENTO_BRUSCO' ? '#dc2626' : (evo.estado === 'PROGRESION_OPTIMA' ? '#059669' : '#0369a1')};">
+                    ? `<div style="margin-top: 4px; font-size: 0.76rem; font-weight: 600; color: ${evo.estado === 'ALERTA_DOLOR' || evo.estado === 'AUMENTO_BRUSCO' ? '#ef4444' : (evo.estado === 'PROGRESION_OPTIMA' ? '#10b981' : '#38bdf8')};">
                         ${escaparHtml(evo.etiqueta)}
                        </div>`
                     : '';
 
+                const btnStyleBase = 'display: inline-flex; align-items: center; justify-content: center; gap: 5px; height: 32px; padding: 0 10px; font-size: 0.8rem; line-height: 1; white-space: nowrap;';
+
+                const botonDesarchivar = !esActiva
+                    ? `<button type="button" class="btn btn-sm"
+                        style="${btnStyleBase} background: rgba(16, 185, 129, 0.14); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.35);"
+                        onclick="desarchivarPauta(${p.id}, '${tituloSeguro}')"
+                        title="Restaurar pauta archivada">
+                        <i class='bx bx-revision'></i> Desarchivar
+                       </button>`
+                    : '';
+
                 const tr = document.createElement('tr');
-                if (!esActiva) tr.style.opacity = '0.78';
+                if (!esActiva) tr.style.opacity = '0.85';
 
                 tr.innerHTML = `
                     <td>
@@ -487,17 +528,19 @@
                     </td>
                     <td>${pacienteBadge}</td>
                     <td><span class="badge badge-neutro">${cant} ejercicios</span>${cicloHtml}</td>
-                    <td>${fecha}</td>
+                    <td style="white-space: nowrap;">${fecha}</td>
                     <td>${estadoBadge}</td>
-                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                            <button type="button" class="btn btn-secondary btn-sm" onclick="verDetallePauta(${p.id})" title="Ver detalle">
+                    <td>
+                        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: nowrap;">
+                            <button type="button" class="btn btn-secondary btn-sm" style="${btnStyleBase}" onclick="verDetallePauta(${p.id})" title="Ver detalle">
                                 <i class='bx bx-show'></i> Ver
                             </button>
-                            <a href="crear_pauta.html?editar=${p.id}" class="btn btn-secondary btn-sm" title="Editar pauta">
+                            <a href="crear_pauta.html?editar=${p.id}" class="btn btn-secondary btn-sm" style="${btnStyleBase}" title="Editar pauta">
                                 <i class='bx bx-edit'></i> Editar
                             </a>
+                            ${botonDesarchivar}
                             <button type="button" class="btn btn-sm"
-                                style="background: rgba(239, 68, 68, 0.14); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.35);"
+                                style="${btnStyleBase} background: rgba(239, 68, 68, 0.14); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.35);"
                                 onclick="eliminarPauta(${p.id}, '${tituloSeguro}', ${esActiva})"
                                 title="${esActiva ? 'Archivar o eliminar pauta' : 'Eliminar definitivamente'}">
                                 <i class='bx bx-trash'></i>${esActiva ? '' : ' Borrar'}
@@ -1258,7 +1301,9 @@
 
                     const pautaId = typeof item.pauta === 'object' ? item.pauta?.id : item.pauta;
                     const pautaInfo = (pautaId != null && mapaPautasLocal[String(pautaId)]) || (typeof item.pauta === 'object' ? item.pauta : {}) || {};
-
+const fechaFb = item.fecha_ejecucion ? new Date(item.fecha_ejecucion).getTime() : 0;
+                    const fechaEdit = pautaInfo.actualizado_en ? new Date(pautaInfo.actualizado_en).getTime() : 0;
+                    if (fechaEdit && fechaFb && fechaEdit > fechaFb) return;
                     const pacienteNombre =
                         item.paciente_nombre ||
                         item.nombre_paciente ||
