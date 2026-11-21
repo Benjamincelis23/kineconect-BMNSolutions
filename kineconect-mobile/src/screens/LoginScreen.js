@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
-  TouchableOpacity,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import KineConnectLogo from '../components/KineConnectLogo';
 import api from '../services/api';
@@ -31,9 +31,9 @@ export default function LoginScreen() {
 
     try {
       setLoading(true);
-      const cleanRut = rut.trim().replace(/\./g, '').replace(/-/g, '');
+      const cleanRut = rut.trim().replace(/\./g, '').replace(/-/g, '').toUpperCase();
 
-      const response = await api.post('/api/token/', {
+      const response = await api.post('/api/v1/auth/login/', {
         username: cleanRut,
         password: password,
       });
