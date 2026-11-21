@@ -2,6 +2,24 @@
 <html lang="es">
 
 <head>
+    <style>
+    body.dark-mode #select-filtro-paciente,
+    html.dark-mode #select-filtro-paciente,
+    [data-theme="dark"] #select-filtro-paciente,
+    body.dark #select-filtro-paciente {
+        background-color: #162236 !important;
+        color: #f8fafc !important;
+        border-color: #24344d !important;
+    }
+
+    body.dark-mode #select-filtro-paciente option,
+    html.dark-mode #select-filtro-paciente option,
+    [data-theme="dark"] #select-filtro-paciente option,
+    body.dark #select-filtro-paciente option {
+        background-color: #162236;
+        color: #f8fafc;
+    }
+</style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Monitoreo de Dolor y Rutinas - KineConnect</title>
@@ -21,10 +39,10 @@
                         <p>Visualiza la adherencia, series ejecutadas y escala EVA reportadas por tus pacientes desde la app móvil.</p>
                     </div>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-                        <select id="select-filtro-paciente" onchange="aplicarFiltroPacienteUI(this.value)"
-                            style="height: 38px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--gris-300); font-size: 0.85rem; font-weight: 600; background: var(--blanco, #fff); color: var(--azul-900);">
-                            <option value="">Todos los pacientes</option>
-                        </select>
+                        <select id="select-filtro-paciente" onchange="aplicarFiltroPacienteUI(this.value)" class="btn btn-secondary"
+    style="height: 38px; padding: 0 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+    <option value="">Todos los pacientes</option>
+</select>
                         <button type="button" class="btn btn-secondary" onclick="abrirModalInformeRut()">
                             <i class='bx bxs-file-pdf' style="color: #ef4444;"></i> Informe Clínico (RUT)
                         </button>

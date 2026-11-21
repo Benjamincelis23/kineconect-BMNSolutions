@@ -605,6 +605,13 @@ class PautaViewSet(viewsets.ModelViewSet):
         if not _es_admin(user) and instance.kinesiologo_id and instance.kinesiologo_id != user.id:
             raise PermissionDenied('Solo el kinesiólogo que creó esta pauta puede modificarla.')
 
+        # Si solo se está archivando o desarchivando la pauta (PATCH con {'activo': bool})
+        if partial and set(request.data.keys()) <= {'activo'}:
+            nuevo_estado = bool(request.data.get('activo', True))
+            Pauta.objects.filter(pk=instance.pk).update(activo=nuevo_estado, actualizado_en=timezone.now())
+            instance.refresh_from_db()
+            return Response(PautaDetailSerializer(instance, context={'request': request}).data)
+
         data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
         ejercicios_data = data.get('ejercicios', None)
 
