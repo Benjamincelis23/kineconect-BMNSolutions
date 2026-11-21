@@ -1016,10 +1016,10 @@ let reportesBaseTodos = [];
                     const idPac = typeof p.paciente === 'object' && p.paciente !== null ? p.paciente.id : p.paciente;
                     return String(idPac) === String(pacienteId) || String(p.paciente_user_id) === String(pacienteId);
                 });
-                const idsPautas = new Set(pautasCargadas.map(p => p.id));
+                const idsPautas = new Set(pautasCargadas.map(p => String(p.id)));
                 reportesCargados = reportesBaseTodos.filter(f => {
                     const pid = typeof f.pauta === 'object' && f.pauta !== null ? f.pauta.id : f.pauta;
-                    return idsPautas.has(pid);
+                    return idsPautas.has(String(pid));
                 });
             }
 
@@ -1032,13 +1032,9 @@ let reportesBaseTodos = [];
             const loadingPautas = document.getElementById('loading-pautas');
             const containerPautas = document.getElementById('container-tabla-pautas');
             const noPautas = document.getElementById('no-pautas');
-            const btnVerTodas = document.getElementById('btn-ver-todas-pautas');
 
             const params = new URLSearchParams(window.location.search);
-            const pacienteFiltro = params.get('paciente');
-            if (pacienteFiltro && btnVerTodas) {
-                btnVerTodas.classList.remove('is-hidden');
-            }
+            const pacienteFiltro = params.get('paciente') || '';
 
             if (loadingPautas) loadingPautas.classList.remove('is-hidden');
             if (containerPautas) containerPautas.classList.add('is-hidden');
@@ -1048,22 +1044,12 @@ let reportesBaseTodos = [];
                 await Promise.all([asegurarCatalogoEjercicios(), cargarPacientesParaInforme()]);
                 let pautas = await api.getPautas();
                 let todasPautas = Array.isArray(pautas) ? pautas : (pautas?.results || []);
-                todasPautasBase = todasPautas;
+                todasPautasBase = [...todasPautas];
 
                 mapaPautas = {};
                 todasPautas.forEach(p => { mapaPautas[p.id] = p; });
 
-                let listaPautas = todasPautas;
-                if (pacienteFiltro) {
-                    listaPautas = todasPautas.filter(p => {
-                        const idPac = typeof p.paciente === 'object' && p.paciente !== null ? p.paciente.id : p.paciente;
-                        return String(idPac) === String(pacienteFiltro) || String(p.paciente_user_id) === String(pacienteFiltro);
-                    });
-                }
-
-                pautasCargadas = listaPautas;
                 if (loadingPautas) loadingPautas.classList.add('is-hidden');
-                renderizarTablaPautas();
             } catch (e) {
                 if (loadingPautas) loadingPautas.classList.add('is-hidden');
                 if (noPautas) noPautas.classList.remove('is-hidden');
@@ -1081,20 +1067,10 @@ let reportesBaseTodos = [];
             try {
                 let feeds = await api.getReportesDolor();
                 let listaFeed = Array.isArray(feeds) ? feeds : (feeds?.results || []);
-
-                if (pacienteFiltro) {
-                    const idsPautasPaciente = new Set(pautasCargadas.map(p => p.id));
-                    listaFeed = listaFeed.filter(f => {
-                        const pid = typeof f.pauta === 'object' && f.pauta !== null ? f.pauta.id : f.pauta;
-                        return idsPautasPaciente.has(pid);
-                    });
-                }
-
-                reportesCargados = listaFeed;
-                actualizarKpisMonitoreo(reportesCargados);
+                reportesBaseTodos = [...listaFeed];
 
                 if (loadingFeed) loadingFeed.classList.add('is-hidden');
-                renderizarTablaFeedback();
+                aplicarFiltroPacienteUI(pacienteFiltro);
             } catch (e) {
                 if (loadingFeed) loadingFeed.classList.add('is-hidden');
                 if (noFeed) noFeed.classList.remove('is-hidden');
