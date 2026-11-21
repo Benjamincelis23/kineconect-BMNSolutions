@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import EmptyState from '../components/EmptyState';
 import Skeleton from '../components/Skeleton';
 import api from '../services/api';
-import { cacheGet, cacheSet, vaciarCola } from '../services/offline';
+import { cacheGet, cacheSet, contarPendientesCola, vaciarCola } from '../services/offline';
 
 function obtenerInfoKinesiologo(me, pautas = []) {
   const k = me?.kinesiologo;
@@ -47,6 +47,7 @@ export default function HomeScreen({ navigation }) {
   const [pautas, setPautas] = useState(null);
   const [error, setError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [pendientesOffline, setPendientesOffline] = useState(0);
 
   const c = {
     bg: isDark ? '#0F172A' : '#F8FAFC',
@@ -60,19 +61,27 @@ export default function HomeScreen({ navigation }) {
     primary: isDark ? '#38BDF8' : '#0284C7',
     success: '#10B981',
     successBg: isDark ? '#064E3B' : '#D1FAE5',
+    warning: '#F59E0B',
+    warningBg: isDark ? '#451A03' : '#FEF3C7',
   };
 
   const cargar = useCallback(async () => {
     setError(false);
     try {
-      vaciarCola();
-      const [m, p] = await Promise.all([api.get('/api/me/'), api.get('/api/pautas/')]);
+      await vaciarCola();
+      const [m, p, pend] = await Promise.all([
+        api.get('/api/me/'),
+        api.get('/api/pautas/'),
+        contarPendientesCola(),
+      ]);
       const lista = p.data.results ?? p.data;
       setMe(m.data);
       setPautas(lista);
+      setPendientesOffline(pend);
       cacheSet('home', { me: m.data, pautas: lista });
     } catch {
-      const cData = await cacheGet('home');
+      const [cData, pend] = await Promise.all([cacheGet('home'), contarPendientesCola()]);
+      setPendientesOffline(pend);
       if (cData) {
         setMe(cData.me);
         setPautas(cData.pautas);
@@ -138,7 +147,6 @@ export default function HomeScreen({ navigation }) {
   const metaGlobalCumplida = sesionesSemana >= metaSemanal;
   const infoKine = obtenerInfoKinesiologo(me, pautas);
 
-  // Evaluación independiente por pauta
   const esPautaCumplida = (pauta) => {
     if (!pauta) return metaGlobalCumplida;
     const metaP = Math.max(1, Number(pauta.meta_semanal || 3));
@@ -148,7 +156,6 @@ export default function HomeScreen({ navigation }) {
     return metaGlobalCumplida;
   };
 
-  // El botón principal prioriza la primera pauta que aún tenga sesiones disponibles
   const pautaPrincipal = pautas.find((p) => !esPautaCumplida(p)) || (pautas.length > 0 ? pautas[0] : null);
   const principalCumplida = pautaPrincipal ? esPautaCumplida(pautaPrincipal) : metaGlobalCumplida;
 
@@ -174,23 +181,44 @@ export default function HomeScreen({ navigation }) {
               {saludoAleatorio.frase}, {me.nombre || 'Paciente'} {saludoAleatorio.emoji}
             </Text>
 
-            <View
-              style={[
-                styles.kineTag,
-                {
-                  backgroundColor: infoKine.asignado ? c.accentBg : c.surface,
-                  borderColor: infoKine.asignado ? c.primary : c.border,
-                },
-              ]}
-            >
-              <MaterialCommunityIcons
-                color={infoKine.asignado ? c.accentText : c.textSub}
-                name={infoKine.asignado ? 'stethoscope' : 'account-clock-outline'}
-                size={14}
-              />
-              <Text style={[styles.kineText, { color: infoKine.asignado ? c.accentText : c.textSub }]}>
-                {infoKine.asignado ? infoKine.nombre : 'Sin kinesiólogo asignado'}
-              </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+              <View
+                style={[
+                  styles.kineTag,
+                  {
+                    backgroundColor: infoKine.asignado ? c.accentBg : c.surface,
+                    borderColor: infoKine.asignado ? c.primary : c.border,
+                  },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  color={infoKine.asignado ? c.accentText : c.textSub}
+                  name={infoKine.asignado ? 'stethoscope' : 'account-clock-outline'}
+                  size={14}
+                />
+                <Text style={[styles.kineText, { color: infoKine.asignado ? c.accentText : c.textSub }]}>
+                  {infoKine.asignado ? infoKine.nombre : 'Sin kinesiólogo asignado'}
+                </Text>
+              </View>
+
+              <View
+                style={[
+                  styles.kineTag,
+                  {
+                    backgroundColor: pendientesOffline > 0 ? c.warningBg : c.successBg,
+                    borderColor: pendientesOffline > 0 ? c.warning : c.success,
+                  },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  color={pendientesOffline > 0 ? c.warning : c.success}
+                  name={pendientesOffline > 0 ? 'cloud-upload-outline' : 'cloud-check-outline'}
+                  size={14}
+                />
+                <Text style={[styles.kineText, { color: pendientesOffline > 0 ? c.warning : c.success }]}>
+                  {pendientesOffline > 0 ? `${pendientesOffline} por sincronizar` : 'Sincronizado'}
+                </Text>
+              </View>
             </View>
           </View>
 
@@ -303,6 +331,7 @@ export default function HomeScreen({ navigation }) {
             const pautaCumplida = esPautaCumplida(p);
             const metaP = Math.max(1, Number(p.meta_semanal || 3));
             const hechasP = p.sesiones_semana != null ? Math.min(Number(p.sesiones_semana), metaP) : null;
+            const indicacion = (p.notas || '').trim();
 
             return (
               <TouchableOpacity
@@ -317,49 +346,58 @@ export default function HomeScreen({ navigation }) {
                   },
                 ]}
               >
-                <View
-                  style={[
-                    styles.pautaIconWrapper,
-                    { backgroundColor: pautaCumplida ? c.successBg : c.accentBg },
-                  ]}
-                >
-                  <MaterialCommunityIcons
-                    color={pautaCumplida ? c.success : c.primary}
-                    name={pautaCumplida ? 'book-open-page-variant-outline' : 'dumbbell'}
-                    size={24}
-                  />
-                </View>
+                <View style={styles.pautaTopRow}>
+                  <View
+                    style={[
+                      styles.pautaIconWrapper,
+                      { backgroundColor: pautaCumplida ? c.successBg : c.accentBg },
+                    ]}
+                  >
+                    <MaterialCommunityIcons
+                      color={pautaCumplida ? c.success : c.primary}
+                      name={pautaCumplida ? 'book-open-page-variant-outline' : 'dumbbell'}
+                      size={24}
+                    />
+                  </View>
 
-                <View style={styles.pautaInfo}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                  <View style={styles.pautaInfo}>
                     <Text numberOfLines={1} style={[styles.pautaTitle, { color: c.textMain }]}>
                       {p.titulo}
                     </Text>
+                    <Text style={[styles.pautaSubtitle, { color: c.textSub }]}>
+                      {totalEj} {totalEj === 1 ? 'ejercicio' : 'ejercicios'} •{' '}
+                      {pautaCumplida
+                        ? 'Modo solo consulta (repaso técnico)'
+                        : hechasP != null
+                        ? `${hechasP}/${metaP} sesiones esta semana`
+                        : `Asignada el ${new Date(p.fecha_creacion).toLocaleDateString('es-CL')}`}
+                    </Text>
                   </View>
-                  <Text style={[styles.pautaSubtitle, { color: c.textSub }]}>
-                    {totalEj} {totalEj === 1 ? 'ejercicio' : 'ejercicios'} •{' '}
-                    {pautaCumplida
-                      ? 'Modo solo consulta (repaso técnico)'
-                      : hechasP != null
-                      ? `${hechasP}/${metaP} sesiones esta semana`
-                      : `Asignada el ${new Date(p.fecha_creacion).toLocaleDateString('es-CL')}`}
-                  </Text>
+
+                  <View
+                    style={[
+                      styles.playPill,
+                      {
+                        backgroundColor: pautaCumplida ? c.accentBg : c.primary,
+                      },
+                    ]}
+                  >
+                    <MaterialCommunityIcons
+                      color={pautaCumplida ? c.primary : (isDark ? '#0F172A' : '#FFFFFF')}
+                      name={pautaCumplida ? 'eye-outline' : 'chevron-right'}
+                      size={20}
+                    />
+                  </View>
                 </View>
 
-                <View
-                  style={[
-                    styles.playPill,
-                    {
-                      backgroundColor: pautaCumplida ? c.accentBg : c.primary,
-                    },
-                  ]}
-                >
-                  <MaterialCommunityIcons
-                    color={pautaCumplida ? c.primary : (isDark ? '#0F172A' : '#FFFFFF')}
-                    name={pautaCumplida ? 'eye-outline' : 'chevron-right'}
-                    size={20}
-                  />
-                </View>
+                {!!indicacion && (
+                  <View style={[styles.indicacionPreview, { backgroundColor: c.accentBg, borderColor: c.primary }]}>
+                    <MaterialCommunityIcons name="clipboard-text-outline" size={15} color={c.primary} />
+                    <Text numberOfLines={2} style={{ flex: 1, color: c.accentText, fontSize: 12, fontWeight: '600', lineHeight: 16 }}>
+                      Indicación: {indicacion}
+                    </Text>
+                  </View>
+                )}
               </TouchableOpacity>
             );
           })
@@ -394,7 +432,6 @@ const styles = StyleSheet.create({
   kineTag: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10,
     alignSelf: 'flex-start',
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -402,7 +439,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 6,
   },
-  kineText: { fontSize: 12.5, fontWeight: '700' },
+  kineText: { fontSize: 12, fontWeight: '700' },
   avatarPlaceholder: {
     width: 48,
     height: 48,
@@ -466,12 +503,15 @@ const styles = StyleSheet.create({
   badgeText: { fontSize: 12.5, fontWeight: '800' },
   emptyContainer: { marginTop: 12 },
   pautaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
     padding: 15,
     borderRadius: 18,
     borderWidth: 1.5,
     marginBottom: 12,
+    gap: 10,
+  },
+  pautaTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 12,
   },
   pautaIconWrapper: {
@@ -482,7 +522,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pautaInfo: { flex: 1 },
-  pautaTitle: { fontSize: 15.5, fontWeight: '700', flex: 1 },
+  pautaTitle: { fontSize: 15.5, fontWeight: '700', marginBottom: 3 },
   pautaSubtitle: { fontSize: 12.5 },
   playPill: {
     width: 34,
@@ -490,5 +530,14 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  indicacionPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderLeftWidth: 3,
   },
 });

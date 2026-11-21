@@ -654,10 +654,37 @@ export default function PautaDetailScreen({ route, navigation }) {
         <Text style={{ color: c.textMain, fontSize: 22, fontWeight: '800' }}>
           {pauta.titulo || 'Tu Sesión'}
         </Text>
+
         {!!pauta.notas && (
-          <Text style={{ color: c.textSub, fontSize: 13.5, lineHeight: 19, marginTop: 4 }}>
-            {pauta.notas}
-          </Text>
+          <View
+            style={{
+              backgroundColor: c.accentBg,
+              borderColor: c.primary,
+              borderWidth: 1,
+              borderLeftWidth: 4,
+              borderRadius: 14,
+              padding: 13,
+              marginTop: 4,
+              gap: 6,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <MaterialCommunityIcons name="stethoscope" size={17} color={c.primary} />
+                <Text style={{ color: c.accentText, fontSize: 12.5, fontWeight: '800' }}>
+                  Indicación de {pauta.kinesiologo_nombre || 'tu Kinesiólogo'}
+                </Text>
+              </View>
+              {!!pauta.actualizado_en && (
+                <Text style={{ color: c.textSub, fontSize: 11, fontWeight: '600' }}>
+                  Act. {new Date(pauta.actualizado_en).toLocaleDateString('es-CL')}
+                </Text>
+              )}
+            </View>
+            <Text style={{ color: c.textMain, fontSize: 13.5, lineHeight: 19 }}>
+              {pauta.notas}
+            </Text>
+          </View>
         )}
 
         {renderBannerSoloConsulta()}

@@ -5,8 +5,18 @@ const QUEUE = 'feedback_queue';
 
 export const cacheSet = (k, v) => AsyncStorage.setItem(k, JSON.stringify(v)).catch(() => {});
 export const cacheGet = async (k) => {
-  try { const v = await AsyncStorage.getItem(k); return v ? JSON.parse(v) : null; } catch { return null; }
+  try {
+    const v = await AsyncStorage.getItem(k);
+    return v ? JSON.parse(v) : null;
+  } catch {
+    return null;
+  }
 };
+
+export async function contarPendientesCola() {
+  const q = (await cacheGet(QUEUE)) || [];
+  return Array.isArray(q) ? q.length : 0;
+}
 
 // Devuelve 'enviado' o 'en_cola'. Solo encola si NO hubo respuesta del servidor (sin señal).
 export async function enviarFeedback(payload) {
@@ -14,7 +24,7 @@ export async function enviarFeedback(payload) {
     await api.post('/api/feedback/', payload);
     return 'enviado';
   } catch (e) {
-    if (e.response) throw e; // error real de validación/permiso: no se encola
+    if (e.response) throw e;
     const q = (await cacheGet(QUEUE)) || [];
     q.push(payload);
     await cacheSet(QUEUE, q);
@@ -24,11 +34,15 @@ export async function enviarFeedback(payload) {
 
 export async function vaciarCola() {
   const q = (await cacheGet(QUEUE)) || [];
-  if (!q.length) return;
+  if (!q.length) return 0;
   const pendientes = [];
   for (const p of q) {
-    try { await api.post('/api/feedback/', p); }
-    catch (e) { if (!e.response) pendientes.push(p); } // sigue sin señal: se reintenta después
+    try {
+      await api.post('/api/feedback/', p);
+    } catch (e) {
+      if (!e.response) pendientes.push(p);
+    }
   }
   await cacheSet(QUEUE, pendientes);
+  return pendientes.length;
 }
