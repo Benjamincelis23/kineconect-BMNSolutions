@@ -16,13 +16,13 @@
             justify-content: space-between;
             border: 1px solid var(--gris-200);
             border-radius: 14px;
-            background: #fff;
+            background: var(--blanco, #ffffff);
             transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
         }
 
         .modulo-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+            box-shadow: 0 10px 22px rgba(15, 23, 42, 0.14);
             border-color: #0284c7;
         }
 
@@ -53,7 +53,72 @@
             padding: 11px 13px;
             border: 1px solid var(--gris-200);
             border-radius: 10px;
-            background: #f8fafc;
+            background: var(--gris-50, #f8fafc);
+        }
+
+        .bandeja-card {
+            padding: 16px 18px;
+            border-left: 4px solid #ef4444;
+            background: #fef2f2;
+        }
+
+        .bandeja-item {
+            background: #ffffff;
+            border: 1px solid #fecaca;
+            border-radius: 10px;
+            padding: 10px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        /* Soporte total para Modo Oscuro de KineConnect (dark-mode / dark / data-theme) */
+        body.dark-mode .modulo-card,
+        html.dark-mode .modulo-card,
+        [data-theme="dark"] .modulo-card,
+        body.dark .modulo-card {
+            background: #162236 !important;
+            border-color: #24344d !important;
+        }
+
+        body.dark-mode .actividad-row,
+        html.dark-mode .actividad-row,
+        [data-theme="dark"] .actividad-row,
+        body.dark .actividad-row {
+            background: #0f1929 !important;
+            border-color: #24344d !important;
+        }
+
+        body.dark-mode .bandeja-card,
+        html.dark-mode .bandeja-card,
+        [data-theme="dark"] .bandeja-card,
+        body.dark .bandeja-card {
+            background: rgba(127, 29, 29, 0.25) !important;
+            border-color: rgba(248, 113, 113, 0.35) !important;
+        }
+
+        body.dark-mode .bandeja-item,
+        html.dark-mode .bandeja-item,
+        [data-theme="dark"] .bandeja-item,
+        body.dark .bandeja-item {
+            background: #0f1929 !important;
+            border-color: rgba(248, 113, 113, 0.35) !important;
+        }
+
+        body.dark-mode .bandeja-title,
+        html.dark-mode .bandeja-title,
+        [data-theme="dark"] .bandeja-title,
+        body.dark .bandeja-title {
+            color: #fca5a5 !important;
+        }
+
+        body.dark-mode .bandeja-paciente,
+        html.dark-mode .bandeja-paciente,
+        [data-theme="dark"] .bandeja-paciente,
+        body.dark .bandeja-paciente {
+            color: #f8fafc !important;
         }
     </style>
 </head>

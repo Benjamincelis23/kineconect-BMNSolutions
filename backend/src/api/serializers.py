@@ -329,7 +329,7 @@ class PautaCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pauta
         fields = [
-            'id', 'titulo', 'notas', 'paciente', 'es_plantilla',
+            'id', 'titulo', 'notas', 'paciente', 'activo', 'es_plantilla',
             'guardar_como_plantilla', 'ejercicios', 'ejercicios_detalle',
         ]
         read_only_fields = ('id',)
@@ -351,32 +351,35 @@ class PautaCreateSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
-        es_plantilla = attrs.get('es_plantilla', False)
-        paciente = attrs.get('paciente', None)
+        is_partial = getattr(self, 'partial', False)
+        es_plantilla = attrs.get('es_plantilla', getattr(self.instance, 'es_plantilla', False))
+        paciente = attrs.get('paciente', getattr(self.instance, 'paciente', None))
 
-        if not es_plantilla and not paciente:
-            raise serializers.ValidationError({"paciente": "Debe asignar un paciente si no es una plantilla."})
-        if es_plantilla:
-            attrs['paciente'] = None
+        if not is_partial:
+            if not es_plantilla and not paciente:
+                raise serializers.ValidationError({"paciente": "Debe asignar un paciente si no es una plantilla."})
+            if es_plantilla:
+                attrs['paciente'] = None
 
         ejercicios_raw = attrs.get('ejercicios_detalle') or attrs.get('ejercicios')
-        if not ejercicios_raw:
+        if not is_partial and not ejercicios_raw:
             raise serializers.ValidationError({"ejercicios": "Debe incluir al menos un ejercicio."})
 
         detalles_limpios = []
-        for idx, item in enumerate(ejercicios_raw):
-            ej_id = _extraer_ejercicio_id(item)
-            if not ej_id or not Ejercicio.objects.filter(id=ej_id).exists():
-                raise serializers.ValidationError({
-                    "ejercicios": f"El ejercicio en la posición {idx + 1} no es válido o no existe."
+        if ejercicios_raw:
+            for idx, item in enumerate(ejercicios_raw):
+                ej_id = _extraer_ejercicio_id(item)
+                if not ej_id or not Ejercicio.objects.filter(id=ej_id).exists():
+                    raise serializers.ValidationError({
+                        "ejercicios": f"El ejercicio en la posición {idx + 1} no es válido o no existe."
+                    })
+                detalles_limpios.append({
+                    'ejercicio_id': int(ej_id),
+                    'series': max(1, _a_entero(item.get('series'), 3)),
+                    'repeticiones': max(1, _a_entero(item.get('repeticiones'), 10)),
+                    'tiempo_descanso_segundos': max(0, _a_entero(
+                        item.get('tiempo_descanso_segundos', item.get('descanso_seg')), 60)),
                 })
-            detalles_limpios.append({
-                'ejercicio_id': int(ej_id),
-                'series': max(1, _a_entero(item.get('series'), 3)),
-                'repeticiones': max(1, _a_entero(item.get('repeticiones'), 10)),
-                'tiempo_descanso_segundos': max(0, _a_entero(
-                    item.get('tiempo_descanso_segundos', item.get('descanso_seg')), 60)),
-            })
 
         attrs['_detalles_limpios'] = detalles_limpios
         return attrs

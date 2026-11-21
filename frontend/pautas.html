@@ -20,10 +20,11 @@
                         <h2>Monitoreo de Dolor y Rutinas</h2>
                         <p>Visualiza la adherencia, series ejecutadas y escala EVA reportadas por tus pacientes desde la app móvil.</p>
                     </div>
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                        <a id="btn-ver-todas-pautas" href="pautas.html" class="btn btn-secondary is-hidden">
-                            <i class='bx bx-filter-alt'></i> Mostrar Todas
-                        </a>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                        <select id="select-filtro-paciente" onchange="aplicarFiltroPacienteUI(this.value)"
+                            style="height: 38px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--gris-300); font-size: 0.85rem; font-weight: 600; background: var(--blanco, #fff); color: var(--azul-900);">
+                            <option value="">Todos los pacientes</option>
+                        </select>
                         <button type="button" class="btn btn-secondary" onclick="abrirModalInformeRut()">
                             <i class='bx bxs-file-pdf' style="color: #ef4444;"></i> Informe Clínico (RUT)
                         </button>
@@ -340,6 +341,15 @@
 
                 const datalist = document.getElementById('datalist-pacientes-rut');
                 if (datalist) {
+                    const selectPac = document.getElementById('select-filtro-paciente');
+                if (selectPac) {
+                    const filtroActual = new URLSearchParams(window.location.search).get('paciente') || '';
+                    selectPac.innerHTML = `<option value="">Todos los pacientes</option>` +
+                        pacientesRegistrados
+                            .filter(p => p.id)
+                            .map(p => `<option value="${escaparHtml(p.id)}" ${String(p.id) === String(filtroActual) ? 'selected' : ''}>${escaparHtml(p.nombre)} (${escaparHtml(p.rut)})</option>`)
+                            .join('');
+                }
                     datalist.innerHTML = pacientesRegistrados
                         .filter(p => p.rut)
                         .map(p => `<option value="${escaparHtml(p.rut)}">${escaparHtml(p.nombre)}</option>`)
@@ -969,6 +979,36 @@
         // =========================================================
         // CARGA GENERAL DE DATOS
         // =========================================================
+let reportesBaseTodos = [];
+
+        function aplicarFiltroPacienteUI(pacienteId) {
+            const url = new URL(window.location.href);
+            if (pacienteId) {
+                url.searchParams.set('paciente', pacienteId);
+            } else {
+                url.searchParams.delete('paciente');
+            }
+            window.history.replaceState({}, '', url);
+
+            if (!pacienteId) {
+                pautasCargadas = [...todasPautasBase];
+                reportesCargados = [...reportesBaseTodos];
+            } else {
+                pautasCargadas = todasPautasBase.filter(p => {
+                    const idPac = typeof p.paciente === 'object' && p.paciente !== null ? p.paciente.id : p.paciente;
+                    return String(idPac) === String(pacienteId) || String(p.paciente_user_id) === String(pacienteId);
+                });
+                const idsPautas = new Set(pautasCargadas.map(p => p.id));
+                reportesCargados = reportesBaseTodos.filter(f => {
+                    const pid = typeof f.pauta === 'object' && f.pauta !== null ? f.pauta.id : f.pauta;
+                    return idsPautas.has(pid);
+                });
+            }
+
+            actualizarKpisMonitoreo(reportesCargados);
+            renderizarTablaPautas();
+            renderizarTablaFeedback();
+        }
 
         async function cargarTodo() {
             const loadingPautas = document.getElementById('loading-pautas');
