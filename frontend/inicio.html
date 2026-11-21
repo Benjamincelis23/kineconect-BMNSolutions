@@ -66,8 +66,8 @@
                 <!-- ENCABEZADO -->
                 <div class="page-header" style="flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
                     <div>
-                        <h2>Panel Principal</h2>
-                        <p>Acceso directo a módulos clínicos, prescripción biomecánica y seguimiento de pacientes.</p>
+                        <h2>Centro de Control Clínico</h2>
+                        <p>Monitoreo de adherencia terapéutica, alertas de dolor (EVA) y prescripción biomecánica.</p>
                     </div>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                         <button type="button" class="btn btn-secondary" onclick="cargarDashboard()">
@@ -79,11 +79,69 @@
                     </div>
                 </div>
 
-                <!-- 1. MÓDULOS CLÍNICOS (PRIORIDAD ALTA) -->
+                <!-- 1. MÉTRICAS RESUMEN CLÍNICO (KPIs) -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(195px, 1fr)); gap: 14px; margin-bottom: 20px;">
+                    <div class="card" style="padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-left: 4px solid #2563eb;">
+                        <div style="width: 40px; height: 40px; border-radius: 10px; background: #dbeafe; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
+                            <i class='bx bx-group'></i>
+                        </div>
+                        <div>
+                            <span style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">Pacientes Activos</span>
+                            <strong id="kpi-pacientes" style="font-size: 1.35rem; color: var(--azul-900);">—</strong>
+                        </div>
+                    </div>
+
+                    <div class="card" style="padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-left: 4px solid #ef4444;">
+                        <div style="width: 40px; height: 40px; border-radius: 10px; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
+                            <i class='bx bx-error-circle'></i>
+                        </div>
+                        <div>
+                            <span style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">Alertas Dolor (EVA ≥ 6)</span>
+                            <strong id="kpi-alertas-dolor" style="font-size: 1.35rem; color: var(--azul-900);">—</strong>
+                        </div>
+                    </div>
+
+                    <div class="card" style="padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-left: 4px solid #10b981;">
+                        <div style="width: 40px; height: 40px; border-radius: 10px; background: #d1fae5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
+                            <i class='bx bx-trending-up'></i>
+                        </div>
+                        <div>
+                            <span style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">Adherencia Semanal</span>
+                            <strong id="kpi-adherencia" style="font-size: 1.35rem; color: var(--azul-900);">—</strong>
+                        </div>
+                    </div>
+
+                    <div class="card" style="padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-left: 4px solid #f59e0b;">
+                        <div style="width: 40px; height: 40px; border-radius: 10px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
+                            <i class='bx bx-time-five'></i>
+                        </div>
+                        <div>
+                            <span style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">Riesgo Inactividad (&gt;3d)</span>
+                            <strong id="kpi-abandono" style="font-size: 1.35rem; color: var(--azul-900);">—</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. BANDEJA DE ATENCIÓN PRIORITARIA (DECISIÓN CLÍNICA KINE <-> PACIENTE) -->
+                <div id="bloque-bandeja-prioritaria" style="display: none; margin-bottom: 22px;">
+                    <div class="card" style="padding: 16px 18px; border-left: 4px solid #ef4444; background: #fef2f2;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+                            <h3 style="margin: 0; font-size: 0.98rem; color: #991b1b; display: flex; align-items: center; gap: 8px;">
+                                <i class='bx bx-bell-ring' style="font-size: 1.2rem;"></i> Bandeja de Atención Prioritaria — Requieren Ajuste Clínico
+                            </h3>
+                            <a href="pautas.html" style="font-size: 0.8rem; font-weight: 700; color: #b91c1c; text-decoration: none;">
+                                Ir a monitoreo completo →
+                            </a>
+                        </div>
+                        <div id="lista-bandeja-prioritaria" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                    </div>
+                </div>
+
+                <!-- 3. MÓDULOS CLÍNICOS -->
                 <div style="margin-bottom: 24px;">
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
                         <h3 style="margin: 0; font-size: 0.98rem; color: var(--azul-900); display: flex; align-items: center; gap: 6px;">
-                            <i class='bx bx-grid-alt' style="color: #0284c7;"></i> Acceso Rápido a Módulos Clínicos
+                            <i class='bx bx-grid-alt' style="color: #0284c7;"></i> Módulos Clínicos
                         </h3>
                     </div>
 
@@ -112,7 +170,30 @@
                             </span>
                         </a>
 
-                        <!-- Módulo 2: Gestión de Pacientes -->
+                        <!-- Módulo 2: Pautas y Dolor -->
+                        <a href="pautas.html" class="modulo-card" style="border-top: 3px solid #f59e0b;">
+                            <div>
+                                <div class="modulo-card-top">
+                                    <span class="modulo-icon" style="background: #fef3c7; color: #d97706;">
+                                        <i class='bx bx-pulse'></i>
+                                    </span>
+                                    <span id="badge-mod-reportes" class="badge badge-neutro" style="font-size: 0.72rem;">
+                                        Monitoreo
+                                    </span>
+                                </div>
+                                <strong style="display: block; color: var(--azul-900); font-size: 1rem; margin-bottom: 5px;">
+                                    Pautas y Dolor (EVA)
+                                </strong>
+                                <p style="margin: 0 0 14px 0; font-size: 0.83rem; color: var(--gris-600); line-height: 1.45;">
+                                    Evalúa reportes de dolor post-sesión, ajusta cargas y exporta PDF por RUT.
+                                </p>
+                            </div>
+                            <span style="font-size: 0.83rem; font-weight: 700; color: #d97706;">
+                                Ver seguimiento →
+                            </span>
+                        </a>
+
+                        <!-- Módulo 3: Gestión de Pacientes -->
                         <a href="pacientes.html" class="modulo-card" style="border-top: 3px solid #2563eb;">
                             <div>
                                 <div class="modulo-card-top">
@@ -127,7 +208,7 @@
                                     Gestión de Pacientes
                                 </strong>
                                 <p style="margin: 0 0 14px 0; font-size: 0.83rem; color: var(--gris-600); line-height: 1.45;">
-                                    Registra nuevos pacientes, consulta sus credenciales y revisa sus pautas.
+                                    Registra pacientes, supervisa adherencia semanal y detecta inactividad.
                                 </p>
                             </div>
                             <span style="font-size: 0.83rem; font-weight: 700; color: #2563eb;">
@@ -135,7 +216,7 @@
                             </span>
                         </a>
 
-                        <!-- Módulo 3: Catálogo de Ejercicios -->
+                        <!-- Módulo 4: Catálogo de Ejercicios -->
                         <a href="ejercicios.html" class="modulo-card" style="border-top: 3px solid #10b981;">
                             <div>
                                 <div class="modulo-card-top">
@@ -158,76 +239,10 @@
                             </span>
                         </a>
 
-                        <!-- Módulo 4: Pautas y Dolor -->
-                        <a href="pautas.html" class="modulo-card" style="border-top: 3px solid #f59e0b;">
-                            <div>
-                                <div class="modulo-card-top">
-                                    <span class="modulo-icon" style="background: #fef3c7; color: #d97706;">
-                                        <i class='bx bx-pulse'></i>
-                                    </span>
-                                    <span id="badge-mod-reportes" class="badge badge-neutro" style="font-size: 0.72rem;">
-                                        Monitoreo
-                                    </span>
-                                </div>
-                                <strong style="display: block; color: var(--azul-900); font-size: 1rem; margin-bottom: 5px;">
-                                    Pautas y Dolor (EVA)
-                                </strong>
-                                <p style="margin: 0 0 14px 0; font-size: 0.83rem; color: var(--gris-600); line-height: 1.45;">
-                                    Evalúa reportes de dolor post-sesión, series completadas y alertas clínicas.
-                                </p>
-                            </div>
-                            <span style="font-size: 0.83rem; font-weight: 700; color: #d97706;">
-                                Ver seguimiento →
-                            </span>
-                        </a>
-
                     </div>
                 </div>
 
-                <!-- 2. MÉTRICAS RESUMEN (KPIs) -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(195px, 1fr)); gap: 14px; margin-bottom: 22px;">
-                    <div class="card" style="padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-left: 4px solid #2563eb;">
-                        <div style="width: 40px; height: 40px; border-radius: 10px; background: #dbeafe; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
-                            <i class='bx bx-group'></i>
-                        </div>
-                        <div>
-                            <span style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">Pacientes Activos</span>
-                            <strong id="kpi-pacientes" style="font-size: 1.35rem; color: var(--azul-900);">—</strong>
-                        </div>
-                    </div>
-
-                    <div class="card" style="padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-left: 4px solid #10b981;">
-                        <div style="width: 40px; height: 40px; border-radius: 10px; background: #d1fae5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
-                            <i class='bx bx-dumbbell'></i>
-                        </div>
-                        <div>
-                            <span style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">Biblioteca Clínica</span>
-                            <strong id="kpi-ejercicios" style="font-size: 1.35rem; color: var(--azul-900);">—</strong>
-                        </div>
-                    </div>
-
-                    <div class="card" style="padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-left: 4px solid #0284c7;">
-                        <div style="width: 40px; height: 40px; border-radius: 10px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
-                            <i class='bx bx-clipboard'></i>
-                        </div>
-                        <div>
-                            <span style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">Pautas Prescritas</span>
-                            <strong id="kpi-pautas" style="font-size: 1.35rem; color: var(--azul-900);">—</strong>
-                        </div>
-                    </div>
-
-                    <div class="card" style="padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-left: 4px solid #f59e0b;">
-                        <div style="width: 40px; height: 40px; border-radius: 10px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
-                            <i class='bx bx-pulse'></i>
-                        </div>
-                        <div>
-                            <span style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">Reportes EVA Móvil</span>
-                            <strong id="kpi-reportes" style="font-size: 1.35rem; color: var(--azul-900);">—</strong>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 3. ACTIVIDAD RECIENTE (2 COLUMNAS NIVELADAS) -->
+                <!-- 4. ACTIVIDAD RECIENTE (2 COLUMNAS NIVELADAS) -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; align-items: stretch;">
 
                     <!-- Últimos Reportes de Dolor -->
@@ -284,11 +299,12 @@
         }
 
         async function cargarDashboard() {
-            const [resPacientes, resEjercicios, resPautas, resReportes] = await Promise.allSettled([
+            const [resPacientes, resEjercicios, resPautas, resReportes, resResumen] = await Promise.allSettled([
                 api.getMisPacientes(),
                 api.getEjercicios(),
                 api.getPautas(),
                 api.getReportesDolor(),
+                typeof api.getResumenClinico === 'function' ? api.getResumenClinico() : Promise.resolve(null),
             ]);
 
             const pacientes = resPacientes.status === 'fulfilled' ? extraerLista(resPacientes.value) : [];
@@ -297,22 +313,50 @@
             const totalEjercicios = typeof ejRaw?.count === 'number' ? ejRaw.count : ejLista.length;
 
             const todasPautas = resPautas.status === 'fulfilled' ? extraerLista(resPautas.value) : [];
-            const pautasActivas = todasPautas.filter(p => !p.es_plantilla);
             const reportes = resReportes.status === 'fulfilled' ? extraerLista(resReportes.value) : [];
+            const resumen = resResumen.status === 'fulfilled' ? resResumen.value : null;
 
             const mapaPautas = {};
             todasPautas.forEach(p => { mapaPautas[p.id] = p; });
 
-            // KPIs
-            document.getElementById('kpi-pacientes').textContent = pacientes.length;
-            document.getElementById('kpi-ejercicios').textContent = totalEjercicios;
-            document.getElementById('kpi-pautas').textContent = pautasActivas.length;
-            document.getElementById('kpi-reportes').textContent = reportes.length;
+            const alertasAltas = reportes.filter(r => Number(r.nivel_dolor ?? r.escala_dolor ?? 0) >= 6);
 
-            // Badges en vivo de los módulos superiores
+            // KPIs
+            document.getElementById('kpi-pacientes').textContent = resumen?.kpis?.pacientes_activos ?? pacientes.length;
+            document.getElementById('kpi-alertas-dolor').textContent = resumen?.kpis?.alertas_dolor_hoy ?? alertasAltas.length;
+            document.getElementById('kpi-adherencia').textContent = resumen?.kpis?.adherencia_global_pct != null
+                ? `${resumen.kpis.adherencia_global_pct}%`
+                : 'Activo';
+            document.getElementById('kpi-abandono').textContent = resumen?.kpis?.riesgo_abandono ?? 0;
+
+            // Badges superiores
             document.getElementById('badge-mod-pacientes').textContent = `${pacientes.length} activos`;
             document.getElementById('badge-mod-ejercicios').textContent = `${totalEjercicios} ejercicios`;
             document.getElementById('badge-mod-reportes').textContent = `${reportes.length} reportes`;
+
+            // Bandeja de Atención Prioritaria
+            const bloqueBandeja = document.getElementById('bloque-bandeja-prioritaria');
+            const listaBandeja = document.getElementById('lista-bandeja-prioritaria');
+            const prioritarios = resumen?.bandeja_prioritaria || [];
+
+            if (prioritarios.length > 0 && bloqueBandeja && listaBandeja) {
+                bloqueBandeja.style.display = 'block';
+                listaBandeja.innerHTML = prioritarios.map(item => `
+                    <div style="background: #fff; border: 1px solid #fecaca; border-radius: 10px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <span class="badge badge-alerta" style="margin-right: 6px;">EVA ${escaparHtml(item.nivel_dolor)}/10</span>
+                            <strong style="color: #0f172a; font-size: 0.9rem;">${escaparHtml(item.paciente_nombre)}</strong>
+                            <span style="color: #64748b; font-size: 0.8rem;"> • ${escaparHtml(item.pauta_titulo)} (${escaparHtml(item.fecha)})</span>
+                            <div style="font-size: 0.8rem; color: #991b1b; margin-top: 3px;">"${escaparHtml(item.comentario)}"</div>
+                        </div>
+                        <a href="crear_pauta.html?editar=${encodeURIComponent(item.pauta_id)}" class="btn btn-primary btn-sm">
+                            <i class='bx bx-slider-alt'></i> Ajustar Pauta
+                        </a>
+                    </div>
+                `).join('');
+            } else if (bloqueBandeja) {
+                bloqueBandeja.style.display = 'none';
+            }
 
             // Últimos 4 reportes EVA
             const contReportes = document.getElementById('lista-ultimos-reportes');
@@ -320,7 +364,7 @@
                 contReportes.innerHTML = `<p style="margin: 0; font-size: 0.85rem; color: var(--gris-500);">Aún no hay reportes recibidos desde la app móvil.</p>`;
             } else {
                 contReportes.innerHTML = reportes.slice(0, 4).map(r => {
-                    const dolor = Number(r.escala_dolor ?? 0);
+                    const dolor = Number(r.nivel_dolor ?? r.escala_dolor ?? 0);
                     const badgeClass = dolor >= 6 ? 'badge-alerta' : (dolor >= 4 ? 'badge-neutro' : 'badge-ok');
                     const pid = typeof r.pauta === 'object' && r.pauta !== null ? r.pauta.id : r.pauta;
                     const infoPauta = mapaPautas[pid] || {};
@@ -346,7 +390,7 @@
                 }).join('');
             }
 
-            // Pacientes asignados (hasta 4 para nivelar con reportes)
+            // Pacientes asignados
             const contPacientes = document.getElementById('lista-pacientes-recientes');
             if (pacientes.length === 0) {
                 contPacientes.innerHTML = `<p style="margin: 0; font-size: 0.85rem; color: var(--gris-500);">No tienes pacientes registrados todavía.</p>`;

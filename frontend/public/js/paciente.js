@@ -5,7 +5,6 @@ function toggleFormulario() {
     }
 }
 
-// Generador de badge estilo semáforo
 function renderSemaforoAbandono(paciente) {
     if (paciente.estado_alerta === 'peligro') {
         return `
@@ -47,25 +46,23 @@ async function cargarPacientes() {
     const noData = document.getElementById('no-pacientes');
     const bannerAlerta = document.getElementById('banner-resumen-churn');
 
-    loading.style.display = 'block';
-    tabla.style.display = 'none';
-    noData.style.display = 'none';
-    tbody.innerHTML = '';
+    if (loading) loading.style.display = 'block';
+    if (tabla) tabla.style.display = 'none';
+    if (noData) noData.style.display = 'none';
+    if (tbody) tbody.innerHTML = '';
 
     try {
-        // 1. LLAMADA FETCH AL NUEVO ENDPOINT DE CHURN RATE / ABANDONO
         const data = await api.getAlertasAbandono();
         const pacientes = data.pacientes || [];
 
-        loading.style.display = 'none';
+        if (loading) loading.style.display = 'none';
 
         if (!pacientes || pacientes.length === 0) {
-            noData.style.display = 'block';
+            if (noData) noData.style.display = 'block';
             if (bannerAlerta) bannerAlerta.style.display = 'none';
             return;
         }
 
-        // 2. Banner contador de pacientes en riesgo
         if (bannerAlerta) {
             if (data.pacientes_en_riesgo > 0) {
                 bannerAlerta.style.display = 'block';
@@ -81,13 +78,10 @@ async function cargarPacientes() {
             }
         }
 
-        tabla.style.display = 'table';
+        if (tabla) tabla.style.display = 'table';
 
-        // 3. RENDERIZADO DE FILAS CON SEMÁFORO
         pacientes.forEach(p => {
             const tr = document.createElement('tr');
-
-            // Fila con fondo rojo muy tenue si está en riesgo crítico
             if (p.en_riesgo_abandono) {
                 tr.style.backgroundColor = '#fff5f5';
             }
@@ -101,32 +95,38 @@ async function cargarPacientes() {
                 <td>${p.email || 'Sin correo'}</td>
                 <td>${renderSemaforoAbandono(p)}</td>
                 <td>
-                    <a href="/ejercicios/?paciente=${p.paciente_id}" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.8rem;">
-                        Ver Pautas
-                    </a>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        <a href="pautas.html?paciente=${p.paciente_id}" class="btn btn-secondary btn-sm">
+                            <i class='bx bx-line-chart'></i> Evolución
+                        </a>
+                        <a href="crear_pauta.html?paciente=${p.paciente_id}" class="btn btn-primary btn-sm">
+                            <i class='bx bx-plus-circle'></i> Prescribir
+                        </a>
+                    </div>
                 </td>
             `;
-            tbody.appendChild(tr);
+            if (tbody) tbody.appendChild(tr);
         });
 
     } catch (err) {
-        loading.style.display = 'none';
-        noData.style.display = 'block';
-        noData.innerHTML = `<p style="color: var(--rojo-500, #ef4444);">Error al cargar pacientes: ${err.message}</p>`;
+        if (loading) loading.style.display = 'none';
+        if (noData) {
+            noData.style.display = 'block';
+            noData.innerHTML = `<p style="color: var(--rojo-500, #ef4444);">Error al cargar pacientes: ${err.message}</p>`;
+        }
     }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     cargarPacientes();
 
-    // ENVÍO DEL FORMULARIO CON FETCH (POST)
     const formRegistro = document.getElementById('form-registrar-paciente');
     if (formRegistro) {
         formRegistro.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const firstName = document.getElementById('first_name').value.trim();
-            const lastName = document.getElementById('last_name').value.trim();
+            const first_name = document.getElementById('first_name').value.trim();
+            const last_name = document.getElementById('last_name').value.trim();
             const rut = document.getElementById('rut').value.trim();
             const email = document.getElementById('email').value.trim();
 
@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
             msgBox.style.display = 'none';
 
             try {
-                const res = await api.registrarPaciente({ firstName, lastName, rut, email });
+                const res = await api.registrarPaciente({ first_name, last_name, rut, email });
 
                 msgBox.style.display = 'block';
                 msgItem.className = 'success';

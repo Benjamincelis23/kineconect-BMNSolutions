@@ -396,7 +396,7 @@ class CambiarPasswordView(APIView):
 
 
 # =========================================================
-# ALERTAS DE ABANDONO
+# ALERTAS DE ABANDONO Y ANALÍTICA CLÍNICA
 # =========================================================
 
 def _calcular_alertas_abandono(user):
@@ -450,6 +450,56 @@ def _calcular_alertas_abandono(user):
         'total_pacientes': len(alertas),
         'pacientes_en_riesgo': sum(1 for p in alertas if p['en_riesgo_abandono']),
         'pacientes': alertas,
+    }
+
+
+def _construir_resumen_clinico(user, pautas_qs):
+    """Construye KPIs clínicos y bandeja priorizada de atención Kine <-> Paciente."""
+    pacientes_qs = _pacientes_visibles(user).select_related('user')
+    total_pacientes = pacientes_qs.count()
+
+    pautas_activas = pautas_qs.filter(activo=True, es_plantilla=False)
+    alertas_dolor = []
+    total_sesiones_ciclo = 0
+    total_meta_ciclo = 0
+
+    for pauta in pautas_activas:
+        meta = getattr(pauta, 'frecuencia_semanal', None) or 3
+        hechas = RegistroFeedback.objects.filter(
+            pauta=pauta,
+            fecha_ejecucion__gte=_inicio_ciclo_pauta(pauta),
+        ).count()
+        total_sesiones_ciclo += min(hechas, meta)
+        total_meta_ciclo += meta
+
+        ultimo_fb = RegistroFeedback.objects.filter(pauta=pauta).order_by('-fecha_ejecucion').first()
+        if ultimo_fb and (ultimo_fb.nivel_dolor or 0) >= 6:
+            pac = pauta.paciente
+            rut_pac = pac.perfil.rut if (pac and hasattr(pac, 'perfil')) else ''
+            alertas_dolor.append({
+                'pauta_id': pauta.id,
+                'pauta_titulo': pauta.titulo,
+                'paciente_id': pac.id if pac else None,
+                'paciente_nombre': f"{pac.first_name} {pac.last_name}".strip() if pac else "Paciente",
+                'paciente_rut': rut_pac,
+                'nivel_dolor': ultimo_fb.nivel_dolor,
+                'comentario': ultimo_fb.comentario or 'Dolor elevado reportado en sesión',
+                'fecha': ultimo_fb.fecha_ejecucion.strftime('%d/%m/%Y %H:%M'),
+            })
+
+    alertas_dolor.sort(key=lambda x: x['nivel_dolor'], reverse=True)
+    abandono_data = _calcular_alertas_abandono(user)
+    adherencia_pct = round((total_sesiones_ciclo / total_meta_ciclo) * 100) if total_meta_ciclo else 0
+
+    return {
+        'kpis': {
+            'pacientes_activos': total_pacientes,
+            'alertas_dolor_hoy': len(alertas_dolor),
+            'riesgo_abandono': abandono_data['pacientes_en_riesgo'],
+            'adherencia_global_pct': adherencia_pct,
+        },
+        'bandeja_prioritaria': alertas_dolor,
+        'inactivos': [p for p in abandono_data['pacientes'] if p['en_riesgo_abandono']],
     }
 
 
@@ -620,6 +670,10 @@ class PautaViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], url_path='alertas-abandono')
     def alertas_abandono(self, request):
         return Response(_calcular_alertas_abandono(request.user), status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'], url_path='resumen-clinico')
+    def resumen_clinico(self, request):
+        return Response(_construir_resumen_clinico(request.user, self.get_queryset()), status=status.HTTP_200_OK)
 
 
 class RegistroFeedbackViewSet(viewsets.ModelViewSet):

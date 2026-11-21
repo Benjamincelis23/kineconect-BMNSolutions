@@ -12,10 +12,7 @@ from .emails import enviar_credenciales_en_segundo_plano
 
 
 def validar_rut_chileno(rut: str) -> str:
-    """
-    Limpia el RUT permitiendo cualquier valor por el momento,
-    sin exigir formato estricto ni validar dígito verificador.
-    """
+    """Normaliza el RUT chileno sin bloquear entornos de prueba."""
     rut_limpio = rut.replace('.', '').replace(' ', '').strip().upper()
     if not rut_limpio:
         raise serializers.ValidationError("El RUT no puede estar vacío.")
@@ -109,7 +106,7 @@ class EjercicioSerializer(serializers.ModelSerializer):
 
 
 # ==========================================
-# SERIALIZADORES PARA LA API REST DE PAUTAS
+# SERIALIZADORES Y ANALÍTICA DE PAUTAS
 # ==========================================
 
 class PautaEjercicioSerializer(serializers.ModelSerializer):
@@ -122,8 +119,10 @@ class PautaEjercicioSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PautaEjercicio
-        fields = ['id', 'ejercicio_id', 'nombre', 'zona', 'series', 'repeticiones',
-                  'descanso_seg', 'tiempo_descanso_segundos', 'media_url']
+        fields = [
+            'id', 'ejercicio_id', 'nombre', 'zona', 'series', 'repeticiones',
+            'descanso_seg', 'tiempo_descanso_segundos', 'media_url',
+        ]
 
     def get_media_url(self, obj):
         request = self.context.get('request')
@@ -146,27 +145,98 @@ def _contar_sesiones_pauta(obj):
     return RegistroFeedback.objects.filter(pauta=obj, fecha_ejecucion__gte=desde).count()
 
 
+def _calcular_evolucion_clinica(obj):
+    """Analiza la evolución del dolor EVA y genera recomendación clínica automática."""
+    if getattr(obj, 'es_plantilla', False):
+        return None
+
+    feedbacks = list(
+        RegistroFeedback.objects.filter(pauta=obj)
+        .order_by('-fecha_ejecucion')[:6]
+    )
+    feedbacks_crono = list(reversed(feedbacks))
+
+    historial = [
+        {
+            'id': fb.id,
+            'fecha': fb.fecha_ejecucion.strftime('%d/%m %H:%M'),
+            'nivel_dolor': fb.nivel_dolor if fb.nivel_dolor is not None else 0,
+            'comentario': fb.comentario or '',
+        }
+        for fb in feedbacks_crono
+    ]
+
+    if not historial:
+        return {
+            'estado': 'SIN_SESIONES',
+            'etiqueta': 'Pendiente de inicio',
+            'recomendacion': 'Aún no registra sesiones ejecutadas desde la aplicación móvil.',
+            'ultimo_eva': None,
+            'delta_eva': 0,
+            'historial_eva': [],
+        }
+
+    ultimo = historial[-1]['nivel_dolor']
+    anterior = historial[-2]['nivel_dolor'] if len(historial) >= 2 else ultimo
+    delta = ultimo - anterior
+    sesiones_ciclo = _contar_sesiones_pauta(obj)
+    meta = getattr(obj, 'frecuencia_semanal', None) or 3
+
+    if ultimo >= 6:
+        estado = 'ALERTA_DOLOR'
+        etiqueta = f'Alerta Dolor Elevado (EVA {ultimo}/10)'
+        recomendacion = 'Se sugiere reducir series/carga o modificar ejercicios con impacto en la zona.'
+    elif delta >= 3:
+        estado = 'AUMENTO_BRUSCO'
+        etiqueta = f'Aumento brusco (+{delta} pts EVA)'
+        recomendacion = 'Evaluar tolerancia biomecánica antes de progresar intensidad.'
+    elif sesiones_ciclo >= meta and ultimo <= 2:
+        estado = 'PROGRESION_OPTIMA'
+        etiqueta = 'Tolerancia óptima (Meta cumplida)'
+        recomendacion = 'Paciente completó el ciclo sin dolor significativo; apto para progresar carga.'
+    else:
+        estado = 'EN_SEGUIMIENTO'
+        etiqueta = f'Evolución estable (EVA {ultimo}/10)'
+        recomendacion = 'Continuar con la dosificación actual y monitorear siguiente sesión.'
+
+    return {
+        'estado': estado,
+        'etiqueta': etiqueta,
+        'recomendacion': recomendacion,
+        'ultimo_eva': ultimo,
+        'delta_eva': delta,
+        'historial_eva': historial,
+    }
+
+
 class PautaListSerializer(serializers.ModelSerializer):
     total_ejercicios = serializers.IntegerField(source='ejercicios_detalle.count', read_only=True)
     cantidad_ejercicios = serializers.IntegerField(source='ejercicios_detalle.count', read_only=True)
     fecha_creacion = serializers.DateTimeField(source='creado_en', read_only=True)
     paciente_nombre = serializers.SerializerMethodField()
+    paciente_rut = serializers.SerializerMethodField()
     kinesiologo_nombre = serializers.SerializerMethodField()
     ejercicios_detalle = PautaEjercicioSerializer(many=True, read_only=True)
     sesiones_semana = serializers.SerializerMethodField()
     meta_semanal = serializers.SerializerMethodField()
+    evolucion_clinica = serializers.SerializerMethodField()
 
     class Meta:
         model = Pauta
         fields = [
-            'id', 'titulo', 'notas', 'paciente', 'paciente_nombre',
-            'kinesiologo_nombre', 'creado_en', 'fecha_creacion', 'activo',
+            'id', 'titulo', 'notas', 'paciente', 'paciente_nombre', 'paciente_rut',
+            'kinesiologo_nombre', 'creado_en', 'actualizado_en', 'fecha_creacion', 'activo',
             'total_ejercicios', 'cantidad_ejercicios', 'es_plantilla',
-            'sesiones_semana', 'meta_semanal', 'ejercicios_detalle',
+            'sesiones_semana', 'meta_semanal', 'evolucion_clinica', 'ejercicios_detalle',
         ]
 
     def get_paciente_nombre(self, obj):
         return _nombre_o_username(obj.paciente) if obj.paciente else "Plantilla General"
+
+    def get_paciente_rut(self, obj):
+        if obj.paciente and hasattr(obj.paciente, 'perfil'):
+            return obj.paciente.perfil.rut
+        return ""
 
     def get_kinesiologo_nombre(self, obj):
         return _nombre_o_username(obj.kinesiologo) if obj.kinesiologo else "KineConnect"
@@ -176,6 +246,9 @@ class PautaListSerializer(serializers.ModelSerializer):
 
     def get_sesiones_semana(self, obj):
         return _contar_sesiones_pauta(obj)
+
+    def get_evolucion_clinica(self, obj):
+        return _calcular_evolucion_clinica(obj)
 
 
 class PautaDetailSerializer(serializers.ModelSerializer):
@@ -183,21 +256,29 @@ class PautaDetailSerializer(serializers.ModelSerializer):
     ejercicios_detalle = PautaEjercicioSerializer(many=True, read_only=True)
     fecha_creacion = serializers.DateTimeField(source='creado_en', read_only=True)
     paciente_nombre = serializers.SerializerMethodField()
+    paciente_rut = serializers.SerializerMethodField()
     kinesiologo_nombre = serializers.SerializerMethodField()
     sesiones_semana = serializers.SerializerMethodField()
     meta_semanal = serializers.SerializerMethodField()
+    evolucion_clinica = serializers.SerializerMethodField()
 
     class Meta:
         model = Pauta
         fields = [
-            'id', 'titulo', 'notas', 'paciente', 'paciente_nombre',
+            'id', 'titulo', 'notas', 'paciente', 'paciente_nombre', 'paciente_rut',
             'kinesiologo_nombre', 'es_plantilla', 'activo',
-            'creado_en', 'fecha_creacion', 'sesiones_semana', 'meta_semanal',
+            'creado_en', 'actualizado_en', 'fecha_creacion',
+            'sesiones_semana', 'meta_semanal', 'evolucion_clinica',
             'ejercicios', 'ejercicios_detalle',
         ]
 
     def get_paciente_nombre(self, obj):
         return _nombre_o_username(obj.paciente) if obj.paciente else "Plantilla General"
+
+    def get_paciente_rut(self, obj):
+        if obj.paciente and hasattr(obj.paciente, 'perfil'):
+            return obj.paciente.perfil.rut
+        return ""
 
     def get_kinesiologo_nombre(self, obj):
         return _nombre_o_username(obj.kinesiologo) if obj.kinesiologo else "KineConnect"
@@ -208,13 +289,14 @@ class PautaDetailSerializer(serializers.ModelSerializer):
     def get_sesiones_semana(self, obj):
         return _contar_sesiones_pauta(obj)
 
+    def get_evolucion_clinica(self, obj):
+        return _calcular_evolucion_clinica(obj)
 
-# Alias de compatibilidad
+
 PautaReadSerializer = PautaDetailSerializer
 
 
 def _extraer_ejercicio_id(detalle):
-    """Busca el id del ejercicio en las distintas formas en que lo puede mandar el frontend."""
     for clave in ('ejercicio_id', 'id_ejercicio', 'ejercicio'):
         valor = detalle.get(clave)
         if isinstance(valor, dict):
@@ -232,7 +314,7 @@ def _a_entero(valor, defecto):
 
 
 class PautaCreateSerializer(serializers.ModelSerializer):
-    """Serializador transaccional para crear Pautas o Plantillas y su detalle en un solo POST"""
+    """Serializador transaccional para crear Pautas o Plantillas y su detalle en un solo POST."""
 
     ejercicios = serializers.ListField(child=serializers.DictField(), required=False, write_only=True)
     ejercicios_detalle = serializers.ListField(child=serializers.DictField(), required=False, write_only=True)
@@ -246,8 +328,10 @@ class PautaCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Pauta
-        fields = ['id', 'titulo', 'notas', 'paciente', 'es_plantilla',
-                  'guardar_como_plantilla', 'ejercicios', 'ejercicios_detalle']
+        fields = [
+            'id', 'titulo', 'notas', 'paciente', 'es_plantilla',
+            'guardar_como_plantilla', 'ejercicios', 'ejercicios_detalle',
+        ]
         read_only_fields = ('id',)
 
     def to_internal_value(self, data):
@@ -328,7 +412,7 @@ class PautaCreateSerializer(serializers.ModelSerializer):
 
 
 class RegistroFeedbackSerializer(serializers.ModelSerializer):
-    """Serializador para pantalla de feedback y registro EVA con validación 0-10"""
+    """Serializador para pantalla de feedback y registro EVA con validación 0-10."""
     escala_dolor = serializers.IntegerField(source='nivel_dolor', required=False, allow_null=True)
 
     class Meta:
@@ -351,10 +435,6 @@ class RegistroFeedbackSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("No puedes registrar feedback sobre una plantilla genérica.")
         return value
 
-
-# ==========================================
-# SERIALIZADOR DE LOGIN JWT (NORMALIZA RUT)
-# ==========================================
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):

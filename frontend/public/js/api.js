@@ -1,5 +1,6 @@
 const API_BASE_URL = 'https://kineconect-bmnsolutions.onrender.com/api/v1';
 const BACKEND_ORIGIN = 'https://kineconect-bmnsolutions.onrender.com';
+
 const api = {
     // ==========================================
     // GESTIÓN DE TOKENS Y SESIÓN
@@ -46,7 +47,7 @@ const api = {
     },
 
     // ==========================================
-    // AUTENTICACIÓN JWT (Rutas exactas de urls.py)
+    // AUTENTICACIÓN JWT
     // ==========================================
     async login(username, password) {
         try {
@@ -66,10 +67,10 @@ const api = {
             this.setTokens(data.access, data.refresh);
 
             const userData = {
-    username: data.user?.username || username,
-    nombre_completo: data.user?.nombre_completo || username,
-    rol: data.user?.rol || 'KINE'
-};
+                username: data.user?.username || username,
+                nombre_completo: data.user?.nombre_completo || username,
+                rol: data.user?.rol || 'KINE'
+            };
             this.setUser(userData);
 
             return data;
@@ -129,7 +130,6 @@ const api = {
 
         let resp = await fetch(`${API_BASE_URL}${endpoint}`, config);
 
-        // Si el token expiró (401), renovar con /auth/refresh/
         if (resp.status === 401 && this.getRefreshToken()) {
             token = await this.refreshToken();
             if (token) {
@@ -162,20 +162,23 @@ const api = {
     },
 
     // ==========================================
-    // RECURSOS REST (RUTAS DEL ROUTER)
+    // RECURSOS REST
     // ==========================================
     async getMisPacientes() {
         return this.request('/perfiles/mis-pacientes/');
     },
+
     async getAlertasAbandono() {
-        return await this.request('/perfiles/alertas-abandono/');
+        return this.request('/perfiles/alertas-abandono/');
     },
+
     async registrarPaciente(datos) {
         return this.request('/perfiles/registrar-paciente/', {
             method: 'POST',
             body: JSON.stringify(datos)
         });
     },
+
     async crearPauta(datos) {
         return this.request('/pautas/', {
             method: 'POST',
@@ -187,12 +190,15 @@ const api = {
         return this.request('/pautas/');
     },
 
+    async getResumenClinico() {
+        return this.request('/pautas/resumen-clinico/');
+    },
+
     async getEjercicios() {
-    return this.request('/ejercicios/');
-},
+        return this.request('/ejercicios/');
+    },
 
     async getReportesDolor() {
-        // Feedback registrado en el router
         return this.request('/feedback/');
     }
 };

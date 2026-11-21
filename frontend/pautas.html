@@ -467,17 +467,28 @@
                     ? '<span class="badge badge-ok">ACTIVA</span>'
                     : '<span class="badge badge-alerta">ARCHIVADA</span>';
                 const tituloSeguro = escaparHtml(p.titulo || 'Sin Título').replace(/'/g, "\\'");
+                const evo = p.evolucion_clinica;
+                const cicloHtml = !esPlantilla
+                    ? `<span class="badge badge-neutro" style="font-size: 0.72rem; margin-left: 4px;">${p.sesiones_semana ?? 0}/${p.meta_semanal ?? 3} sem.</span>`
+                    : '';
+                const evoPill = (evo && !esPlantilla)
+                    ? `<div style="margin-top: 4px; font-size: 0.76rem; font-weight: 600; color: ${evo.estado === 'ALERTA_DOLOR' || evo.estado === 'AUMENTO_BRUSCO' ? '#dc2626' : (evo.estado === 'PROGRESION_OPTIMA' ? '#059669' : '#0369a1')};">
+                        ${escaparHtml(evo.etiqueta)}
+                       </div>`
+                    : '';
 
                 const tr = document.createElement('tr');
                 if (!esActiva) tr.style.opacity = '0.78';
 
                 tr.innerHTML = `
-                    <td><strong>${tituloIcon}${escaparHtml(p.titulo || 'Sin Título')}</strong></td>
+                    <td>
+                        <strong>${tituloIcon}${escaparHtml(p.titulo || 'Sin Título')}</strong>
+                        ${evoPill}
+                    </td>
                     <td>${pacienteBadge}</td>
-                    <td><span class="badge badge-neutro">${cant} ejercicios</span></td>
+                    <td><span class="badge badge-neutro">${cant} ejercicios</span>${cicloHtml}</td>
                     <td>${fecha}</td>
                     <td>${estadoBadge}</td>
-                    <td>
                         <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                             <button type="button" class="btn btn-secondary btn-sm" onclick="verDetallePauta(${p.id})" title="Ver detalle">
                                 <i class='bx bx-show'></i> Ver
@@ -519,10 +530,32 @@
             document.getElementById('detalle-pauta-subtitulo').textContent = `${destinatario} | Creada el ${fecha}`;
 
             const indicaciones = (pauta.notas || pauta.descripcion || pauta.objetivo || '').trim();
-            document.getElementById('detalle-pauta-indicaciones').innerHTML = indicaciones
-                ? `<strong>Indicaciones / Objetivo:</strong> ${escaparHtml(indicaciones)}`
-                : `<span style="color: var(--gris-500); font-style: italic;">Sin indicaciones adicionales.</span>`;
+            const evo = pauta.evolucion_clinica;
+            let evoHtml = '';
+            if (evo && !esPlantilla) {
+                const esAlerta = evo.estado === 'ALERTA_DOLOR' || evo.estado === 'AUMENTO_BRUSCO';
+                const barrasHtml = (evo.historial_eva || []).map(h => `
+                    <span class="badge ${h.nivel_dolor >= 6 ? 'badge-alerta' : (h.nivel_dolor >= 4 ? 'badge-neutro' : 'badge-ok')}" style="font-size: 0.74rem;">
+                        ${escaparHtml(h.fecha)} → EVA ${h.nivel_dolor}/10
+                    </span>
+                `).join(' ');
 
+                evoHtml = `
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #cbd5e1;">
+                        <div style="font-weight: 700; font-size: 0.84rem; color: ${esAlerta ? '#dc2626' : '#0369a1'};">
+                            Analítica Clínica: ${escaparHtml(evo.etiqueta)}
+                        </div>
+                        <div style="font-size: 0.8rem; color: #334155; margin-top: 2px;">
+                            ${escaparHtml(evo.recomendacion)}
+                        </div>
+                        ${barrasHtml ? `<div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">${barrasHtml}</div>` : ''}
+                    </div>
+                `;
+            }
+
+            document.getElementById('detalle-pauta-indicaciones').innerHTML = (indicaciones
+                ? `<strong>Indicación Clínica del Kinesiólogo:</strong> ${escaparHtml(indicaciones)}`
+                : `<span style="color: var(--gris-500); font-style: italic;">Sin indicaciones adicionales.</span>`) + evoHtml;
             const listaEl = document.getElementById('detalle-pauta-lista-ejercicios');
             const detalles = Array.isArray(pauta.ejercicios_detalle) ? pauta.ejercicios_detalle : [];
 

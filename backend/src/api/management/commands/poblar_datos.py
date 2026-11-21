@@ -769,3 +769,120 @@ class Command(BaseCommand):
                 f'{creados} creados, {actualizados} actualizados.'
             )
         )
+# =====================================================================
+        # 7. PACIENTES Y CASOS CLÍNICOS REALISTAS PARA DEMOSTRACIÓN
+        # =====================================================================
+        from django.contrib.auth.models import User
+        from django.utils import timezone
+        from datetime import timedelta
+        from api.models import Perfil, Pauta, PautaEjercicio, RegistroFeedback
+
+        kine_demo = (
+            User.objects.filter(perfil__rol='KINE').first()
+            or User.objects.filter(is_superuser=True).first()
+        )
+
+        if kine_demo:
+            # Caso 1: Camila Valdés (Paciente con alerta de dolor EVA 8/10 lista para ajuste)
+            camila, _ = User.objects.get_or_create(
+                username='194528103',
+                defaults={
+                    'first_name': 'Camila',
+                    'last_name': 'Valdés Rojas',
+                    'email': 'camila.valdes.demo@kineconnect.cl',
+                },
+            )
+            camila.set_password('Kine2026')
+            camila.save()
+            Perfil.objects.update_or_create(
+                user=camila,
+                defaults={'rut': '19452810-3', 'rol': 'PACIENTE', 'kinesiologo_asignado': kine_demo},
+            )
+
+            pauta_camila, _ = Pauta.objects.update_or_create(
+                paciente=camila,
+                titulo='Rehabilitación Lumbar — Fase 1',
+                defaults={
+                    'kinesiologo': kine_demo,
+                    'activo': True,
+                    'es_plantilla': False,
+                    'notas': 'Ejecutar 3 veces por semana manteniendo columna neutra. Detener si EVA ≥ 6.',
+                },
+            )
+            PautaEjercicio.objects.filter(pauta=pauta_camila).delete()
+            ej_bird = Ejercicio.objects.filter(nombre__icontains='Bird Dog').first()
+            ej_puente = Ejercicio.objects.filter(nombre__icontains='Puente Glúteo').first()
+            if ej_bird:
+                PautaEjercicio.objects.create(
+                    pauta=pauta_camila, ejercicio=ej_bird, series=3, repeticiones=10, tiempo_descanso_segundos=60
+                )
+            if ej_puente:
+                PautaEjercicio.objects.create(
+                    pauta=pauta_camila, ejercicio=ej_puente, series=3, repeticiones=12, tiempo_descanso_segundos=45
+                )
+
+            RegistroFeedback.objects.filter(pauta=pauta_camila).delete()
+            fb1 = RegistroFeedback.objects.create(
+                pauta=pauta_camila,
+                completado=True,
+                nivel_dolor=4,
+                comentario='Leve tensión lumbar al finalizar la última serie.',
+            )
+            RegistroFeedback.objects.filter(id=fb1.id).update(fecha_ejecucion=timezone.now() - timedelta(days=2))
+
+            RegistroFeedback.objects.create(
+                pauta=pauta_camila,
+                completado=True,
+                nivel_dolor=8,
+                comentario='Dolor agudo en zona lumbar baja durante Bird Dog.',
+            )
+
+            # Caso 2: Matías Contreras (Ciclo 3/3 completado — Modo Solo Consulta y PDF)
+            matias_pac, _ = User.objects.get_or_create(
+                username='16834920K',
+                defaults={
+                    'first_name': 'Matías',
+                    'last_name': 'Contreras Silva',
+                    'email': 'matias.contreras.demo@kineconnect.cl',
+                },
+            )
+            matias_pac.set_password('Kine2026')
+            matias_pac.save()
+            Perfil.objects.update_or_create(
+                user=matias_pac,
+                defaults={'rut': '16834920-K', 'rol': 'PACIENTE', 'kinesiologo_asignado': kine_demo},
+            )
+
+            pauta_matias, _ = Pauta.objects.update_or_create(
+                paciente=matias_pac,
+                titulo='Estabilización de Cadera y Tobillo',
+                defaults={
+                    'kinesiologo': kine_demo,
+                    'activo': True,
+                    'es_plantilla': False,
+                    'notas': 'Controlar alineación de pelvis en Clamshell y movilidad completa de tobillo.',
+                },
+            )
+            PautaEjercicio.objects.filter(pauta=pauta_matias).delete()
+            ej_clam = Ejercicio.objects.filter(nombre__icontains='Clamshell').first()
+            ej_tob = Ejercicio.objects.filter(nombre__icontains='Abecedario').first()
+            if ej_clam:
+                PautaEjercicio.objects.create(
+                    pauta=pauta_matias, ejercicio=ej_clam, series=3, repeticiones=12, tiempo_descanso_segundos=45
+                )
+            if ej_tob:
+                PautaEjercicio.objects.create(
+                    pauta=pauta_matias, ejercicio=ej_tob, series=2, repeticiones=10, tiempo_descanso_segundos=30
+                )
+
+            RegistroFeedback.objects.filter(pauta=pauta_matias).delete()
+            for idx, dolor in enumerate([3, 2, 1]):
+                fb = RegistroFeedback.objects.create(
+                    pauta=pauta_matias,
+                    completado=True,
+                    nivel_dolor=dolor,
+                    comentario=f'Sesión {idx + 1} completada con buena tolerancia.',
+                )
+                RegistroFeedback.objects.filter(id=fb.id).update(
+                    fecha_ejecucion=timezone.now() - timedelta(days=(4 - idx * 2))
+                )

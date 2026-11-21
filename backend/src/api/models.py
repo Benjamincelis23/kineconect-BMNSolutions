@@ -1,11 +1,13 @@
-from django.db import models 
+from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+
+
 class SolicitudRegistro(models.Model):
     ESTADOS = [
         ('PENDIENTE', 'Pendiente'),
         ('APROBADA', 'Aprobada'),
-        ('RECHAZADA', 'Rechazada')
+        ('RECHAZADA', 'Rechazada'),
     ]
     rut = models.CharField(max_length=12, unique=True)
     nombre = models.CharField(max_length=100)
@@ -17,6 +19,7 @@ class SolicitudRegistro(models.Model):
 
     def __str__(self):
         return f"{self.rut} - {self.nombre} {self.apellido} ({self.estado})"
+
 
 class Perfil(models.Model):
     ROL_CHOICES = (
@@ -32,34 +35,20 @@ class Perfil(models.Model):
 
     def __str__(self):
         return f"{self.user.get_full_name() or self.user.username} - {self.rol}"
-class SolicitudRegistro(models.Model):
-    ESTADOS = [
-        ('PENDIENTE', 'Pendiente'),
-        ('APROBADA', 'Aprobada'),
-        ('RECHAZADA', 'Rechazada')
-    ]
-    rut = models.CharField(max_length=12, unique=True)
-    nombre = models.CharField(max_length=100)
-    apellido = models.CharField(max_length=100)
-    email = models.EmailField()
-    telefono = models.CharField(max_length=20, blank=True)
-    estado = models.CharField(max_length=10, choices=ESTADOS, default='PENDIENTE')
-    creada = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"{self.rut} - {self.nombre} {self.apellido} ({self.estado})"
 
 class AreaClinica(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
 
-    class Meta: 
+    class Meta:
         verbose_name = "Área / Condición Clínica"
         verbose_name_plural = "Áreas / Condiciones Clínicas"
         ordering = ['nombre']
-        
+
     def __str__(self):
         return self.nombre
-    
+
+
 class Ejercicio(models.Model):
     AREAS_CLINICAS_CHOICES = [
         ('GENERAL', 'Rehabilitación General'),
@@ -77,14 +66,15 @@ class Ejercicio(models.Model):
     video = models.FileField(upload_to="videos_ejercicios/", blank=True, null=True)
     imagen = models.ImageField(upload_to="ejercicios/", blank=True, null=True)
     gif_url = models.URLField(
-        blank=True, null=True,
-        help_text="URL de un GIF demostrativo del ejercicio (opcional)."
+        blank=True,
+        null=True,
+        help_text="URL de un GIF demostrativo del ejercicio (opcional).",
     )
     area_clinica = models.ManyToManyField(
         AreaClinica,
         blank=True,
         related_name='ejercicios',
-        verbose_name="Áreas / Condiciones Clínicas"
+        verbose_name="Áreas / Condiciones Clínicas",
     )
 
     def __str__(self):
@@ -94,19 +84,19 @@ class Ejercicio(models.Model):
 class Pauta(models.Model):
     titulo = models.CharField(max_length=150, default="Rutina de Ejercicios")
     kinesiologo = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pautas_creadas')
-    
-    # ADAPTACIÓN DE NICOLÁS (Plantillas sin paciente obligatorio):
-    paciente = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pautas_asignadas', null=True, blank=True)
+    paciente = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='pautas_asignadas', null=True, blank=True
+    )
     es_plantilla = models.BooleanField(default=False)
-    
     activo = models.BooleanField(default=True)
     creado_en = models.DateTimeField(auto_now_add=True)
-    notas = models.TextField(blank=True, default='') 
+    actualizado_en = models.DateTimeField(auto_now=True)
+    notas = models.TextField(blank=True, default='')
 
     def clean(self):
         if self.paciente and hasattr(self.paciente, 'perfil') and self.paciente.perfil.rol != 'PACIENTE':
             raise ValidationError({'paciente': 'El usuario asignado debe tener el rol de PACIENTE.'})
-        
+
         if hasattr(self.kinesiologo, 'perfil') and self.kinesiologo.perfil.rol != 'KINE':
             raise ValidationError({'kinesiologo': 'El usuario creador debe tener el rol de KINE.'})
 
@@ -136,9 +126,9 @@ class PautaEjercicio(models.Model):
 class RegistroFeedback(models.Model):
     pauta = models.ForeignKey(Pauta, on_delete=models.CASCADE, related_name='feedbacks')
     completado = models.BooleanField(default=False)
-    
-    # Adaptado a nivel_dolor para que el frontend móvil lo reciba bien
-    nivel_dolor = models.PositiveSmallIntegerField(choices=[(i, str(i)) for i in range(0, 11)], null=True, blank=True)
+    nivel_dolor = models.PositiveSmallIntegerField(
+        choices=[(i, str(i)) for i in range(0, 11)], null=True, blank=True
+    )
     comentario = models.TextField(blank=True, null=True)
     fecha_ejecucion = models.DateTimeField(auto_now_add=True)
 
