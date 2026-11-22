@@ -689,6 +689,46 @@ class PautaViewSet(viewsets.ModelViewSet):
 class RegistroFeedbackViewSet(viewsets.ModelViewSet):
     serializer_class = RegistroFeedbackSerializer
     permission_classes = [permissions.IsAuthenticated]
+    @action(detail=True, methods=['patch'], url_path='responder')
+    def responder(self, request, pk=None):
+        user = request.user
+        if not _es_admin(user) and _rol(user) == 'PACIENTE':
+            raise PermissionDenied('Solo un kinesiólogo o administrador puede responder reportes clínicos.')
+
+        feedback = self.get_object()
+        texto = request.data.get('respuesta_kinesiologo', '')
+        if not isinstance(texto, str) or not texto.strip():
+            raise DRFValidationError({'respuesta_kinesiologo': 'Debes proporcionar una respuesta clínica válida.'})
+
+        feedback.respuesta_kinesiologo = texto.strip()
+        feedback.fecha_respuesta = timezone.now()
+        feedback.save(update_fields=['respuesta_kinesiologo', 'fecha_respuesta'])
+
+        serializer = self.get_serializer(feedback)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def partial_update(self, request, *args, **kwargs):
+        user = request.user
+        if 'respuesta_kinesiologo' in request.data and not _es_admin(user) and _rol(user) == 'PACIENTE':
+            raise PermissionDenied('Solo un kinesiólogo o administrador puede responder reportes clínicos.')
+
+        instance = self.get_object()
+        data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
+        if 'respuesta_kinesiologo' in data:
+            texto = data.get('respuesta_kinesiologo')
+            if texto is not None and not str(texto).strip():
+                raise DRFValidationError({'respuesta_kinesiologo': 'La respuesta clínica no puede estar vacía.'})
+
+        serializer = self.get_serializer(instance, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        if 'respuesta_kinesiologo' in data:
+            instance.respuesta_kinesiologo = str(data['respuesta_kinesiologo']).strip() if data['respuesta_kinesiologo'] else None
+            instance.fecha_respuesta = timezone.now() if instance.respuesta_kinesiologo else None
+            instance.save(update_fields=['respuesta_kinesiologo', 'fecha_respuesta'])
+            return Response(self.get_serializer(instance).data, status=status.HTTP_200_OK)
+
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def get_queryset(self):
         user = self.request.user

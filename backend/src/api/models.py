@@ -131,7 +131,8 @@ class RegistroFeedback(models.Model):
     )
     comentario = models.TextField(blank=True, null=True)
     fecha_ejecucion = models.DateTimeField(auto_now_add=True)
-
+    respuesta_kinesiologo = models.TextField(blank=True, null=True)
+    fecha_respuesta = models.DateTimeField(blank=True, null=True)
     def __str__(self):
         usuario = self.pauta.paciente.username if self.pauta.paciente else "Anónimo"
         return f"Feedback de {usuario} - Dolor: {self.nivel_dolor}"

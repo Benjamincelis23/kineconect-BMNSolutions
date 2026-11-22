@@ -200,5 +200,22 @@ const api = {
 
     async getReportesDolor() {
         return this.request('/feedback/');
+    },
+    async responderFeedback(feedbackId, respuestaTexto) {
+        if (!feedbackId) {
+            throw new Error('Falta el identificador del reporte clínico.');
+        }
+
+        const textoLimpio = typeof respuestaTexto === 'string' ? respuestaTexto.trim() : '';
+        if (!textoLimpio) {
+            throw new Error('Debes escribir una indicación o retroalimentación antes de enviar.');
+        }
+
+        return this.request(`/feedback/${encodeURIComponent(feedbackId)}/responder/`, {
+            method: 'PATCH',
+            body: JSON.stringify({
+                respuesta_kinesiologo: textoLimpio,
+            }),
+        });
     }
 };

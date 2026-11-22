@@ -417,11 +417,31 @@ class PautaCreateSerializer(serializers.ModelSerializer):
 class RegistroFeedbackSerializer(serializers.ModelSerializer):
     """Serializador para pantalla de feedback y registro EVA con validación 0-10."""
     escala_dolor = serializers.IntegerField(source='nivel_dolor', required=False, allow_null=True)
+    pauta_titulo = serializers.CharField(source='pauta.titulo', read_only=True)
+    paciente_nombre = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = RegistroFeedback
-        fields = ('id', 'pauta', 'completado', 'nivel_dolor', 'escala_dolor', 'comentario', 'fecha_ejecucion')
-        read_only_fields = ('fecha_ejecucion',)
+        fields = (
+            'id',
+            'pauta',
+            'pauta_titulo',
+            'paciente_nombre',
+            'completado',
+            'nivel_dolor',
+            'escala_dolor',
+            'comentario',
+            'fecha_ejecucion',
+            'respuesta_kinesiologo',
+            'fecha_respuesta',
+        )
+        read_only_fields = ('fecha_ejecucion', 'fecha_respuesta')
+
+    def get_paciente_nombre(self, obj):
+        paciente = getattr(obj.pauta, 'paciente', None)
+        if not paciente:
+            return 'Paciente'
+        return _nombre_o_username(paciente)
 
     def validate_nivel_dolor(self, value):
         if value is not None and not (0 <= int(value) <= 10):

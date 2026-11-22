@@ -101,7 +101,7 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [BASE_DIR / 'static'] if (BASE_DIR / 'static').exists() else []
 
-MEDIA_URL = '/static/media/'
+MEDIA_URL = '/media/' if DEBUG else '/static/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'static', 'media')
 
 STORAGES = {

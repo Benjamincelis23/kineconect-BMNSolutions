@@ -2,11 +2,13 @@
 <html lang="es">
 
 <head>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Principal - KineConnect</title>
     <link rel="stylesheet" href="public/css/style.css">
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+
     <style>
         .modulo-card {
             padding: 18px;
@@ -120,6 +122,24 @@
         body.dark .bandeja-paciente {
             color: #f8fafc !important;
         }
+
+        body.dark-mode #modal-responder-bandeja .modal-card,
+        html.dark-mode #modal-responder-bandeja .modal-card,
+        [data-theme="dark"] #modal-responder-bandeja .modal-card,
+        body.dark #modal-responder-bandeja .modal-card {
+            background: #162236 !important;
+            color: #f8fafc !important;
+            border: 1px solid #24344d !important;
+        }
+
+        body.dark-mode #modal-responder-bandeja textarea,
+        html.dark-mode #modal-responder-bandeja textarea,
+        [data-theme="dark"] #modal-responder-bandeja textarea,
+        body.dark #modal-responder-bandeja textarea {
+            background: #0f1929 !important;
+            color: #f8fafc !important;
+            border-color: #334155 !important;
+        }
     </style>
 </head>
 
@@ -145,43 +165,61 @@
                 </div>
 
                 <!-- 1. MÉTRICAS RESUMEN CLÍNICO (KPIs) -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(195px, 1fr)); gap: 14px; margin-bottom: 20px;">
-                    <div class="card" style="padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-left: 4px solid #2563eb;">
-                        <div style="width: 40px; height: 40px; border-radius: 10px; background: #dbeafe; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(195px, 1fr)); gap: 14px; margin-bottom: 20px;">
+                    <div class="card"
+                        style="padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-left: 4px solid #2563eb;">
+                        <div
+                            style="width: 40px; height: 40px; border-radius: 10px; background: #dbeafe; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
                             <i class='bx bx-group'></i>
                         </div>
                         <div>
-                            <span style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">Pacientes Activos</span>
+                            <span
+                                style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">Pacientes
+                                Activos</span>
                             <strong id="kpi-pacientes" style="font-size: 1.35rem; color: var(--azul-900);">—</strong>
                         </div>
                     </div>
 
-                    <div class="card" style="padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-left: 4px solid #ef4444;">
-                        <div style="width: 40px; height: 40px; border-radius: 10px; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
+                    <div class="card"
+                        style="padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-left: 4px solid #ef4444;">
+                        <div
+                            style="width: 40px; height: 40px; border-radius: 10px; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
                             <i class='bx bx-error-circle'></i>
                         </div>
                         <div>
-                            <span style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">Alertas Dolor (EVA ≥ 6)</span>
-                            <strong id="kpi-alertas-dolor" style="font-size: 1.35rem; color: var(--azul-900);">—</strong>
+                            <span
+                                style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">Alertas
+                                Dolor (EVA ≥ 6)</span>
+                            <strong id="kpi-alertas-dolor"
+                                style="font-size: 1.35rem; color: var(--azul-900);">—</strong>
                         </div>
                     </div>
 
-                    <div class="card" style="padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-left: 4px solid #10b981;">
-                        <div style="width: 40px; height: 40px; border-radius: 10px; background: #d1fae5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
+                    <div class="card"
+                        style="padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-left: 4px solid #10b981;">
+                        <div
+                            style="width: 40px; height: 40px; border-radius: 10px; background: #d1fae5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
                             <i class='bx bx-trending-up'></i>
                         </div>
                         <div>
-                            <span style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">Adherencia Semanal</span>
+                            <span
+                                style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">Adherencia
+                                Semanal</span>
                             <strong id="kpi-adherencia" style="font-size: 1.35rem; color: var(--azul-900);">—</strong>
                         </div>
                     </div>
 
-                    <div class="card" style="padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-left: 4px solid #f59e0b;">
-                        <div style="width: 40px; height: 40px; border-radius: 10px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
+                    <div class="card"
+                        style="padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-left: 4px solid #f59e0b;">
+                        <div
+                            style="width: 40px; height: 40px; border-radius: 10px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
                             <i class='bx bx-time-five'></i>
                         </div>
                         <div>
-                            <span style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">Riesgo Inactividad (&gt;3d)</span>
+                            <span
+                                style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">Riesgo
+                                Inactividad (&gt;3d)</span>
                             <strong id="kpi-abandono" style="font-size: 1.35rem; color: var(--azul-900);">—</strong>
                         </div>
                     </div>
@@ -190,22 +228,29 @@
                 <!-- 2. BANDEJA DE ATENCIÓN PRIORITARIA (DECISIÓN CLÍNICA KINE <-> PACIENTE) -->
                 <div id="bloque-bandeja-prioritaria" style="display: none; margin-bottom: 22px;">
                     <div class="card" style="padding: 16px 18px; border-left: 4px solid #ef4444; background: #fef2f2;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
-                            <h3 style="margin: 0; font-size: 0.98rem; color: #991b1b; display: flex; align-items: center; gap: 8px;">
-                                <i class='bx bx-bell-ring' style="font-size: 1.2rem;"></i> Bandeja de Atención Prioritaria — Requieren Ajuste Clínico
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+                            <h3
+                                style="margin: 0; font-size: 0.98rem; color: #991b1b; display: flex; align-items: center; gap: 8px;">
+                                <i class='bx bx-bell-ring' style="font-size: 1.2rem;"></i> Bandeja de Atención
+                                Prioritaria — Requieren Ajuste Clínico
                             </h3>
-                            <a href="pautas.html" style="font-size: 0.8rem; font-weight: 700; color: #b91c1c; text-decoration: none;">
+                            <a href="pautas.html"
+                                style="font-size: 0.8rem; font-weight: 700; color: #b91c1c; text-decoration: none;">
                                 Ir a monitoreo completo →
                             </a>
                         </div>
-                        <div id="lista-bandeja-prioritaria" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                        <div id="lista-bandeja-prioritaria" style="display: flex; flex-direction: column; gap: 8px;">
+                        </div>
                     </div>
                 </div>
 
                 <!-- 3. MÓDULOS CLÍNICOS -->
                 <div style="margin-bottom: 24px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                        <h3 style="margin: 0; font-size: 0.98rem; color: var(--azul-900); display: flex; align-items: center; gap: 6px;">
+                    <div
+                        style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                        <h3
+                            style="margin: 0; font-size: 0.98rem; color: var(--azul-900); display: flex; align-items: center; gap: 6px;">
                             <i class='bx bx-grid-alt' style="color: #0284c7;"></i> Módulos Clínicos
                         </h3>
                     </div>
@@ -219,14 +264,17 @@
                                     <span class="modulo-icon" style="background: #e0f2fe; color: #0284c7;">
                                         <i class='bx bx-body'></i>
                                     </span>
-                                    <span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 700; font-size: 0.72rem;">
+                                    <span class="badge"
+                                        style="background: #e0f2fe; color: #0369a1; font-weight: 700; font-size: 0.72rem;">
                                         Prescribir
                                     </span>
                                 </div>
-                                <strong style="display: block; color: var(--azul-900); font-size: 1rem; margin-bottom: 5px;">
+                                <strong
+                                    style="display: block; color: var(--azul-900); font-size: 1rem; margin-bottom: 5px;">
                                     Mapa Anatómico
                                 </strong>
-                                <p style="margin: 0 0 14px 0; font-size: 0.83rem; color: var(--gris-600); line-height: 1.45;">
+                                <p
+                                    style="margin: 0 0 14px 0; font-size: 0.83rem; color: var(--gris-600); line-height: 1.45;">
                                     Arma rutinas filtrando por grupos musculares, áreas clínicas o plantillas.
                                 </p>
                             </div>
@@ -242,14 +290,17 @@
                                     <span class="modulo-icon" style="background: #fef3c7; color: #d97706;">
                                         <i class='bx bx-pulse'></i>
                                     </span>
-                                    <span id="badge-mod-reportes" class="badge badge-neutro" style="font-size: 0.72rem;">
+                                    <span id="badge-mod-reportes" class="badge badge-neutro"
+                                        style="font-size: 0.72rem;">
                                         Monitoreo
                                     </span>
                                 </div>
-                                <strong style="display: block; color: var(--azul-900); font-size: 1rem; margin-bottom: 5px;">
+                                <strong
+                                    style="display: block; color: var(--azul-900); font-size: 1rem; margin-bottom: 5px;">
                                     Pautas y Dolor (EVA)
                                 </strong>
-                                <p style="margin: 0 0 14px 0; font-size: 0.83rem; color: var(--gris-600); line-height: 1.45;">
+                                <p
+                                    style="margin: 0 0 14px 0; font-size: 0.83rem; color: var(--gris-600); line-height: 1.45;">
                                     Evalúa reportes de dolor post-sesión, ajusta cargas y exporta PDF por RUT.
                                 </p>
                             </div>
@@ -265,14 +316,17 @@
                                     <span class="modulo-icon" style="background: #dbeafe; color: #2563eb;">
                                         <i class='bx bx-group'></i>
                                     </span>
-                                    <span id="badge-mod-pacientes" class="badge badge-neutro" style="font-size: 0.72rem;">
+                                    <span id="badge-mod-pacientes" class="badge badge-neutro"
+                                        style="font-size: 0.72rem;">
                                         Pacientes
                                     </span>
                                 </div>
-                                <strong style="display: block; color: var(--azul-900); font-size: 1rem; margin-bottom: 5px;">
+                                <strong
+                                    style="display: block; color: var(--azul-900); font-size: 1rem; margin-bottom: 5px;">
                                     Gestión de Pacientes
                                 </strong>
-                                <p style="margin: 0 0 14px 0; font-size: 0.83rem; color: var(--gris-600); line-height: 1.45;">
+                                <p
+                                    style="margin: 0 0 14px 0; font-size: 0.83rem; color: var(--gris-600); line-height: 1.45;">
                                     Registra pacientes, supervisa adherencia semanal y detecta inactividad.
                                 </p>
                             </div>
@@ -292,10 +346,12 @@
                                         Biblioteca
                                     </span>
                                 </div>
-                                <strong style="display: block; color: var(--azul-900); font-size: 1rem; margin-bottom: 5px;">
+                                <strong
+                                    style="display: block; color: var(--azul-900); font-size: 1rem; margin-bottom: 5px;">
                                     Catálogo de Ejercicios
                                 </strong>
-                                <p style="margin: 0 0 14px 0; font-size: 0.83rem; color: var(--gris-600); line-height: 1.45;">
+                                <p
+                                    style="margin: 0 0 14px 0; font-size: 0.83rem; color: var(--gris-600); line-height: 1.45;">
                                     Explora la biblioteca clínica ordenada por segmento céfalo-caudal y video.
                                 </p>
                             </div>
@@ -308,36 +364,46 @@
                 </div>
 
                 <!-- 4. ACTIVIDAD RECIENTE (2 COLUMNAS NIVELADAS) -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; align-items: stretch;">
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; align-items: stretch;">
 
                     <!-- Últimos Reportes de Dolor -->
                     <div class="card" style="padding: 18px 20px; display: flex; flex-direction: column;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-                            <h3 style="margin: 0; font-size: 1rem; color: var(--azul-900); display: flex; align-items: center; gap: 8px;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                            <h3
+                                style="margin: 0; font-size: 1rem; color: var(--azul-900); display: flex; align-items: center; gap: 8px;">
                                 <i class='bx bx-pulse' style="color: #ef4444;"></i> Últimos Reportes EVA (App Móvil)
                             </h3>
-                            <a href="pautas.html" style="font-size: 0.82rem; font-weight: 700; color: #0284c7; text-decoration: none;">
+                            <a href="pautas.html"
+                                style="font-size: 0.82rem; font-weight: 700; color: #0284c7; text-decoration: none;">
                                 Ver monitoreo →
                             </a>
                         </div>
 
-                        <div id="lista-ultimos-reportes" style="display: flex; flex-direction: column; gap: 9px; flex: 1;">
-                            <p style="margin: 0; font-size: 0.85rem; color: var(--gris-500);">Cargando reportes recientes...</p>
+                        <div id="lista-ultimos-reportes"
+                            style="display: flex; flex-direction: column; gap: 9px; flex: 1;">
+                            <p style="margin: 0; font-size: 0.85rem; color: var(--gris-500);">Cargando reportes
+                                recientes...</p>
                         </div>
                     </div>
 
                     <!-- Pacientes Recientes -->
                     <div class="card" style="padding: 18px 20px; display: flex; flex-direction: column;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-                            <h3 style="margin: 0; font-size: 1rem; color: var(--azul-900); display: flex; align-items: center; gap: 8px;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                            <h3
+                                style="margin: 0; font-size: 1rem; color: var(--azul-900); display: flex; align-items: center; gap: 8px;">
                                 <i class='bx bx-user-check' style="color: #2563eb;"></i> Pacientes Asignados
                             </h3>
-                            <a href="pacientes.html" style="font-size: 0.82rem; font-weight: 700; color: #2563eb; text-decoration: none;">
+                            <a href="pacientes.html"
+                                style="font-size: 0.82rem; font-weight: 700; color: #2563eb; text-decoration: none;">
                                 Gestionar →
                             </a>
                         </div>
 
-                        <div id="lista-pacientes-recientes" style="display: flex; flex-direction: column; gap: 9px; flex: 1;">
+                        <div id="lista-pacientes-recientes"
+                            style="display: flex; flex-direction: column; gap: 9px; flex: 1;">
                             <p style="margin: 0; font-size: 0.85rem; color: var(--gris-500);">Cargando pacientes...</p>
                         </div>
                     </div>
@@ -347,7 +413,73 @@
             </div>
         </main>
     </div>
+    <!-- Modal de Respuesta Rápida desde Bandeja Prioritaria -->
+    <div id="modal-responder-bandeja" class="modal-overlay" style="display: none;"
+        onclick="if(event.target === this) cerrarModalBandeja()">
+        <div class="modal-card" style="max-width: 520px; width: 92%; padding: 20px; border-radius: 14px;">
+            <div
+                style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 12px;">
+                <div>
+                    <h3 id="bandeja-modal-titulo" style="margin: 0; font-size: 1.06rem; color: var(--azul-900);">
+                        <i class='bx bx-message-square-edit' style="color: #0284c7;"></i> Enviar Mensaje Clínico
+                    </h3>
+                    <p id="bandeja-modal-subtitulo"
+                        style="margin: 4px 0 0; font-size: 0.82rem; color: var(--gris-600);"></p>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="cerrarModalBandeja()">
+                    <i class='bx bx-x' style="font-size: 1.3rem;"></i>
+                </button>
+            </div>
 
+            <div id="bandeja-modal-contexto"
+                style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; font-size: 0.83rem;">
+            </div>
+
+            <div style="margin-bottom: 12px;">
+                <span
+                    style="display: block; font-size: 0.78rem; font-weight: 700; color: var(--gris-600); margin-bottom: 6px;">
+                    Sugerencias rápidas (un clic):
+                </span>
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <button type="button" class="btn btn-secondary btn-sm"
+                        style="justify-content: flex-start; text-align: left; font-size: 0.78rem; padding: 7px 10px;"
+                        onclick="aplicarSugerenciaBandeja('Excelente tolerancia, mantén la carga actual')">
+                        • Excelente tolerancia, mantén la carga actual
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm"
+                        style="justify-content: flex-start; text-align: left; font-size: 0.78rem; padding: 7px 10px;"
+                        onclick="aplicarSugerenciaBandeja('Reducir a 2 series si persiste molestia')">
+                        • Reducir a 2 series si persiste molestia
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm"
+                        style="justify-content: flex-start; text-align: left; font-size: 0.78rem; padding: 7px 10px;"
+                        onclick="aplicarSugerenciaBandeja('Suspender ejercicio con dolor y evaluar en próxima sesión')">
+                        • Suspender ejercicio con dolor y evaluar en próxima sesión
+                    </button>
+                </div>
+            </div>
+
+            <div class="field" style="margin-bottom: 14px;">
+                <label for="textarea-mensaje-bandeja"
+                    style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 6px;">
+                    Mensaje o indicación para el paciente
+                </label>
+                <textarea id="textarea-mensaje-bandeja" rows="3"
+                    placeholder="Escribe tu indicación ante el dolor reportado..."
+                    style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #cbd5e1; font-family: inherit; font-size: 0.86rem; resize: vertical;"></textarea>
+                <div id="bandeja-modal-error"
+                    style="display: none; color: #ef4444; font-size: 0.78rem; font-weight: 600; margin-top: 5px;"></div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="cerrarModalBandeja()">Cancelar</button>
+                <button type="button" id="btn-enviar-mensaje-bandeja" class="btn btn-primary btn-sm"
+                    onclick="enviarMensajeBandeja()">
+                    <i class='bx bx-send'></i> Enviar Mensaje
+                </button>
+            </div>
+        </div>
+    </div>
     <script src="js/api.js"></script>
     <script src="js/layout.js"></script>
     <script>
@@ -400,28 +532,8 @@
             document.getElementById('badge-mod-reportes').textContent = `${reportes.length} reportes`;
 
             // Bandeja de Atención Prioritaria
-            const bloqueBandeja = document.getElementById('bloque-bandeja-prioritaria');
-            const listaBandeja = document.getElementById('lista-bandeja-prioritaria');
-            const prioritarios = resumen?.bandeja_prioritaria || [];
-
-            if (prioritarios.length > 0 && bloqueBandeja && listaBandeja) {
-                bloqueBandeja.style.display = 'block';
-                listaBandeja.innerHTML = prioritarios.map(item => `
-                    <div style="background: #fff; border: 1px solid #fecaca; border-radius: 10px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                        <div>
-                            <span class="badge badge-alerta" style="margin-right: 6px;">EVA ${escaparHtml(item.nivel_dolor)}/10</span>
-                            <strong style="color: #0f172a; font-size: 0.9rem;">${escaparHtml(item.paciente_nombre)}</strong>
-                            <span style="color: #64748b; font-size: 0.8rem;"> • ${escaparHtml(item.pauta_titulo)} (${escaparHtml(item.fecha)})</span>
-                            <div style="font-size: 0.8rem; color: #991b1b; margin-top: 3px;">"${escaparHtml(item.comentario)}"</div>
-                        </div>
-                        <a href="crear_pauta.html?editar=${encodeURIComponent(item.pauta_id)}" class="btn btn-primary btn-sm">
-                            <i class='bx bx-slider-alt'></i> Ajustar Pauta
-                        </a>
-                    </div>
-                `).join('');
-            } else if (bloqueBandeja) {
-                bloqueBandeja.style.display = 'none';
-            }
+            reportesActualesDashboard = reportes;
+            renderizarBandejaPrioritaria(resumen?.bandeja_prioritaria || [], reportes);
 
             // Últimos 4 reportes EVA
             const contReportes = document.getElementById('lista-ultimos-reportes');
@@ -454,20 +566,53 @@
                     `;
                 }).join('');
             }
+        }
 
-            // Pacientes asignados
-            const contPacientes = document.getElementById('lista-pacientes-recientes');
-            if (pacientes.length === 0) {
-                contPacientes.innerHTML = `<p style="margin: 0; font-size: 0.85rem; color: var(--gris-500);">No tienes pacientes registrados todavía.</p>`;
-            } else {
-                contPacientes.innerHTML = pacientes.slice(0, 4).map(p => {
-                    const userId = p.user_id || ((p.user && typeof p.user === 'object') ? p.user.id : (p.user || p.id));
-                    const nombre = p.nombre_completo ||
-                        (p.user && typeof p.user === 'object' ? `${p.user.first_name} ${p.user.last_name}`.trim() : '') ||
-                        'Paciente';
-                    const rut = p.rut || 'Sin RUT';
+        // Últimos 4 reportes EVA
+        const contReportes = document.getElementById('lista-ultimos-reportes');
+        if (reportes.length === 0) {
+            contReportes.innerHTML = `<p style="margin: 0; font-size: 0.85rem; color: var(--gris-500);">Aún no hay reportes recibidos desde la app móvil.</p>`;
+        } else {
+            contReportes.innerHTML = reportes.slice(0, 4).map(r => {
+                const dolor = Number(r.nivel_dolor ?? r.escala_dolor ?? 0);
+                const badgeClass = dolor >= 6 ? 'badge-alerta' : (dolor >= 4 ? 'badge-neutro' : 'badge-ok');
+                const pid = typeof r.pauta === 'object' && r.pauta !== null ? r.pauta.id : r.pauta;
+                const infoPauta = mapaPautas[pid] || {};
+                const titulo = infoPauta.titulo || `Pauta #${pid || 'N/A'}`;
+                const paciente = r.paciente_nombre || infoPauta.paciente_nombre || 'Paciente';
+                const fecha = r.fecha_ejecucion
+                    ? new Date(r.fecha_ejecucion).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })
+                    : '';
 
-                    return `
+                return `
+                        <div class="actividad-row">
+                            <div style="min-width: 0;">
+                                <strong style="display: block; font-size: 0.88rem; color: var(--azul-900); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    ${escaparHtml(titulo)}
+                                </strong>
+                                <span style="font-size: 0.77rem; color: var(--gris-600);">
+                                    ${escaparHtml(paciente)} ${fecha ? `• ${fecha}` : ''}
+                                </span>
+                            </div>
+                            <span class="badge ${badgeClass}" style="white-space: nowrap; flex-shrink: 0;">EVA ${dolor}/10</span>
+                        </div>
+                    `;
+            }).join('');
+        }
+
+        // Pacientes asignados
+        const contPacientes = document.getElementById('lista-pacientes-recientes');
+        if (pacientes.length === 0) {
+            contPacientes.innerHTML = `<p style="margin: 0; font-size: 0.85rem; color: var(--gris-500);">No tienes pacientes registrados todavía.</p>`;
+        } else {
+            contPacientes.innerHTML = pacientes.slice(0, 4).map(p => {
+                const userId = p.user_id || ((p.user && typeof p.user === 'object') ? p.user.id : (p.user || p.id));
+                const nombre = p.nombre_completo ||
+                    (p.user && typeof p.user === 'object' ? `${p.user.first_name} ${p.user.last_name}`.trim() : '') ||
+                    'Paciente';
+                const rut = p.rut || 'Sin RUT';
+
+                return `
                         <div class="actividad-row">
                             <div style="min-width: 0;">
                                 <strong style="display: block; font-size: 0.88rem; color: var(--azul-900); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
@@ -485,10 +630,8 @@
                             </div>
                         </div>
                     `;
-                }).join('');
-            }
+            }).join('');
         }
-
         document.addEventListener('DOMContentLoaded', () => {
             if (typeof api !== 'undefined' && !api.isAuthenticated()) {
                 window.location.href = 'index.html';
