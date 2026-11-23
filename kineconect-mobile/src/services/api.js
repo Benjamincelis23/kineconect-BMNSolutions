@@ -4,7 +4,7 @@ import { API_URL } from '../constants/config';
 
 const api = axios.create({ baseURL: API_URL, timeout: 30000 });
 
-let onSessionExpired = () => {};
+let onSessionExpired = () => { };
 export const setSessionExpiredHandler = (fn) => { onSessionExpired = fn; };
 
 api.interceptors.request.use(async (config) => {
@@ -19,7 +19,8 @@ api.interceptors.response.use(
   (res) => res,
   async (error) => {
     const original = error.config;
-    if (error.response?.status === 401 && !original._retry) {
+    const isLoginRequest = original?.url?.includes('/auth/login/');
+    if (error.response?.status === 401 && !original?._retry && !isLoginRequest) {
       original._retry = true;
       try {
         refreshing = refreshing || (async () => {
