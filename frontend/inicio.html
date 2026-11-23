@@ -483,6 +483,9 @@
     <script src="js/api.js"></script>
     <script src="js/layout.js"></script>
     <script>
+        let reportesActualesDashboard = [];
+        let feedbackBandejaSeleccionado = null;
+
         function escaparHtml(txt) {
             return String(txt ?? '').replace(/[&<>"']/g, c => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -493,6 +496,121 @@
             if (Array.isArray(resp)) return resp;
             if (resp && Array.isArray(resp.results)) return resp.results;
             return [];
+        }
+
+        function renderizarBandejaPrioritaria(bandejaApi, reportes) {
+            const bloque = document.getElementById('bloque-bandeja-prioritaria');
+            const lista = document.getElementById('lista-bandeja-prioritaria');
+            if (!bloque || !lista) return;
+
+            const alertas = (Array.isArray(bandejaApi) && bandejaApi.length > 0)
+                ? bandejaApi
+                : reportes.filter(r => Number(r.nivel_dolor ?? r.escala_dolor ?? 0) >= 6);
+
+            if (alertas.length === 0) {
+                bloque.style.display = 'none';
+                lista.innerHTML = '';
+                return;
+            }
+
+            bloque.style.display = 'block';
+            lista.innerHTML = alertas.slice(0, 5).map(item => {
+                const feedbackId = item.id ?? item.feedback_id;
+                const repCompleto = reportes.find(r => r.id === feedbackId) || item;
+                const dolor = Number(repCompleto.nivel_dolor ?? repCompleto.escala_dolor ?? item.nivel_dolor ?? 0);
+                const paciente = repCompleto.paciente_nombre || item.paciente_nombre || 'Paciente';
+                const pautaTitulo = repCompleto.pauta_titulo || item.pauta_titulo || `Pauta #${repCompleto.pauta || ''}`;
+                const comentario = repCompleto.comentario || item.comentario || 'Sin observaciones adicionales';
+                const respuesta = repCompleto.respuesta_kinesiologo;
+
+                return `
+                    <div class="bandeja-item">
+                        <div style="min-width: 220px; flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 3px;">
+                                <strong class="bandeja-paciente" style="font-size: 0.9rem; color: #0f172a;">${escaparHtml(paciente)}</strong>
+                                <span class="badge badge-alerta">EVA ${dolor}/10</span>
+                                <span style="font-size: 0.78rem; color: var(--gris-600);">${escaparHtml(pautaTitulo)}</span>
+                            </div>
+                            <p style="margin: 0; font-size: 0.81rem; color: var(--gris-600);">
+                                "${escaparHtml(comentario)}"
+                            </p>
+                            ${respuesta ? `
+                                <p style="margin: 4px 0 0; font-size: 0.78rem; color: #0284c7; font-weight: 600;">
+                                    ✓ Respondido: "${escaparHtml(respuesta)}"
+                                </p>
+                            ` : ''}
+                        </div>
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            ${feedbackId ? `
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="abrirModalBandeja(${feedbackId})">
+                                    <i class='bx bx-message-square-edit'></i> ${respuesta ? 'Editar Mensaje' : 'Enviar Mensaje'}
+                                </button>
+                            ` : ''}
+                            <a href="pautas.html" class="btn btn-primary btn-sm">
+                                <i class='bx bx-slider-alt'></i> Ajustar Pauta
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function abrirModalBandeja(feedbackId) {
+            const rep = reportesActualesDashboard.find(r => r.id === feedbackId);
+            if (!rep) return;
+
+            feedbackBandejaSeleccionado = rep;
+            const dolor = Number(rep.nivel_dolor ?? rep.escala_dolor ?? 0);
+            document.getElementById('bandeja-modal-subtitulo').textContent =
+                `${rep.paciente_nombre || 'Paciente'} • ${rep.pauta_titulo || 'Pauta'} (EVA ${dolor}/10)`;
+            document.getElementById('bandeja-modal-contexto').innerHTML =
+                `<strong>Reporte del paciente:</strong> ${escaparHtml(rep.comentario || 'Sin comentario')}`;
+            document.getElementById('textarea-mensaje-bandeja').value = rep.respuesta_kinesiologo || '';
+            document.getElementById('bandeja-modal-error').style.display = 'none';
+            document.getElementById('modal-responder-bandeja').style.display = 'flex';
+        }
+
+        function cerrarModalBandeja() {
+            document.getElementById('modal-responder-bandeja').style.display = 'none';
+            feedbackBandejaSeleccionado = null;
+        }
+
+        function aplicarSugerenciaBandeja(texto) {
+            const ta = document.getElementById('textarea-mensaje-bandeja');
+            if (ta) {
+                ta.value = texto;
+                ta.focus();
+            }
+        }
+
+        async function enviarMensajeBandeja() {
+            if (!feedbackBandejaSeleccionado) return;
+            const ta = document.getElementById('textarea-mensaje-bandeja');
+            const errEl = document.getElementById('bandeja-modal-error');
+            const btn = document.getElementById('btn-enviar-mensaje-bandeja');
+            const texto = (ta?.value || '').trim();
+
+            if (!texto) {
+                errEl.textContent = 'Escribe una indicación antes de enviar.';
+                errEl.style.display = 'block';
+                return;
+            }
+
+            errEl.style.display = 'none';
+            btn.disabled = true;
+            btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Enviando...";
+
+            try {
+                await api.responderFeedback(feedbackBandejaSeleccionado.id, texto);
+                cerrarModalBandeja();
+                await cargarDashboard();
+            } catch (e) {
+                errEl.textContent = e.message || 'No se pudo enviar el mensaje.';
+                errEl.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = "<i class='bx bx-send'></i> Enviar Mensaje";
+            }
         }
 
         async function cargarDashboard() {
@@ -545,7 +663,7 @@
                     const badgeClass = dolor >= 6 ? 'badge-alerta' : (dolor >= 4 ? 'badge-neutro' : 'badge-ok');
                     const pid = typeof r.pauta === 'object' && r.pauta !== null ? r.pauta.id : r.pauta;
                     const infoPauta = mapaPautas[pid] || {};
-                    const titulo = infoPauta.titulo || `Pauta #${pid || 'N/A'}`;
+                    const titulo = r.pauta_titulo || infoPauta.titulo || `Pauta #${pid || 'N/A'}`;
                     const paciente = r.paciente_nombre || infoPauta.paciente_nombre || 'Paciente';
                     const fecha = r.fecha_ejecucion
                         ? new Date(r.fecha_ejecucion).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })
@@ -566,53 +684,20 @@
                     `;
                 }).join('');
             }
-        }
 
-        // Últimos 4 reportes EVA
-        const contReportes = document.getElementById('lista-ultimos-reportes');
-        if (reportes.length === 0) {
-            contReportes.innerHTML = `<p style="margin: 0; font-size: 0.85rem; color: var(--gris-500);">Aún no hay reportes recibidos desde la app móvil.</p>`;
-        } else {
-            contReportes.innerHTML = reportes.slice(0, 4).map(r => {
-                const dolor = Number(r.nivel_dolor ?? r.escala_dolor ?? 0);
-                const badgeClass = dolor >= 6 ? 'badge-alerta' : (dolor >= 4 ? 'badge-neutro' : 'badge-ok');
-                const pid = typeof r.pauta === 'object' && r.pauta !== null ? r.pauta.id : r.pauta;
-                const infoPauta = mapaPautas[pid] || {};
-                const titulo = infoPauta.titulo || `Pauta #${pid || 'N/A'}`;
-                const paciente = r.paciente_nombre || infoPauta.paciente_nombre || 'Paciente';
-                const fecha = r.fecha_ejecucion
-                    ? new Date(r.fecha_ejecucion).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })
-                    : '';
+            // Pacientes asignados
+            const contPacientes = document.getElementById('lista-pacientes-recientes');
+            if (pacientes.length === 0) {
+                contPacientes.innerHTML = `<p style="margin: 0; font-size: 0.85rem; color: var(--gris-500);">No tienes pacientes registrados todavía.</p>`;
+            } else {
+                contPacientes.innerHTML = pacientes.slice(0, 4).map(p => {
+                    const userId = p.user_id || ((p.user && typeof p.user === 'object') ? p.user.id : (p.user || p.id));
+                    const nombre = p.nombre_completo ||
+                        (p.user && typeof p.user === 'object' ? `${p.user.first_name} ${p.user.last_name}`.trim() : '') ||
+                        'Paciente';
+                    const rut = p.rut || 'Sin RUT';
 
-                return `
-                        <div class="actividad-row">
-                            <div style="min-width: 0;">
-                                <strong style="display: block; font-size: 0.88rem; color: var(--azul-900); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                    ${escaparHtml(titulo)}
-                                </strong>
-                                <span style="font-size: 0.77rem; color: var(--gris-600);">
-                                    ${escaparHtml(paciente)} ${fecha ? `• ${fecha}` : ''}
-                                </span>
-                            </div>
-                            <span class="badge ${badgeClass}" style="white-space: nowrap; flex-shrink: 0;">EVA ${dolor}/10</span>
-                        </div>
-                    `;
-            }).join('');
-        }
-
-        // Pacientes asignados
-        const contPacientes = document.getElementById('lista-pacientes-recientes');
-        if (pacientes.length === 0) {
-            contPacientes.innerHTML = `<p style="margin: 0; font-size: 0.85rem; color: var(--gris-500);">No tienes pacientes registrados todavía.</p>`;
-        } else {
-            contPacientes.innerHTML = pacientes.slice(0, 4).map(p => {
-                const userId = p.user_id || ((p.user && typeof p.user === 'object') ? p.user.id : (p.user || p.id));
-                const nombre = p.nombre_completo ||
-                    (p.user && typeof p.user === 'object' ? `${p.user.first_name} ${p.user.last_name}`.trim() : '') ||
-                    'Paciente';
-                const rut = p.rut || 'Sin RUT';
-
-                return `
+                    return `
                         <div class="actividad-row">
                             <div style="min-width: 0;">
                                 <strong style="display: block; font-size: 0.88rem; color: var(--azul-900); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
@@ -630,8 +715,10 @@
                             </div>
                         </div>
                     `;
-            }).join('');
+                }).join('');
+            }
         }
+
         document.addEventListener('DOMContentLoaded', () => {
             if (typeof api !== 'undefined' && !api.isAuthenticated()) {
                 window.location.href = 'index.html';
@@ -640,6 +727,9 @@
             cargarDashboard();
         });
     </script>
+</body>
+
+</html>
 </body>
 
 </html>
