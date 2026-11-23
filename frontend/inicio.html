@@ -503,9 +503,13 @@
             const lista = document.getElementById('lista-bandeja-prioritaria');
             if (!bloque || !lista) return;
 
-            const alertas = (Array.isArray(bandejaApi) && bandejaApi.length > 0)
-                ? bandejaApi
-                : reportes.filter(r => Number(r.nivel_dolor ?? r.escala_dolor ?? 0) >= 6);
+            // Mostrar solo alertas críticas (EVA >= 6) pendientes de respuesta clínica y con pauta vigente
+            const alertas = reportes.filter(r => {
+                const dolor = Number(r.nivel_dolor ?? r.escala_dolor ?? 0);
+                const sinResponder = !r.respuesta_kinesiologo || String(r.respuesta_kinesiologo).trim() === '';
+                const pautaVigente = r.pauta !== null && r.pauta !== undefined;
+                return dolor >= 6 && sinResponder && pautaVigente;
+            });
 
             if (alertas.length === 0) {
                 bloque.style.display = 'none';
