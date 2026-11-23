@@ -82,6 +82,16 @@ DATABASES = {
     }
 }
 
+# Solo desarrollo local: USE_SQLITE=True en backend/src/.env.
+# Sin esa variable (Render) se mantiene exactamente la configuración PostgreSQL de arriba.
+if os.environ.get('USE_SQLITE') == 'True':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
 # Validación de contraseñas
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
