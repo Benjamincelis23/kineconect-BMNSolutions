@@ -512,7 +512,9 @@ def _construir_resumen_clinico(user, pautas_qs):
 # VIEWSETS PRINCIPALES (WEB Y API REST)
 # =========================================================
 
-class PerfilViewSet(viewsets.ModelViewSet):
+class PerfilViewSet(viewsets.ReadOnlyModelViewSet):
+    """Perfil propio en solo lectura. Rol, RUT y kinesiólogo asignado los gestiona un admin.
+    Las acciones (registrar-paciente, mis-pacientes, alertas-abandono) declaran sus propios métodos."""
     serializer_class = PerfilSerializer
     permission_classes = [IsAuthenticated]
 

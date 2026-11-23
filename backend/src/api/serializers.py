@@ -84,6 +84,8 @@ class PerfilSerializer(serializers.ModelSerializer):
     class Meta:
         model = Perfil
         fields = ('id', 'user_id', 'user', 'rut', 'rol', 'nombre_completo', 'email', 'kinesiologo_asignado')
+        # H-20: nunca editables por el propio usuario vía API
+        read_only_fields = ('rut', 'rol', 'kinesiologo_asignado')
 
     def get_user(self, obj):
         return {
