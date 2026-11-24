@@ -18,6 +18,17 @@ const ESCALA_EVA = [
   { valor: 10, titulo: 'Dolor insoportable', guia: 'Máximo dolor posible; requiere revisión kinésica.', color: '#B91C1C', icono: 'alert-circle-outline' },
 ];
 
+const ESCALA_BORG = [
+  { valor: 1, etiqueta: 'Muy suave', desc: 'Esfuerzo mínimo, respiración normal', color: '#10B981' },
+  { valor: 2, etiqueta: 'Suave', desc: 'Cómodo, podrías mantenerlo largo rato', color: '#22C55E' },
+  { valor: 3, etiqueta: 'Moderado', desc: 'Se nota el trabajo muscular pero es fluido', color: '#84CC16' },
+  { valor: 4, etiqueta: 'Algo duro', desc: 'Aumenta la frecuencia respiratoria', color: '#EAB308' },
+  { valor: 5, etiqueta: 'Duro', desc: 'Cuesta completar las últimas repeticiones', color: '#F59E0B' },
+  { valor: 7, etiqueta: 'Muy duro', desc: 'Fatiga marcada, exige concentración', color: '#F97316' },
+  { valor: 9, etiqueta: 'Casi máximo', desc: 'Al límite de tu capacidad actual', color: '#EF4444' },
+  { valor: 10, etiqueta: 'Máximo', desc: 'Agotamiento total', color: '#B91C1C' },
+];
+
 const SENSACIONES_RAPIDAS = [
   'Buena tolerancia',
   'Fatiga muscular',
@@ -31,6 +42,7 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
   const isDark = theme.dark;
 
   const [dolor, setDolor] = useState(0);
+  const [borg, setBorg] = useState(3);
   const [tagsSeleccionados, setTagsSeleccionados] = useState([]);
   const [comentario, setComentario] = useState('');
 
@@ -45,10 +57,16 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
   };
 
   const nivelActual = ESCALA_EVA[dolor] || ESCALA_EVA[0];
+  const borgActual = ESCALA_BORG.find((b) => b.valor === borg) || ESCALA_BORG[2];
 
   const seleccionarValor = (val) => {
     Haptics.selectionAsync();
     setDolor(val);
+  };
+
+  const seleccionarBorg = (val) => {
+    Haptics.selectionAsync();
+    setBorg(val);
   };
 
   const toggleTag = (tag) => {
@@ -59,15 +77,16 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
   };
 
   const limpiarYEnviar = () => {
-    const partes = [];
+    const partes = [`Esfuerzo Borg: ${borgActual.valor}/10 (${borgActual.etiqueta})`];
     if (tagsSeleccionados.length > 0) {
       partes.push(`[${tagsSeleccionados.join(', ')}]`);
     }
     if (comentario.trim()) {
       partes.push(comentario.trim());
     }
-    onSubmit(dolor, partes.join(' '));
+    onSubmit(dolor, partes.join(' • '));
     setDolor(0);
+    setBorg(3);
     setTagsSeleccionados([]);
     setComentario('');
   };
@@ -87,10 +106,10 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
             Evaluación Post-Sesión
           </Text>
           <Text style={[styles.subtitle, { color: c.textSub }]}>
-            Indica tu nivel de dolor actual (Escala EVA 0–10)
+            1. Nivel de dolor actual (Escala EVA 0–10)
           </Text>
 
-          {/* Tarjeta dinámica del nivel seleccionado */}
+          {/* Tarjeta dinámica del nivel de dolor seleccionado */}
           <View
             style={[
               styles.heroCard,
@@ -123,7 +142,6 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
               </View>
             </View>
 
-            {/* Barra segmentada continua 0..10 */}
             <View style={styles.trackBar}>
               {ESCALA_EVA.map((item) => (
                 <View
@@ -139,7 +157,7 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
             </View>
           </View>
 
-          {/* Selector completo del 0 al 10 */}
+          {/* Selector numérico EVA 0..10 */}
           <View style={styles.gridNumeros}>
             {ESCALA_EVA.map((item) => {
               const activo = dolor === item.valor;
@@ -176,9 +194,67 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
             <Text style={{ color: c.textSub, fontSize: 11, fontWeight: '600' }}>10 • Máximo</Text>
           </View>
 
+          {/* 2. Escala de Esfuerzo Percibido (Borg CR-10) */}
+          <View style={[styles.borgBox, { backgroundColor: c.surfaceSoft, borderColor: c.border }]}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <Text style={[styles.sectionLabel, { color: c.textMain, marginBottom: 0 }]}>
+                2. Esfuerzo percibido (Borg CR-10)
+              </Text>
+              <View style={[styles.borgPill, { backgroundColor: borgActual.color }]}>
+                <Text style={{ color: '#FFFFFF', fontSize: 11.5, fontWeight: '800' }}>
+                  {borgActual.valor}/10 • {borgActual.etiqueta}
+                </Text>
+              </View>
+            </View>
+
+            <Text style={{ color: c.textSub, fontSize: 12, marginBottom: 10 }}>
+              {borgActual.desc}
+            </Text>
+
+            <View style={styles.borgGrid}>
+              {ESCALA_BORG.map((item) => {
+                const activo = borg === item.valor;
+                return (
+                  <TouchableOpacity
+                    key={item.valor}
+                    activeOpacity={0.75}
+                    onPress={() => seleccionarBorg(item.valor)}
+                    style={[
+                      styles.borgBtn,
+                      {
+                        backgroundColor: activo ? item.color : c.surface,
+                        borderColor: activo ? item.color : c.border,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={{
+                        color: activo ? '#FFFFFF' : c.textMain,
+                        fontWeight: '800',
+                        fontSize: 13,
+                      }}
+                    >
+                      {item.valor}
+                    </Text>
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        color: activo ? '#FFFFFF' : c.textSub,
+                        fontSize: 10,
+                        fontWeight: '600',
+                      }}
+                    >
+                      {item.etiqueta}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
           {/* Sensaciones rápidas */}
           <Text style={[styles.sectionLabel, { color: c.textMain }]}>
-            ¿Qué sensación predominó? (opcional)
+            3. ¿Qué sensación predominó? (opcional)
           </Text>
           <View style={styles.tagsWrap}>
             {SENSACIONES_RAPIDAS.map((tag) => {
@@ -260,7 +336,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 22,
     borderWidth: 1,
-    maxHeight: '88%',
+    maxHeight: '90%',
   },
   title: {
     fontSize: 19,
@@ -271,13 +347,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: 'center',
     marginTop: 2,
-    marginBottom: 14,
+    marginBottom: 12,
   },
   heroCard: {
     borderRadius: 16,
     borderWidth: 1.5,
     padding: 12,
-    marginBottom: 14,
+    marginBottom: 12,
   },
   heroTopRow: {
     flexDirection: 'row',
@@ -323,7 +399,7 @@ const styles = StyleSheet.create({
   numBtn: {
     width: '14.5%',
     minWidth: 42,
-    paddingVertical: 10,
+    paddingVertical: 9,
     borderRadius: 11,
     borderWidth: 1.5,
     alignItems: 'center',
@@ -334,6 +410,33 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 6,
     marginBottom: 14,
+  },
+  borgBox: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 12,
+    marginBottom: 14,
+  },
+  borgPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  borgGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    justifyContent: 'space-between',
+  },
+  borgBtn: {
+    width: '23%',
+    paddingVertical: 7,
+    paddingHorizontal: 4,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 1,
   },
   sectionLabel: {
     fontSize: 13,
