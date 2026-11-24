@@ -60,10 +60,8 @@ def _pacientes_visibles(user):
     """Perfiles de pacientes que el usuario puede ver."""
     if _es_admin(user):
         return Perfil.objects.filter(rol='PACIENTE')
-    qs = Perfil.objects.filter(rol='PACIENTE', kinesiologo_asignado=user)
-    if not qs.exists() and settings.DEBUG:
-        return Perfil.objects.filter(rol='PACIENTE')
-    return qs
+    # H-29: sin fallbacks por DEBUG; un kine sin asignados ve una lista vacía.
+    return Perfil.objects.filter(rol='PACIENTE', kinesiologo_asignado=user)
 
 
 def _inicio_ciclo_pauta(pauta):
@@ -598,10 +596,8 @@ class PautaViewSet(viewsets.ModelViewSet):
                     | Q(paciente__perfil__kinesiologo_asignado=user)
                     | Q(es_plantilla=True)
                 ).distinct()
-                if not qs.exists() and settings.DEBUG:
-                    qs = base_qs
             else:
-                qs = base_qs if settings.DEBUG else base_qs.none()
+                qs = base_qs.none()  # H-29: usuario sin perfil/rol no ve nada, también con DEBUG
 
         es_plantilla_param = self.request.query_params.get('es_plantilla')
         if es_plantilla_param is not None:
@@ -755,14 +751,11 @@ class RegistroFeedbackViewSet(viewsets.ModelViewSet):
             return base.filter(pauta__paciente=user)
 
         if rol == 'KINE':
-            qs = base.filter(
+            return base.filter(
                 Q(pauta__kinesiologo=user) | Q(pauta__paciente__perfil__kinesiologo_asignado=user)
             ).distinct()
-            if not qs.exists() and settings.DEBUG:
-                return base
-            return qs
 
-        return base if settings.DEBUG else base.none()
+        return base.none()  # H-29: usuario sin perfil/rol no ve nada, también con DEBUG
 
     def perform_create(self, serializer):
         user = self.request.user

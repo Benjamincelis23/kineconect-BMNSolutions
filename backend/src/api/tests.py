@@ -1,6 +1,7 @@
 from rest_framework.test import APITestCase
 from rest_framework import status
 from django.contrib.auth.models import User
+from django.test import override_settings
 from api.models import Ejercicio, Pauta, PautaEjercicio, Perfil, RegistroFeedback
 
 class KineconectSecurityTests(APITestCase):
@@ -160,3 +161,41 @@ class EdicionPautaTests(APITestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.pauta.refresh_from_db()
         self.assertFalse(self.pauta.activo)
+
+
+@override_settings(DEBUG=True)
+class SinFallbacksDebugTests(APITestCase):
+    """H-29: con DEBUG=True, un kine sin asignados o un usuario sin perfil no ve datos ajenos."""
+
+    def setUp(self):
+        self.kine_a = User.objects.create_user(username='kine_a_h29', password='x-no-usar-8')
+        Perfil.objects.create(user=self.kine_a, rut='10101010-1', rol='KINE')
+        pac = User.objects.create_user(username='pac_h29', password='x-no-usar-9')
+        Perfil.objects.create(user=pac, rut='12121212-1', rol='PACIENTE', kinesiologo_asignado=self.kine_a)
+        pauta = Pauta.objects.create(titulo='Ajena', kinesiologo=self.kine_a, paciente=pac)
+        RegistroFeedback.objects.create(pauta=pauta, completado=True, nivel_dolor=7)
+        # kine sin pacientes asignados ni pautas propias, y usuario sin Perfil
+        self.kine_b = User.objects.create_user(username='kine_b_h29', password='x-no-usar-10')
+        Perfil.objects.create(user=self.kine_b, rut='13131313-1', rol='KINE')
+        self.sin_perfil = User.objects.create_user(username='sinperfil_h29', password='x-no-usar-11')
+
+    def _lista(self, resp):
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        return resp.data['results'] if isinstance(resp.data, dict) else resp.data
+
+    def test_kine_sin_asignados_no_ve_pacientes_pautas_ni_feedback_ajenos(self):
+        self.client.force_authenticate(user=self.kine_b)
+        for url in ('/api/v1/perfiles/mis-pacientes/', '/api/v1/pautas/', '/api/v1/feedback/'):
+            with self.subTest(url=url):
+                self.assertEqual(self._lista(self.client.get(url)), [])
+
+    def test_usuario_sin_perfil_no_ve_pautas_ni_feedback(self):
+        self.client.force_authenticate(user=self.sin_perfil)
+        for url in ('/api/v1/pautas/', '/api/v1/feedback/'):
+            with self.subTest(url=url):
+                self.assertEqual(self._lista(self.client.get(url)), [])
+
+    def test_kine_con_asignados_sigue_viendo_lo_suyo(self):
+        self.client.force_authenticate(user=self.kine_a)
+        self.assertEqual(len(self._lista(self.client.get('/api/v1/pautas/'))), 1)
+        self.assertEqual(len(self._lista(self.client.get('/api/v1/feedback/'))), 1)
