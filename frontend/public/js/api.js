@@ -85,7 +85,19 @@ const api = {
         }
     },
 
-    async refreshToken() {
+    // H-47: single-flight. N peticiones concurrentes con 401 comparten un único POST de refresh.
+    _refreshEnCurso: null,
+
+    refreshToken() {
+        if (!this._refreshEnCurso) {
+            this._refreshEnCurso = this._pedirNuevoAccess().finally(() => {
+                this._refreshEnCurso = null;
+            });
+        }
+        return this._refreshEnCurso;
+    },
+
+    async _pedirNuevoAccess() {
         const refresh = this.getRefreshToken();
         if (!refresh) return null;
 
@@ -115,37 +127,35 @@ const api = {
     // ==========================================
     // INTERCEPTOR HTTP CON BEARER TOKEN
     // ==========================================
-    async request(endpoint, options = {}) {
-        let token = this.getToken();
-
+    // H-47: único punto que adjunta el Bearer y renueva el token ante un 401.
+    // 'ruta' es relativa a BACKEND_ORIGIN (ej. '/api/v1/pautas/' o '/api/pautas/').
+    // Devuelve el Response crudo; request() lo usa y las páginas con fetch propio también.
+    async fetchConSesion(ruta, options = {}) {
         const config = {
             method: options.method || 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                ...(options.headers || {})
-            }
+            headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
         };
+        if (options.body) config.body = options.body;
 
-        if (token) {
-            config.headers['Authorization'] = `Bearer ${token}`;
-        }
+        const token = this.getToken();
+        if (token) config.headers['Authorization'] = `Bearer ${token}`;
 
-        if (options.body) {
-            config.body = options.body;
-        }
-
-        let resp = await fetch(`${API_BASE_URL}${endpoint}`, config);
+        let resp = await fetch(`${BACKEND_ORIGIN}${ruta}`, config);
 
         if (resp.status === 401 && this.getRefreshToken()) {
-            token = await this.refreshToken();
-            if (token) {
-                config.headers['Authorization'] = `Bearer ${token}`;
-                resp = await fetch(`${API_BASE_URL}${endpoint}`, config);
-            } else {
+            const nuevo = await this.refreshToken();
+            if (!nuevo) {
                 this.logout();
                 throw new Error('Sesión expirada. Inicia sesión nuevamente.');
             }
+            config.headers['Authorization'] = `Bearer ${nuevo}`;
+            resp = await fetch(`${BACKEND_ORIGIN}${ruta}`, config);
         }
+        return resp;
+    },
+
+    async request(endpoint, options = {}) {
+        const resp = await this.fetchConSesion(`/api/v1${endpoint}`, options);
 
         if (resp.status === 204) return null;
 
