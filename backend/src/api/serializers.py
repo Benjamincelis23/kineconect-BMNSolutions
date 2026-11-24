@@ -38,6 +38,9 @@ class PacienteRegistroSerializer(serializers.ModelSerializer):
         rut_valido = validar_rut_chileno(value)
         if Perfil.objects.filter(rut=rut_valido).exists():
             raise serializers.ValidationError("Este RUT ya se encuentra registrado en el sistema.")
+        username = rut_valido.replace('-', '').replace('.', '').upper()
+        if User.objects.filter(username=username).exists():
+            raise serializers.ValidationError("Ya existe una cuenta de usuario asociada a este RUT.")
         return rut_valido
 
     def create(self, validated_data):

@@ -87,6 +87,15 @@ class SoloLecturaParaPacientes(permissions.BasePermission):
         return _es_admin(user) or _rol(user) != 'PACIENTE'
 
 
+class EsKinesiologo(permissions.BasePermission):
+    """Solo kinesiólogos (Perfil.rol == 'KINE') o administradores (H-21)."""
+    message = 'Esta acción está reservada para kinesiólogos.'
+
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(user and user.is_authenticated and (_es_admin(user) or _rol(user) == 'KINE'))
+
+
 # =========================================================
 # AUTENTICACIÓN JWT PERSONALIZADA
 # =========================================================
@@ -521,7 +530,7 @@ class PerfilViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         return Perfil.objects.filter(user=self.request.user)
 
-    @action(detail=False, methods=['post'], url_path='registrar-paciente')
+    @action(detail=False, methods=['post'], url_path='registrar-paciente', permission_classes=[EsKinesiologo])
     def registrar_paciente(self, request):
         serializer = PacienteRegistroSerializer(data=request.data, context={'request': request})
         if not serializer.is_valid():
@@ -538,12 +547,12 @@ class PerfilViewSet(viewsets.ReadOnlyModelViewSet):
             "password_temporal": password_temporal,
         }, status=status.HTTP_201_CREATED)
 
-    @action(detail=False, methods=['get'], url_path='mis-pacientes')
+    @action(detail=False, methods=['get'], url_path='mis-pacientes', permission_classes=[EsKinesiologo])
     def mis_pacientes(self, request):
         serializer = PerfilSerializer(_pacientes_visibles(request.user), many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'], url_path='alertas-abandono')
+    @action(detail=False, methods=['get'], url_path='alertas-abandono', permission_classes=[EsKinesiologo])
     def alertas_abandono(self, request):
         return Response(_calcular_alertas_abandono(request.user), status=status.HTTP_200_OK)
 
