@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <style>
+        body.dark-mode #select-filtro-paciente,
+        html.dark-mode #select-filtro-paciente,
+        [data-theme="dark"] #select-filtro-paciente,
+        body.dark #select-filtro-paciente {
+            background-color: #162236 !important;
+            color: #f8fafc !important;
+            border-color: #24344d !important;
+        }
+
+        body.dark-mode #select-filtro-paciente option,
+        html.dark-mode #select-filtro-paciente option,
+        [data-theme="dark"] #select-filtro-paciente option,
+        body.dark #select-filtro-paciente option {
+            background-color: #162236;
+            color: #f8fafc;
+        }
+
+        body.dark-mode #modal-responder-feedback .modal-card,
+        html.dark-mode #modal-responder-feedback .modal-card {
+            background-color: #162236 !important;
+            color: #f8fafc !important;
+            border: 1px solid #24344d !important;
+        }
+
+        body.dark-mode #modal-responder-feedback textarea,
+        html.dark-mode #modal-responder-feedback textarea {
+            background-color: #0f172a !important;
+            color: #f8fafc !important;
+            border-color: #334155 !important;
+        }
+
+        .btn-sugerencia-kine {
+            justify-content: flex-start !important;
+            text-align: left !important;
+            font-size: 0.78rem !important;
+            padding: 7px 10px !important;
+            transition: all 0.18s ease !important;
+        }
+
+        .btn-sugerencia-kine.seleccionada {
+            background: rgba(2, 132, 199, 0.16) !important;
+            border-color: #0284c7 !important;
+            color: #0284c7 !important;
+            font-weight: 700 !important;
+        }
+
+        body.dark-mode .btn-sugerencia-kine.seleccionada,
+        html.dark-mode .btn-sugerencia-kine.seleccionada {
+            background: rgba(56, 189, 248, 0.18) !important;
+            border-color: #38bdf8 !important;
+            color: #38bdf8 !important;
+        }
+
+        .textarea-flash {
+            border-color: #0284c7 !important;
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.25) !important;
+            transition: box-shadow 0.25s ease, border-color 0.25s ease;
+        }
+    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultas y Reportes - KineConnect</title>
+    <link rel="stylesheet" href="public/css/style.css">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-shell">
+        <main class="main">
+            <div class="content">
+
+                <!-- ENCABEZADO -->
+                <div class="page-header" style="flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <h2>Consultas y Reportes de Pacientes</h2>
+                        <p>Revisa las evaluaciones post-sesión enviadas desde la app móvil, responde consultas o déjalas en visto.</p>
+                    </div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                        <select id="select-filtro-paciente" onchange="aplicarFiltroPacienteUI(this.value)"
+                            class="btn btn-secondary"
+                            style="height: 38px; padding: 0 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                            <option value="">Todos los pacientes</option>
+                        </select>
+                        <button type="button" class="btn btn-secondary" onclick="cargarTodo()">
+                            <i class='bx bx-refresh'></i> Actualizar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- KPIS COMPACTOS -->
+                <!-- KPIS DE CONSULTAS Y REPORTES -->
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 22px;">
+                    <div class="card"
+                        style="padding: 16px 18px; display: flex; align-items: center; gap: 14px; border-left: 4px solid #0284c7;">
+                        <div
+                            style="width: 42px; height: 42px; border-radius: 12px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">
+                            <i class='bx bx-inbox'></i>
+                        </div>
+                        <div>
+                            <span style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--gris-600);">Pendientes de Revisión</span>
+                            <strong id="kpi-pendientes" style="font-size: 1.45rem; color: var(--azul-900);">0</strong>
+                        </div>
+                    </div>
+
+                    <div class="card"
+                        style="padding: 16px 18px; display: flex; align-items: center; gap: 14px; border-left: 4px solid #ef4444;">
+                        <div
+                            style="width: 42px; height: 42px; border-radius: 12px; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">
+                            <i class='bx bx-error-circle'></i>
+                        </div>
+                        <div>
+                            <span style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--gris-600);">Alertas EVA ≥ 6</span>
+                            <strong id="kpi-alertas-eva" style="font-size: 1.45rem; color: var(--azul-900);">0</strong>
+                        </div>
+                    </div>
+
+                    <div class="card"
+                        style="padding: 16px 18px; display: flex; align-items: center; gap: 14px; border-left: 4px solid #10b981;">
+                        <div
+                            style="width: 42px; height: 42px; border-radius: 12px; background: #d1fae5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">
+                            <i class='bx bx-check-double'></i>
+                        </div>
+                        <div>
+                            <span style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--gris-600);">Respondidos / Vistos</span>
+                            <strong id="kpi-revisados" style="font-size: 1.45rem; color: var(--azul-900);">0</strong>
+                        </div>
+                    </div>
+
+                    <div class="card"
+                        style="padding: 16px 18px; display: flex; align-items: center; gap: 14px; border-left: 4px solid #f59e0b;">
+                        <div
+                            style="width: 42px; height: 42px; border-radius: 12px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">
+                            <i class='bx bx-pulse'></i>
+                        </div>
+                        <div>
+                            <span style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--gris-600);">Promedio Dolor EVA</span>
+                            <strong id="kpi-promedio-eva" style="font-size: 1.45rem; color: var(--azul-900);">0.0 / 10</strong>
+                        </div>
+                    </div>
+                </div>
+                <!-- BANDEJA DE EVALUACIONES Y MENSAJES -->
+                <div class="card">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+                        <h3 style="margin: 0; font-size: 1.05rem; color: var(--azul-900);">
+                            Bandeja de Reportes Post-Sesión
+                        </h3>
+
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;" id="filtros-feedback-container">
+                            <button type="button" id="pill-sin-revisar" class="filtro-biomecanico-pill activo-todos"
+                                onclick="filtrarFeedback('sin_revisar', this)">Sin Revisar (0)</button>
+                            <button type="button" class="filtro-biomecanico-pill"
+                                onclick="filtrarFeedback('todos', this)">Todos</button>
+                            <button type="button" class="filtro-biomecanico-pill"
+                                onclick="filtrarFeedback('alertas', this)">Alertas EVA ≥ 6</button>
+                            <button type="button" class="filtro-biomecanico-pill"
+                                onclick="filtrarFeedback('revisados', this)">Revisados / Vistos</button>
+                        </div>
+                    </div>
+
+                    <div id="loading-feedback" class="empty-state">
+                        <i class='bx bx-loader-alt bx-spin loading-icon'></i>
+                        <p class="loading-text">Cargando reportes...</p>
+                    </div>
+
+                    <div id="container-tabla-feedback" class="is-hidden" style="overflow-x: auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Paciente y Pauta</th>
+                                    <th>Cumplimiento</th>
+                                    <th>Dolor y Esfuerzo</th>
+                                    <th>Observaciones y Gestión</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-feedback"></tbody>
+                        </table>
+                    </div>
+
+                    <div id="no-feedback" class="empty-state is-hidden">
+                        <i class='bx bx-check-circle'
+                            style="font-size: 2.2rem; color: var(--verde-500); margin-bottom: 8px;"></i>
+                        <p class="empty-text" style="margin: 0; font-size: 0.9rem;">No hay reportes pendientes en esta vista.</p>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal de Retroalimentación Clínica del Kinesiólogo -->
+    <div id="modal-responder-feedback" class="modal-overlay" style="display: none;"
+        onclick="if(event.target === this) cerrarModalResponderFeedback()">
+        <div class="modal-card" style="max-width: 540px; width: 92%; padding: 20px; border-radius: 14px;">
+            <div
+                style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 12px;">
+                <div>
+                    <h3 id="modal-resp-titulo" style="margin: 0; font-size: 1.08rem; color: var(--azul-900);">
+                        Responder Reporte Clínico
+                    </h3>
+                    <p id="modal-resp-subtitulo" style="margin: 4px 0 0; font-size: 0.82rem; color: var(--gris-600);">
+                    </p>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="cerrarModalResponderFeedback()">
+                    <i class='bx bx-x' style="font-size: 1.3rem;"></i>
+                </button>
+            </div>
+
+            <div id="modal-resp-contexto"
+                style="background: rgba(2, 132, 199, 0.08); border: 1px solid rgba(2, 132, 199, 0.25); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; font-size: 0.83rem;">
+            </div>
+
+            <div style="margin-bottom: 12px;">
+                <span
+                    style="display: block; font-size: 0.78rem; font-weight: 700; color: var(--gris-600); margin-bottom: 6px;">
+                    Respuestas frecuentes:
+                </span>
+                <div id="lista-sugerencias-kine" style="display: flex; flex-direction: column; gap: 6px;">
+                    <button type="button" class="btn btn-secondary btn-sm btn-sugerencia-kine"
+                        data-texto="Excelente tolerancia, mantén la carga actual"
+                        onclick="aplicarSugerenciaRespuesta('Excelente tolerancia, mantén la carga actual')">
+                        • Excelente tolerancia, mantén la carga actual
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm btn-sugerencia-kine"
+                        data-texto="Reducir a 2 series si persiste molestia"
+                        onclick="aplicarSugerenciaRespuesta('Reducir a 2 series si persiste molestia')">
+                        • Reducir a 2 series si persiste molestia
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm btn-sugerencia-kine"
+                        data-texto="Suspender ejercicio con dolor y evaluar en próxima sesión"
+                        onclick="aplicarSugerenciaRespuesta('Suspender ejercicio con dolor y evaluar en próxima sesión')">
+                        • Suspender ejercicio con dolor y evaluar en próxima sesión
+                    </button>
+                </div>
+            </div>
+
+            <div class="field" style="margin-bottom: 14px;">
+                <label for="textarea-respuesta-kine"
+                    style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-weight: 700; margin-bottom: 6px;">
+                    <span>Mensaje para el paciente</span>
+                    <span id="estado-sugerencia-aplicada" style="display: none; color: #0284c7; font-size: 0.74rem; font-weight: 700;">
+                        ✓ Aplicado
+                    </span>
+                </label>
+                <textarea id="textarea-respuesta-kine" rows="3"
+                    oninput="sincronizarSeleccionSugerencia()"
+                    placeholder="Escribe tu indicación clínica..."
+                    style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #cbd5e1; font-family: inherit; font-size: 0.86rem; resize: vertical;"></textarea>
+                <div id="modal-resp-error"
+                    style="display: none; color: #ef4444; font-size: 0.78rem; font-weight: 600; margin-top: 5px;"></div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                <button type="button" class="btn btn-secondary btn-sm"
+                    onclick="cerrarModalResponderFeedback()">Cancelar</button>
+                <button type="button" id="btn-guardar-respuesta-kine" class="btn btn-primary btn-sm"
+                    onclick="guardarRespuestaFeedback()">
+                    <i class='bx bx-send'></i> Enviar Respuesta
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
+    <script>
+        const STORAGE_VISTOS_KINE = 'kc_reportes_vistos_kine_v1';
+
+        let todasPautasBase = [];
+        let mapaPautas = {};
+        let reportesBaseTodos = [];
+        let reportesCargados = [];
+        let pacientesRegistrados = [];
+        let filtroFeedbackActual = 'sin_revisar';
+        let feedbackEnEdicionId = null;
+
+        function obtenerVistosKine() {
+            try {
+                return JSON.parse(localStorage.getItem(STORAGE_VISTOS_KINE) || '{}');
+            } catch {
+                return {};
+            }
+        }
+
+        function guardarVistosKine(mapa) {
+            localStorage.setItem(STORAGE_VISTOS_KINE, JSON.stringify(mapa));
+        }
+
+        function escaparHtml(txt) {
+            return String(txt ?? '').replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[c]));
+        }
+
+        function parsearComentarioApp(raw) {
+            let texto = String(raw || '').trim();
+            let seriesInfo = '';
+            let tags = [];
+
+            const matchSeries = texto.match(/(?:\|\s*)?(Series:\s*[^|]+)\.?$/i);
+            if (matchSeries) {
+                seriesInfo = matchSeries[1].trim();
+                texto = texto.slice(0, matchSeries.index).trim();
+            }
+
+            const matchTags = texto.match(/^\[([^\]]+)\]\s*(.*)$/);
+            if (matchTags) {
+                tags = matchTags[1].split(',').map(t => t.trim()).filter(Boolean);
+                texto = matchTags[2].trim();
+            }
+
+            return { tags, seriesInfo, textoLibre: texto };
+        }
+
+        function describirNivelEva(dolor) {
+            if (dolor === 0) return 'Sin dolor';
+            if (dolor <= 3) return 'Leve';
+            if (dolor <= 5) return 'Moderado';
+            if (dolor <= 7) return 'Fuerte';
+            return 'Severo';
+        }
+
+        function extraerEsfuerzoBorg(texto) {
+            const raw = String(texto || '');
+            const match = raw.match(/(?:esfuerzo\s*borg|borg\s*cr-?10|borg)\s*[:\-]?\s*(\d+(?:[.,]\d+)?(?:\s*\/\s*10)?)/i);
+            if (!match) return null;
+            const valor = match[1].replace(/\s+/g, '');
+            return valor.includes('/') ? `Borg: ${valor}` : `Borg: ${valor}/10`;
+        }
+
+        function tieneRespuestaClinica(item) {
+            return Boolean(item?.respuesta_kinesiologo && String(item.respuesta_kinesiologo).trim().length > 0);
+        }
+
+        function estaEnVistoKine(item) {
+            if (!item || item.id == null) return false;
+            const vistos = obtenerVistosKine();
+            return Boolean(vistos[String(item.id)]);
+        }
+
+        function estaGestionado(item) {
+            return tieneRespuestaClinica(item) || estaEnVistoKine(item);
+        }
+
+        function marcarReporteEnVisto(feedbackId) {
+            const vistos = obtenerVistosKine();
+            vistos[String(feedbackId)] = new Date().toISOString();
+            guardarVistosKine(vistos);
+            actualizarKpis(reportesCargados);
+            renderizarTablaFeedback();
+        }
+
+        function desmarcarReporteEnVisto(feedbackId) {
+            const vistos = obtenerVistosKine();
+            delete vistos[String(feedbackId)];
+            guardarVistosKine(vistos);
+            actualizarKpis(reportesCargados);
+            renderizarTablaFeedback();
+        }
+
+        async function cargarPacientesFiltro() {
+            try {
+                const res = await api.fetchConSesion('/api/v1/perfiles/mis-pacientes/');
+                if (!res.ok) return;
+                const data = await res.json();
+                const lista = Array.isArray(data) ? data : (data?.results || []);
+
+                pacientesRegistrados = lista.map(p => {
+                    const u = p.user && typeof p.user === 'object' ? p.user : {};
+                    const nombre =
+                        p.nombre_completo ||
+                        `${p.nombre || u.first_name || ''} ${p.apellido || u.last_name || ''}`.trim() ||
+                        u.username ||
+                        'Paciente';
+                    const rut = p.rut || u.username || '';
+                    const userId = p.usuario_id || p.user_id || u.id || (typeof p.user === 'number' ? p.user : null);
+                    return { id: userId, nombre, rut };
+                });
+
+                const selectPac = document.getElementById('select-filtro-paciente');
+                if (selectPac) {
+                    const filtroActual = new URLSearchParams(window.location.search).get('paciente') || '';
+                    selectPac.innerHTML = `<option value="">Todos los pacientes</option>` +
+                        pacientesRegistrados
+                            .filter(p => p.id)
+                            .map(p => `<option value="${escaparHtml(p.id)}" ${String(p.id) === String(filtroActual) ? 'selected' : ''}>${escaparHtml(p.nombre)} (${escaparHtml(p.rut)})</option>`)
+                            .join('');
+                }
+            } catch (e) {
+                console.warn('No se pudo precargar pacientes:', e);
+            }
+        }
+
+        function actualizarKpis(lista) {
+            const total = lista.length;
+            const pendientes = lista.filter(f => !estaGestionado(f)).length;
+            const revisados = lista.filter(f => estaGestionado(f)).length;
+            const alertas = lista.filter(f => Number(f.nivel_dolor ?? f.escala_dolor ?? 0) >= 6).length;
+            const sumaEva = lista.reduce((acc, f) => acc + Number(f.nivel_dolor ?? f.escala_dolor ?? 0), 0);
+            const promedio = total > 0 ? (sumaEva / total).toFixed(1) : '0.0';
+
+            document.getElementById('kpi-pendientes').textContent = pendientes;
+            document.getElementById('kpi-alertas-eva').textContent = alertas;
+            document.getElementById('kpi-revisados').textContent = revisados;
+            document.getElementById('kpi-promedio-eva').textContent = `${promedio} / 10`;
+
+            const pillSinRev = document.getElementById('pill-sin-revisar');
+            if (pillSinRev) {
+                pillSinRev.textContent = `Sin Revisar (${pendientes})`;
+            }
+        }
+
+        function filtrarFeedback(tipo, btnEl) {
+            filtroFeedbackActual = tipo;
+            document.querySelectorAll('#filtros-feedback-container .filtro-biomecanico-pill').forEach(b => {
+                b.className = 'filtro-biomecanico-pill';
+            });
+            if (btnEl) btnEl.classList.add('activo-todos');
+            renderizarTablaFeedback();
+        }
+
+        function sincronizarSeleccionSugerencia() {
+            const textarea = document.getElementById('textarea-respuesta-kine');
+            const val = (textarea?.value || '').trim();
+            document.querySelectorAll('#lista-sugerencias-kine .btn-sugerencia-kine').forEach(btn => {
+                const textoBtn = btn.getAttribute('data-texto') || '';
+                const coincide = val === textoBtn;
+                btn.classList.toggle('seleccionada', coincide);
+                btn.textContent = coincide ? `✓ ${textoBtn}` : `• ${textoBtn}`;
+            });
+        }
+
+        function abrirModalResponderFeedback(feedbackId) {
+            const idStr = String(feedbackId);
+            const item = reportesBaseTodos.find(f => String(f.id) === idStr) || reportesCargados.find(f => String(f.id) === idStr);
+            if (!item) return;
+
+            feedbackEnEdicionId = item.id;
+            const dolor = Number(item.nivel_dolor ?? item.escala_dolor ?? 0);
+            const pautaId = typeof item.pauta === 'object' && item.pauta !== null ? item.pauta.id : item.pauta;
+            const infoPauta = mapaPautas[pautaId] || {};
+            const tituloRutina = item.pauta_titulo || infoPauta.titulo || `Pauta #${pautaId || 'N/A'}`;
+            const nombrePaciente = item.paciente_nombre || infoPauta.paciente_nombre || 'Paciente';
+            const borgLabel = extraerEsfuerzoBorg(item.comentario);
+
+            document.getElementById('modal-resp-titulo').textContent = item.respuesta_kinesiologo
+                ? 'Editar Respuesta Clínica'
+                : 'Responder al Paciente';
+
+            document.getElementById('modal-resp-subtitulo').textContent =
+                `${nombrePaciente} • ${tituloRutina} • EVA ${dolor}/10`;
+
+            document.getElementById('modal-resp-contexto').innerHTML = `
+                <div><strong>Reporte:</strong> ${escaparHtml(item.comentario || 'Sin comentario adicional')}</div>
+                ${borgLabel ? `<div style="margin-top: 4px;"><span class="badge" style="background: #fef3c7; color: #92400e; font-size: 0.72rem;">${escaparHtml(borgLabel)}</span></div>` : ''}
+            `;
+
+            const textarea = document.getElementById('textarea-respuesta-kine');
+            textarea.value = item.respuesta_kinesiologo || '';
+            sincronizarSeleccionSugerencia();
+
+            const badgeAplicada = document.getElementById('estado-sugerencia-aplicada');
+            if (badgeAplicada) badgeAplicada.style.display = 'none';
+
+            const errEl = document.getElementById('modal-resp-error');
+            errEl.style.display = 'none';
+            errEl.textContent = '';
+
+            document.getElementById('modal-responder-feedback').style.display = 'flex';
+            textarea.focus();
+        }
+
+        function cerrarModalResponderFeedback() {
+            feedbackEnEdicionId = null;
+            const modal = document.getElementById('modal-responder-feedback');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function aplicarSugerenciaRespuesta(texto) {
+            const textarea = document.getElementById('textarea-respuesta-kine');
+            if (!textarea) return;
+            textarea.value = texto;
+            sincronizarSeleccionSugerencia();
+
+            const badgeAplicada = document.getElementById('estado-sugerencia-aplicada');
+            if (badgeAplicada) {
+                badgeAplicada.style.display = 'inline';
+                clearTimeout(badgeAplicada._timer);
+                badgeAplicada._timer = setTimeout(() => {
+                    badgeAplicada.style.display = 'none';
+                }, 1800);
+            }
+
+            textarea.classList.remove('textarea-flash');
+            void textarea.offsetWidth;
+            textarea.classList.add('textarea-flash');
+            clearTimeout(textarea._flashTimer);
+            textarea._flashTimer = setTimeout(() => {
+                textarea.classList.remove('textarea-flash');
+            }, 650);
+
+            textarea.focus();
+        }
+
+        function actualizarItemFeedbackEnEstado(actualizado, idFallback) {
+            const targetId = String(actualizado?.id ?? idFallback);
+            const aplicarCambio = (arr) => arr.map(f => {
+                if (String(f.id) !== targetId) return f;
+                return {
+                    ...f,
+                    ...actualizado,
+                    respuesta_kinesiologo: actualizado?.respuesta_kinesiologo ?? f.respuesta_kinesiologo,
+                    fecha_respuesta: actualizado?.fecha_respuesta || new Date().toISOString(),
+                };
+            });
+
+            reportesBaseTodos = aplicarCambio(reportesBaseTodos);
+            reportesCargados = aplicarCambio(reportesCargados);
+            actualizarKpis(reportesCargados);
+            renderizarTablaFeedback();
+        }
+
+        async function guardarRespuestaFeedback() {
+            if (!feedbackEnEdicionId) return;
+            const textarea = document.getElementById('textarea-respuesta-kine');
+            const errEl = document.getElementById('modal-resp-error');
+            const btnGuardar = document.getElementById('btn-guardar-respuesta-kine');
+            const texto = (textarea?.value || '').trim();
+
+            if (!texto) {
+                errEl.textContent = 'Escribe una indicación antes de enviar.';
+                errEl.style.display = 'block';
+                return;
+            }
+
+            errEl.style.display = 'none';
+            const textoPrevioBtn = btnGuardar.innerHTML;
+            btnGuardar.disabled = true;
+            btnGuardar.innerHTML = `<i class='bx bx-loader-alt bx-spin'></i> Enviando...`;
+
+            try {
+                const resp = await api.responderFeedback(feedbackEnEdicionId, texto);
+                actualizarItemFeedbackEnEstado(
+                    resp || { respuesta_kinesiologo: texto, fecha_respuesta: new Date().toISOString() },
+                    feedbackEnEdicionId
+                );
+                cerrarModalResponderFeedback();
+            } catch (err) {
+                errEl.textContent = err?.message || 'No se pudo enviar la respuesta.';
+                errEl.style.display = 'block';
+            } finally {
+                btnGuardar.disabled = false;
+                btnGuardar.innerHTML = textoPrevioBtn;
+            }
+        }
+
+        function renderizarTablaFeedback() {
+            const containerFeed = document.getElementById('container-tabla-feedback');
+            const tbodyFeed = document.getElementById('tbody-feedback');
+            const noFeed = document.getElementById('no-feedback');
+
+            let listaFiltrada = [...reportesCargados];
+            if (filtroFeedbackActual === 'sin_revisar') {
+                listaFiltrada = listaFiltrada.filter(f => !estaGestionado(f));
+            } else if (filtroFeedbackActual === 'alertas') {
+                listaFiltrada = listaFiltrada.filter(f => Number(f.nivel_dolor ?? f.escala_dolor ?? 0) >= 6);
+            } else if (filtroFeedbackActual === 'revisados') {
+                listaFiltrada = listaFiltrada.filter(f => estaGestionado(f));
+            }
+
+            if (listaFiltrada.length === 0) {
+                containerFeed.classList.add('is-hidden');
+                noFeed.classList.remove('is-hidden');
+                return;
+            }
+
+            noFeed.classList.add('is-hidden');
+            containerFeed.classList.remove('is-hidden');
+            tbodyFeed.innerHTML = '';
+
+            listaFiltrada.forEach(f => {
+                const dolor = Number(f.nivel_dolor ?? f.escala_dolor ?? 0);
+                const badgeColor = dolor >= 6 ? 'badge-alerta' : (dolor >= 4 ? 'badge-neutro' : 'badge-ok');
+                const textoEva = describirNivelEva(dolor);
+                const borgBadgeTexto = extraerEsfuerzoBorg(f.comentario);
+                const borgBadgeHtml = borgBadgeTexto
+                    ? `<span class="badge" style="background: rgba(245, 158, 11, 0.16); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.35); font-weight: 700;">${escaparHtml(borgBadgeTexto)}</span>`
+                    : '';
+
+                const pautaId = typeof f.pauta === 'object' && f.pauta !== null ? f.pauta.id : f.pauta;
+                const infoPauta = mapaPautas[pautaId] || {};
+                const tituloRutina = f.pauta_titulo || infoPauta.titulo || `Pauta #${pautaId || 'N/A'}`;
+                const nombrePaciente = f.paciente_nombre || infoPauta.paciente_nombre || '';
+
+                const parsed = parsearComentarioApp(f.comentario);
+                const completadoBadge = f.completado
+                    ? '<span class="badge badge-ok">100% Completa</span>'
+                    : '<span class="badge badge-alerta">Incompleta</span>';
+
+                const tagsHtml = parsed.tags.length > 0
+                    ? `<div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: ${parsed.textoLibre ? '5px' : '0'};">
+                        ${parsed.tags.map(t => `<span class="badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 0.72rem;">${escaparHtml(t)}</span>`).join('')}
+                       </div>`
+                    : '';
+
+                const textoHtml = parsed.textoLibre
+                    ? `<div style="color: var(--azul-900); font-size: 0.86rem;">${escaparHtml(parsed.textoLibre)}</div>`
+                    : (!tagsHtml ? `<div style="color: var(--gris-400); font-style: italic; font-size: 0.84rem;">Sin observaciones adicionales</div>` : '');
+
+                const tieneRespuesta = tieneRespuestaClinica(f);
+                const enVisto = !tieneRespuesta && estaEnVistoKine(f);
+                const fechaRespFormateada = f.fecha_respuesta
+                    ? new Date(f.fecha_respuesta).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })
+                    : '';
+
+                let estadoRespuestaHtml = '';
+                if (tieneRespuesta) {
+                    estadoRespuestaHtml = `
+                        <div style="margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: rgba(2, 132, 199, 0.10); border-left: 3px solid #0284c7;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 3px;">
+                                <span style="font-size: 0.74rem; font-weight: 800; color: #0284c7;">Respuesta enviada</span>
+                                ${fechaRespFormateada ? `<span style="font-size: 0.7rem; color: var(--gris-500);">${escaparHtml(fechaRespFormateada)}</span>` : ''}
+                            </div>
+                            <div style="font-size: 0.82rem; line-height: 1.35;">${escaparHtml(f.respuesta_kinesiologo)}</div>
+                        </div>
+                    `;
+                } else if (enVisto) {
+                    estadoRespuestaHtml = `
+                        <div style="margin-top: 8px;">
+                            <span class="badge badge-neutro" style="font-size: 0.73rem;">✓ Dejado en visto (sin respuesta escrita)</span>
+                        </div>
+                    `;
+                }
+
+                const botonVistoHtml = !tieneRespuesta && f.id != null
+                    ? (enVisto
+                        ? `<button type="button" class="btn btn-secondary btn-sm"
+                            style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; padding: 4px 10px;"
+                            onclick="desmarcarReporteEnVisto('${escaparHtml(f.id)}')">
+                            <i class='bx bx-undo'></i> Marcar pendiente
+                           </button>`
+                        : `<button type="button" class="btn btn-secondary btn-sm"
+                            style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; padding: 4px 10px;"
+                            onclick="marcarReporteEnVisto('${escaparHtml(f.id)}')">
+                            <i class='bx bx-check'></i> Dejar en visto
+                           </button>`)
+                    : '';
+
+                const botonResponderHtml = f.id != null
+                    ? `<div style="margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap;">
+                        <button type="button" class="btn ${tieneRespuesta || enVisto ? 'btn-secondary' : 'btn-primary'} btn-sm"
+                            style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; padding: 4px 10px;"
+                            onclick="abrirModalResponderFeedback('${escaparHtml(f.id)}')">
+                            <i class='bx ${tieneRespuesta ? 'bx-edit' : 'bx-message-square-add'}'></i>
+                            ${tieneRespuesta ? 'Editar respuesta' : 'Responder'}
+                        </button>
+                        ${botonVistoHtml}
+                       </div>`
+                    : '';
+
+                const fecha = f.fecha_ejecucion
+                    ? new Date(f.fecha_ejecucion).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })
+                    : 'N/A';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="white-space: nowrap; font-size: 0.85rem; color: var(--gris-700);">${fecha}</td>
+                    <td>
+                        <strong style="color: var(--azul-900); display: block; font-size: 0.9rem;">${escaparHtml(tituloRutina)}</strong>
+                        <span style="font-size: 0.78rem; color: var(--gris-600);">
+                            ${nombrePaciente ? `${escaparHtml(nombrePaciente)} • ` : ''}ID #${pautaId || 'N/A'}
+                        </span>
+                    </td>
+                    <td>
+                        <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">
+                            ${completadoBadge}
+                            ${parsed.seriesInfo ? `<span style="font-size: 0.76rem; color: var(--gris-600); font-weight: 600;">${escaparHtml(parsed.seriesInfo)}</span>` : ''}
+                        </div>
+                    </td>
+                    <td>
+                        <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 5px;">
+                            <span class="badge ${badgeColor}" style="font-weight: 700;">EVA ${dolor}/10 • ${textoEva}</span>
+                            ${borgBadgeHtml}
+                        </div>
+                    </td>
+                    <td>
+                        ${tagsHtml}
+                        ${textoHtml}
+                        ${estadoRespuestaHtml}
+                        ${botonResponderHtml}
+                    </td>
+                `;
+                tbodyFeed.appendChild(tr);
+            });
+        }
+
+        function aplicarFiltroPacienteUI(pacienteId) {
+            const url = new URL(window.location.href);
+            if (pacienteId) {
+                url.searchParams.set('paciente', pacienteId);
+            } else {
+                url.searchParams.delete('paciente');
+            }
+            window.history.replaceState({}, '', url);
+
+            if (!pacienteId) {
+                reportesCargados = [...reportesBaseTodos];
+            } else {
+                const pautasDelPac = todasPautasBase.filter(p => {
+                    const idPac = typeof p.paciente === 'object' && p.paciente !== null ? p.paciente.id : p.paciente;
+                    return String(idPac) === String(pacienteId) || String(p.paciente_user_id) === String(pacienteId);
+                });
+                const idsPautas = new Set(pautasDelPac.map(p => String(p.id)));
+                reportesCargados = reportesBaseTodos.filter(f => {
+                    const pid = typeof f.pauta === 'object' && f.pauta !== null ? f.pauta.id : f.pauta;
+                    return idsPautas.has(String(pid));
+                });
+            }
+
+            actualizarKpis(reportesCargados);
+            renderizarTablaFeedback();
+        }
+
+        async function cargarTodo() {
+            const loadingFeed = document.getElementById('loading-feedback');
+            const containerFeed = document.getElementById('container-tabla-feedback');
+            const noFeed = document.getElementById('no-feedback');
+            const params = new URLSearchParams(window.location.search);
+            const pacienteFiltro = params.get('paciente') || '';
+
+            if (loadingFeed) loadingFeed.classList.remove('is-hidden');
+            if (containerFeed) containerFeed.classList.add('is-hidden');
+            if (noFeed) noFeed.classList.add('is-hidden');
+
+            try {
+                await cargarPacientesFiltro();
+                const [pautas, feeds] = await Promise.all([
+                    api.getPautas(),
+                    api.getReportesDolor()
+                ]);
+
+                todasPautasBase = Array.isArray(pautas) ? pautas : (pautas?.results || []);
+                mapaPautas = {};
+                todasPautasBase.forEach(p => { mapaPautas[p.id] = p; });
+
+                reportesBaseTodos = Array.isArray(feeds) ? feeds : (feeds?.results || []);
+
+                if (loadingFeed) loadingFeed.classList.add('is-hidden');
+                aplicarFiltroPacienteUI(pacienteFiltro);
+            } catch (e) {
+                if (loadingFeed) loadingFeed.classList.add('is-hidden');
+                if (noFeed) noFeed.classList.remove('is-hidden');
+                console.error('Error al cargar reportes:', e);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof api !== 'undefined' && !api.isAuthenticated()) {
+                window.location.href = 'index.html';
+                return;
+            }
+            cargarTodo();
+        });
+    </script>
+</body>
+
+</html>
