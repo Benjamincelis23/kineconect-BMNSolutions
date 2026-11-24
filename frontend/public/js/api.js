@@ -90,7 +90,8 @@ const api = {
         if (!refresh) return null;
 
         try {
-            const resp = await fetch(`${API_BASE_URL}/auth/refresh/`, {
+            // H-01: SimpleJWT expone el refresh fuera de /api/v1 (config/urls.py: api/token/refresh/)
+            const resp = await fetch(`${BACKEND_ORIGIN}/api/token/refresh/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ refresh })
