@@ -10,6 +10,60 @@ import Skeleton from '../components/Skeleton';
 import api from '../services/api';
 import { cacheGet, cacheSet, contarPendientesCola, vaciarCola } from '../services/offline';
 
+function capitalizarNombre(texto) {
+  if (!texto || typeof texto !== 'string') return 'Paciente';
+  const limpio = texto.trim();
+  if (!limpio) return 'Paciente';
+  return limpio
+    .split(/\s+/)
+    .map((parte) => parte.charAt(0).toUpperCase() + parte.slice(1).toLowerCase())
+    .join(' ');
+}
+
+function formatearFechaCorta(isoStr) {
+  if (!isoStr) return '';
+  const fecha = new Date(isoStr);
+  if (Number.isNaN(fecha.getTime())) return '';
+  return fecha.toLocaleString('es-CL', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function esRespuestaNueva(item) {
+  const rawFecha = item?.fecha_respuesta || item?.fecha_ejecucion;
+  if (!rawFecha) return false;
+  const ts = new Date(rawFecha).getTime();
+  if (Number.isNaN(ts)) return false;
+  const horas48 = 48 * 60 * 60 * 1000;
+  return Date.now() - ts <= horas48;
+}
+
+function obtenerPautaIdRespuesta(item) {
+  if (!item) return null;
+  if (typeof item.pauta === 'number' || typeof item.pauta === 'string') {
+    const num = Number(item.pauta);
+    return Number.isNaN(num) ? item.pauta : num;
+  }
+  if (item.pauta && typeof item.pauta === 'object' && item.pauta.id != null) {
+    return item.pauta.id;
+  }
+  if (item.pauta_id != null) {
+    return item.pauta_id;
+  }
+  return null;
+}
+
+function ordenarRespuestasRecientes(items = []) {
+  return [...items].sort((a, b) => {
+    const tA = new Date(a?.fecha_respuesta || a?.fecha_ejecucion || 0).getTime();
+    const tB = new Date(b?.fecha_respuesta || b?.fecha_ejecucion || 0).getTime();
+    return (Number.isNaN(tB) ? 0 : tB) - (Number.isNaN(tA) ? 0 : tA);
+  });
+}
+
 function obtenerInfoKinesiologo(me, pautas = []) {
   const k = me?.kinesiologo;
   const pautaConKine = Array.isArray(pautas)
@@ -34,7 +88,7 @@ function obtenerInfoKinesiologo(me, pautas = []) {
 
   return {
     asignado: true,
-    nombre: nombre || 'Kinesiólogo Asignado',
+    nombre: nombre ? capitalizarNombre(nombre) : 'Kinesiólogo Asignado',
   };
 }
 
@@ -45,6 +99,7 @@ export default function HomeScreen({ navigation }) {
 
   const [me, setMe] = useState(null);
   const [pautas, setPautas] = useState(null);
+  const [respuestasKine, setRespuestasKine] = useState([]);
   const [error, setError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [pendientesOffline, setPendientesOffline] = useState(0);
@@ -69,22 +124,35 @@ export default function HomeScreen({ navigation }) {
     setError(false);
     try {
       await vaciarCola();
-      const [m, p, pend] = await Promise.all([
+      const [m, p, fb, pend] = await Promise.all([
         api.get('/api/me/'),
         api.get('/api/pautas/'),
+        api.get('/api/v1/feedback/').catch(() => ({ data: [] })),
         contarPendientesCola(),
       ]);
+
       const lista = p.data.results ?? p.data;
+      const listaFeedback = fb.data.results ?? fb.data ?? [];
+      const conRespuesta = Array.isArray(listaFeedback)
+        ? ordenarRespuestasRecientes(
+            listaFeedback.filter(
+              (item) => item?.respuesta_kinesiologo && String(item.respuesta_kinesiologo).trim().length > 0
+            )
+          )
+        : [];
+
       setMe(m.data);
       setPautas(lista);
+      setRespuestasKine(conRespuesta);
       setPendientesOffline(pend);
-      cacheSet('home', { me: m.data, pautas: lista });
+      cacheSet('home', { me: m.data, pautas: lista, respuestasKine: conRespuesta });
     } catch {
       const [cData, pend] = await Promise.all([cacheGet('home'), contarPendientesCola()]);
       setPendientesOffline(pend);
       if (cData) {
         setMe(cData.me);
         setPautas(cData.pautas);
+        setRespuestasKine(ordenarRespuestasRecientes(cData.respuestasKine || []));
       } else {
         setError(true);
       }
@@ -117,7 +185,12 @@ export default function HomeScreen({ navigation }) {
 
   if (error) {
     return (
-      <View style={[styles.mainWrapper, { paddingTop: insets.top, backgroundColor: c.bg }]}>
+      <View
+        style={[
+          styles.mainWrapper,
+          { paddingTop: insets.top, paddingBottom: insets.bottom, backgroundColor: c.bg },
+        ]}
+      >
         <EmptyState
           icon="wifi-off"
           onRetry={cargar}
@@ -132,7 +205,10 @@ export default function HomeScreen({ navigation }) {
     return (
       <ScrollView
         style={[styles.mainWrapper, { backgroundColor: c.bg }]}
-        contentContainerStyle={[styles.scrollPadding, { paddingTop: insets.top + 24 }]}
+        contentContainerStyle={[
+          styles.scrollPadding,
+          { paddingTop: insets.top + 24, paddingBottom: Math.max(36, insets.bottom + 24) },
+        ]}
       >
         <Skeleton height={80} />
         <Skeleton height={160} />
@@ -141,6 +217,7 @@ export default function HomeScreen({ navigation }) {
     );
   }
 
+  const nombrePaciente = capitalizarNombre(me.nombre);
   const metaSemanal = Math.max(1, Number(me.meta_semanal || 3));
   const sesionesSemana = Number(me.sesiones_semana || 0);
   const progreso = Math.min(1, sesionesSemana / metaSemanal);
@@ -160,16 +237,32 @@ export default function HomeScreen({ navigation }) {
   const principalCumplida = pautaPrincipal ? esPautaCumplida(pautaPrincipal) : metaGlobalCumplida;
 
   const abrirPauta = (pauta) => {
+    if (!pauta?.id) return;
     navigation.navigate('PautaDetail', {
       id: pauta.id,
       soloConsulta: esPautaCumplida(pauta),
     });
   };
 
+  const abrirPautaDesdeRespuesta = (item) => {
+    const pautaId = obtenerPautaIdRespuesta(item);
+    if (!pautaId) return;
+    const encontrada = Array.isArray(pautas)
+      ? pautas.find((p) => Number(p?.id) === Number(pautaId))
+      : null;
+
+    navigation.navigate('PautaDetail', {
+      id: encontrada?.id ?? pautaId,
+      soloConsulta: encontrada ? esPautaCumplida(encontrada) : false,
+    });
+  };
+
+  const cantidadNuevas = respuestasKine.filter(esRespuestaNueva).length;
+
   return (
     <View style={[styles.mainWrapper, { paddingTop: insets.top, backgroundColor: c.bg }]}>
       <ScrollView
-        contentContainerStyle={styles.scrollPadding}
+        contentContainerStyle={[styles.scrollPadding, { paddingBottom: Math.max(36, insets.bottom + 24) }]}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl onRefresh={onRefresh} refreshing={refreshing} tintColor={c.primary} />}
       >
@@ -178,7 +271,7 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.headerTextContainer}>
             <Text style={[styles.subGreeting, { color: c.primary }]}>PANEL DEL PACIENTE</Text>
             <Text style={[styles.greeting, { color: c.textMain }]}>
-              {saludoAleatorio.frase}, {me.nombre || 'Paciente'} {saludoAleatorio.emoji}
+              {saludoAleatorio.frase}, {nombrePaciente} {saludoAleatorio.emoji}
             </Text>
 
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
@@ -228,7 +321,7 @@ export default function HomeScreen({ navigation }) {
             style={[styles.avatarPlaceholder, { backgroundColor: c.accentBg, borderColor: c.primary }]}
           >
             <Text style={[styles.avatarText, { color: c.primary }]}>
-              {me.nombre ? me.nombre.charAt(0).toUpperCase() : 'P'}
+              {nombrePaciente.charAt(0).toUpperCase()}
             </Text>
           </TouchableOpacity>
         </View>
@@ -402,6 +495,105 @@ export default function HomeScreen({ navigation }) {
             );
           })
         )}
+
+        {/* Respuestas del Kinesiólogo */}
+        <View style={[styles.sectionHeader, { marginTop: 12 }]}>
+          <Text style={[styles.sectionTitle, { color: c.textMain }]}>Respuesta de tu kinesiólogo</Text>
+          {respuestasKine.length > 0 && (
+            <View style={[styles.badge, { backgroundColor: c.accentBg }]}>
+              <Text style={[styles.badgeText, { color: c.accentText }]}>
+                {cantidadNuevas > 0 ? `${cantidadNuevas} nueva${cantidadNuevas > 1 ? 's' : ''}` : respuestasKine.length}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {respuestasKine.length === 0 ? (
+          <View style={[styles.respuestaEmptyCard, { backgroundColor: c.surface, borderColor: c.border }]}>
+            <MaterialCommunityIcons name="message-text-outline" size={20} color={c.textSub} />
+            <Text style={{ flex: 1, color: c.textSub, fontSize: 12.5, lineHeight: 18 }}>
+              Cuando tu kinesiólogo responda tus reportes de sesión o consultas, aparecerá aquí.
+            </Text>
+          </View>
+        ) : (
+          respuestasKine.slice(0, 3).map((item, idx) => {
+            const fechaTexto = formatearFechaCorta(item.fecha_respuesta || item.fecha_ejecucion);
+            const tituloPauta = item.pauta_titulo || item.titulo_pauta || '';
+            const pautaId = obtenerPautaIdRespuesta(item);
+            const esNueva = esRespuestaNueva(item);
+            const esDestacada = idx === 0 || esNueva;
+
+            const contenidoTarjeta = (
+              <>
+                <View style={styles.respuestaHeaderRow}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+                    <MaterialCommunityIcons name="doctor" size={16} color={c.primary} />
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.respuestaTitle, { color: c.primary }]}
+                    >
+                      {tituloPauta ? `Kinesiólogo • ${tituloPauta}` : 'Respuesta del kinesiólogo'}
+                    </Text>
+                  </View>
+
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    {esNueva && (
+                      <View style={[styles.nuevaPill, { backgroundColor: c.accentBg, borderColor: c.primary }]}>
+                        <Text style={[styles.nuevaText, { color: c.accentText }]}>Nueva</Text>
+                      </View>
+                    )}
+                    {!!fechaTexto && (
+                      <Text style={{ color: c.textSub, fontSize: 11, fontWeight: '600' }}>
+                        {fechaTexto}
+                      </Text>
+                    )}
+                  </View>
+                </View>
+
+                <Text style={{ color: c.textMain, fontSize: 13.5, lineHeight: 19, fontWeight: '500' }}>
+                  {String(item.respuesta_kinesiologo).trim()}
+                </Text>
+
+                {pautaId != null && (
+                  <View style={styles.respuestaFooterRow}>
+                    <Text style={[styles.verPautaLink, { color: c.primary }]}>
+                      Abrir pauta relacionada
+                    </Text>
+                    <MaterialCommunityIcons name="arrow-right" size={14} color={c.primary} />
+                  </View>
+                )}
+              </>
+            );
+
+            const estiloTarjeta = [
+              styles.respuestaCard,
+              {
+                backgroundColor: esDestacada ? c.surfaceSoft : c.surface,
+                borderColor: c.primary,
+                borderWidth: esDestacada ? 1.5 : 1,
+              },
+            ];
+
+            if (pautaId != null) {
+              return (
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  key={item.id ?? idx}
+                  onPress={() => abrirPautaDesdeRespuesta(item)}
+                  style={estiloTarjeta}
+                >
+                  {contenidoTarjeta}
+                </TouchableOpacity>
+              );
+            }
+
+            return (
+              <View key={item.id ?? idx} style={estiloTarjeta}>
+                {contenidoTarjeta}
+              </View>
+            );
+          })
+        )}
       </ScrollView>
     </View>
   );
@@ -539,5 +731,52 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 10,
     borderLeftWidth: 3,
+  },
+  respuestaEmptyCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  respuestaCard: {
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderLeftWidth: 4,
+    marginBottom: 10,
+    gap: 6,
+  },
+  respuestaHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+  },
+  respuestaTitle: {
+    fontSize: 12.5,
+    fontWeight: '800',
+  },
+  nuevaPill: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  nuevaText: {
+    fontSize: 10.5,
+    fontWeight: '800',
+  },
+  respuestaFooterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 4,
+    marginTop: 2,
+  },
+  verPautaLink: {
+    fontSize: 12,
+    fontWeight: '700',
   },
 });

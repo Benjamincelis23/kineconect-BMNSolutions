@@ -372,6 +372,37 @@ def _notificar_alerta_dolor(feedback):
     )
 
 
+def _notificar_respuesta_kinesiologo(feedback):
+    """Notifica al correo del paciente cuando el kinesiólogo responde su reporte clínico."""
+    pauta = getattr(feedback, 'pauta', None)
+    paciente = getattr(pauta, 'paciente', None)
+    correo_paciente = (getattr(paciente, 'email', '') or '').strip()
+    if not correo_paciente:
+        return
+
+    kine = getattr(pauta, 'kinesiologo', None)
+    nombre_kine = (
+        f"{kine.first_name} {kine.last_name}".strip() if kine else "Tu Kinesiólogo"
+    ) or "Tu Kinesiólogo"
+    nombre_pac = f"{paciente.first_name} {paciente.last_name}".strip() or paciente.username
+
+    cuerpo = (
+        f"<p>Hola <b>{escape(nombre_pac)}</b>,</p>"
+        f"<p><b>{escape(nombre_kine)}</b> revisó tu reporte de sesión en la pauta "
+        f"<i>{escape(pauta.titulo)}</i> (Dolor EVA: <b>{feedback.nivel_dolor}/10</b>) y te dejó la siguiente indicación clínica:</p>"
+        f"<blockquote style='border-left: 4px solid #0284c7; padding: 10px 14px; background: #f0f9ff; color: #0f172a;'>"
+        f"{escape(feedback.respuesta_kinesiologo)}"
+        f"</blockquote>"
+        f"<p>Revisa los detalles directamente en tu aplicación móvil <strong>KineConnect</strong>.</p>"
+    )
+
+    enviar_email_en_segundo_plano(
+        correo_paciente,
+        f"Nueva indicación de tu kinesiólogo - {pauta.titulo}",
+        cuerpo,
+    )
+
+
 class FeedbackCreateView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = RegistroFeedbackSerializer
@@ -481,7 +512,9 @@ def _construir_resumen_clinico(user, pautas_qs):
 
         ultimo_fb = RegistroFeedback.objects.filter(pauta=pauta).order_by('-fecha_ejecucion').first()
         if ultimo_fb and (ultimo_fb.nivel_dolor or 0) >= 6:
-            # Si el kinesiólogo ya editó/ajustó la pauta después del reporte de dolor, la alerta queda atendida
+            # Si el kinesiólogo ya respondió o ajustó la pauta después del reporte, la alerta queda atendida
+            if (ultimo_fb.respuesta_kinesiologo or '').strip():
+                continue
             actualizada = getattr(pauta, 'actualizado_en', None)
             if actualizada and actualizada > ultimo_fb.fecha_ejecucion:
                 continue
@@ -489,6 +522,8 @@ def _construir_resumen_clinico(user, pautas_qs):
             pac = pauta.paciente
             rut_pac = pac.perfil.rut if (pac and hasattr(pac, 'perfil')) else ''
             alertas_dolor.append({
+                'id': ultimo_fb.id,
+                'feedback_id': ultimo_fb.id,
                 'pauta_id': pauta.id,
                 'pauta_titulo': pauta.titulo,
                 'paciente_id': pac.id if pac else None,
@@ -698,6 +733,7 @@ class PautaViewSet(viewsets.ModelViewSet):
 class RegistroFeedbackViewSet(viewsets.ModelViewSet):
     serializer_class = RegistroFeedbackSerializer
     permission_classes = [permissions.IsAuthenticated]
+
     @action(detail=True, methods=['patch'], url_path='responder')
     def responder(self, request, pk=None):
         user = request.user
@@ -712,6 +748,7 @@ class RegistroFeedbackViewSet(viewsets.ModelViewSet):
         feedback.respuesta_kinesiologo = texto.strip()
         feedback.fecha_respuesta = timezone.now()
         feedback.save(update_fields=['respuesta_kinesiologo', 'fecha_respuesta'])
+        _notificar_respuesta_kinesiologo(feedback)
 
         serializer = self.get_serializer(feedback)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -731,9 +768,13 @@ class RegistroFeedbackViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(instance, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
         if 'respuesta_kinesiologo' in data:
-            instance.respuesta_kinesiologo = str(data['respuesta_kinesiologo']).strip() if data['respuesta_kinesiologo'] else None
+            instance.respuesta_kinesiologo = (
+                str(data['respuesta_kinesiologo']).strip() if data['respuesta_kinesiologo'] else None
+            )
             instance.fecha_respuesta = timezone.now() if instance.respuesta_kinesiologo else None
             instance.save(update_fields=['respuesta_kinesiologo', 'fecha_respuesta'])
+            if instance.respuesta_kinesiologo:
+                _notificar_respuesta_kinesiologo(instance)
             return Response(self.get_serializer(instance).data, status=status.HTTP_200_OK)
 
         serializer.save()

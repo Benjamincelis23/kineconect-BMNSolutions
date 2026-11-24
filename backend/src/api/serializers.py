@@ -150,6 +150,24 @@ def _contar_sesiones_pauta(obj):
     return RegistroFeedback.objects.filter(pauta=obj, fecha_ejecucion__gte=desde).count()
 
 
+def _obtener_ultima_respuesta_kine(obj):
+    fb = (
+        RegistroFeedback.objects.filter(pauta=obj)
+        .exclude(respuesta_kinesiologo__isnull=True)
+        .exclude(respuesta_kinesiologo__exact='')
+        .order_by('-fecha_respuesta', '-fecha_ejecucion')
+        .first()
+    )
+    if not fb:
+        return None
+    return {
+        'feedback_id': fb.id,
+        'respuesta': fb.respuesta_kinesiologo,
+        'fecha_respuesta': fb.fecha_respuesta,
+        'nivel_dolor_reportado': fb.nivel_dolor,
+    }
+
+
 def _calcular_evolucion_clinica(obj):
     """Analiza la evolución del dolor EVA y genera recomendación clínica automática."""
     if getattr(obj, 'es_plantilla', False):
@@ -167,6 +185,8 @@ def _calcular_evolucion_clinica(obj):
             'fecha': fb.fecha_ejecucion.strftime('%d/%m %H:%M'),
             'nivel_dolor': fb.nivel_dolor if fb.nivel_dolor is not None else 0,
             'comentario': fb.comentario or '',
+            'respuesta_kinesiologo': fb.respuesta_kinesiologo or None,
+            'fecha_respuesta': fb.fecha_respuesta.strftime('%d/%m %H:%M') if fb.fecha_respuesta else None,
         }
         for fb in feedbacks_crono
     ]
@@ -225,6 +245,7 @@ class PautaListSerializer(serializers.ModelSerializer):
     sesiones_semana = serializers.SerializerMethodField()
     meta_semanal = serializers.SerializerMethodField()
     evolucion_clinica = serializers.SerializerMethodField()
+    ultima_respuesta_kine = serializers.SerializerMethodField()
 
     class Meta:
         model = Pauta
@@ -232,7 +253,8 @@ class PautaListSerializer(serializers.ModelSerializer):
             'id', 'titulo', 'notas', 'paciente', 'paciente_nombre', 'paciente_rut',
             'kinesiologo_nombre', 'creado_en', 'actualizado_en', 'fecha_creacion', 'activo',
             'total_ejercicios', 'cantidad_ejercicios', 'es_plantilla',
-            'sesiones_semana', 'meta_semanal', 'evolucion_clinica', 'ejercicios_detalle',
+            'sesiones_semana', 'meta_semanal', 'evolucion_clinica',
+            'ultima_respuesta_kine', 'ejercicios_detalle',
         ]
 
     def get_paciente_nombre(self, obj):
@@ -254,6 +276,9 @@ class PautaListSerializer(serializers.ModelSerializer):
 
     def get_evolucion_clinica(self, obj):
         return _calcular_evolucion_clinica(obj)
+
+    def get_ultima_respuesta_kine(self, obj):
+        return _obtener_ultima_respuesta_kine(obj)
 
 
 class PautaDetailSerializer(serializers.ModelSerializer):
@@ -266,6 +291,7 @@ class PautaDetailSerializer(serializers.ModelSerializer):
     sesiones_semana = serializers.SerializerMethodField()
     meta_semanal = serializers.SerializerMethodField()
     evolucion_clinica = serializers.SerializerMethodField()
+    ultima_respuesta_kine = serializers.SerializerMethodField()
 
     class Meta:
         model = Pauta
@@ -274,7 +300,7 @@ class PautaDetailSerializer(serializers.ModelSerializer):
             'kinesiologo_nombre', 'es_plantilla', 'activo',
             'creado_en', 'actualizado_en', 'fecha_creacion',
             'sesiones_semana', 'meta_semanal', 'evolucion_clinica',
-            'ejercicios', 'ejercicios_detalle',
+            'ultima_respuesta_kine', 'ejercicios', 'ejercicios_detalle',
         ]
 
     def get_paciente_nombre(self, obj):
@@ -296,6 +322,9 @@ class PautaDetailSerializer(serializers.ModelSerializer):
 
     def get_evolucion_clinica(self, obj):
         return _calcular_evolucion_clinica(obj)
+
+    def get_ultima_respuesta_kine(self, obj):
+        return _obtener_ultima_respuesta_kine(obj)
 
 
 PautaReadSerializer = PautaDetailSerializer

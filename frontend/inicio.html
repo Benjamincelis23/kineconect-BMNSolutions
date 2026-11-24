@@ -498,18 +498,24 @@
             return [];
         }
 
-        function renderizarBandejaPrioritaria(bandejaApi, reportes) {
+        function renderizarBandejaPrioritaria(bandejaApi, reportes, mapaPautas = {}) {
             const bloque = document.getElementById('bloque-bandeja-prioritaria');
             const lista = document.getElementById('lista-bandeja-prioritaria');
+            const kpiAlertas = document.getElementById('kpi-alertas-dolor');
             if (!bloque || !lista) return;
 
-            // Mostrar solo alertas críticas (EVA >= 6) pendientes de respuesta clínica y con pauta vigente
+            // Mostrar solo alertas críticas (EVA >= 6) sin responder y cuya pauta siga activa en mapaPautas
             const alertas = reportes.filter(r => {
                 const dolor = Number(r.nivel_dolor ?? r.escala_dolor ?? 0);
                 const sinResponder = !r.respuesta_kinesiologo || String(r.respuesta_kinesiologo).trim() === '';
-                const pautaVigente = r.pauta !== null && r.pauta !== undefined;
-                return dolor >= 6 && sinResponder && pautaVigente;
+                const pid = typeof r.pauta === 'object' && r.pauta !== null ? r.pauta.id : r.pauta;
+                const pautaActiva = pid && Boolean(mapaPautas[pid]);
+                return dolor >= 6 && sinResponder && pautaActiva;
             });
+
+            if (kpiAlertas) {
+                kpiAlertas.textContent = alertas.length;
+            }
 
             if (alertas.length === 0) {
                 bloque.style.display = 'none';
@@ -655,7 +661,7 @@
 
             // Bandeja de Atención Prioritaria
             reportesActualesDashboard = reportes;
-            renderizarBandejaPrioritaria(resumen?.bandeja_prioritaria || [], reportes);
+            renderizarBandejaPrioritaria(resumen?.bandeja_prioritaria || [], reportes, mapaPautas);
 
             // Últimos 4 reportes EVA
             const contReportes = document.getElementById('lista-ultimos-reportes');
