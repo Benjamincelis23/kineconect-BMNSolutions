@@ -550,7 +550,14 @@
             renderizarTablaPautas();
         }
 
-        async function desarchivarPauta(pautaId, titulo) {
+        // H-45: los handlers reciben solo el id; título y estado se leen del modelo,
+        // nunca de un string interpolado en un atributo onclick.
+        function buscarPautaCargada(pautaId) {
+            return todasPautasBase.find(p => Number(p.id) === Number(pautaId)) || null;
+        }
+
+        async function desarchivarPauta(pautaId) {
+            const titulo = buscarPautaCargada(pautaId)?.titulo || 'Sin Título';
             if (!window.confirm(`¿Deseas reactivar y desarchivar la pauta "${titulo}"?`)) return;
 
             try {
@@ -576,7 +583,10 @@
             }
         }
 
-        async function eliminarPauta(pautaId, titulo, esActiva) {
+        async function eliminarPauta(pautaId) {
+            const pauta = buscarPautaCargada(pautaId);
+            const titulo = pauta?.titulo || 'Sin Título';
+            const esActiva = pauta ? pauta.activo !== false : true;  // si no se encuentra, nunca forzar borrado
             const mensaje = esActiva
                 ? `¿Qué deseas hacer con la pauta "${titulo}"?\n\n` +
                 `• Si no tiene sesiones registradas, se eliminará de inmediato.\n` +
@@ -659,7 +669,7 @@
                 const estadoBadge = esActiva
                     ? '<span class="badge badge-ok">ACTIVA</span>'
                     : '<span class="badge badge-alerta">ARCHIVADA</span>';
-                const tituloSeguro = escaparHtml(p.titulo || 'Sin Título').replace(/'/g, "\\'");
+                const idPauta = Number(p.id);
                 const evo = p.evolucion_clinica;
                 const cicloHtml = !esPlantilla
                     ? `<span class="badge badge-neutro" style="font-size: 0.72rem; margin-left: 4px;">${p.sesiones_semana ?? 0}/${p.meta_semanal ?? 3} sem.</span>`
@@ -675,7 +685,7 @@
                 const botonDesarchivar = !esActiva
                     ? `<button type="button" class="btn btn-sm"
                         style="${btnStyleBase} background: rgba(16, 185, 129, 0.14); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.35);"
-                        onclick="desarchivarPauta(${p.id}, '${tituloSeguro}')"
+                        onclick="desarchivarPauta(${idPauta})"
                         title="Restaurar pauta archivada">
                         <i class='bx bx-revision'></i> Desarchivar
                        </button>`
@@ -695,16 +705,16 @@
                     <td>${estadoBadge}</td>
                     <td>
                         <div style="display: flex; gap: 6px; align-items: center; flex-wrap: nowrap;">
-                            <button type="button" class="btn btn-secondary btn-sm" style="${btnStyleBase}" onclick="verDetallePauta(${p.id})" title="Ver detalle">
+                            <button type="button" class="btn btn-secondary btn-sm" style="${btnStyleBase}" onclick="verDetallePauta(${idPauta})" title="Ver detalle">
                                 <i class='bx bx-show'></i> Ver
                             </button>
-                            <a href="crear_pauta.html?editar=${p.id}" class="btn btn-secondary btn-sm" style="${btnStyleBase}" title="Editar pauta">
+                            <a href="crear_pauta.html?editar=${idPauta}" class="btn btn-secondary btn-sm" style="${btnStyleBase}" title="Editar pauta">
                                 <i class='bx bx-edit'></i> Editar
                             </a>
                             ${botonDesarchivar}
                             <button type="button" class="btn btn-sm"
                                 style="${btnStyleBase} background: rgba(239, 68, 68, 0.14); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.35);"
-                                onclick="eliminarPauta(${p.id}, '${tituloSeguro}', ${esActiva})"
+                                onclick="eliminarPauta(${idPauta})"
                                 title="${esActiva ? 'Archivar o eliminar pauta' : 'Eliminar definitivamente'}">
                                 <i class='bx bx-trash'></i>${esActiva ? '' : ' Borrar'}
                             </button>
