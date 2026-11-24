@@ -22,6 +22,36 @@ function norm(txt) {
     .trim();
 }
 
+function formatearFechaHora(isoStr) {
+  if (!isoStr) return '';
+  const fecha = new Date(isoStr);
+  if (Number.isNaN(fecha.getTime())) return '';
+  return fecha.toLocaleString('es-CL', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function capitalizarNombre(texto) {
+  if (!texto || typeof texto !== 'string') return '';
+  const limpio = texto.trim();
+  if (!limpio) return '';
+  return limpio
+    .split(/\s+/)
+    .map((parte) => parte.charAt(0).toUpperCase() + parte.slice(1).toLowerCase())
+    .join(' ');
+}
+
+function ordenarRespuestasRecientes(items = []) {
+  return [...items].sort((a, b) => {
+    const tA = new Date(a?.fecha_respuesta || a?.fecha_ejecucion || 0).getTime();
+    const tB = new Date(b?.fecha_respuesta || b?.fecha_ejecucion || 0).getTime();
+    return (Number.isNaN(tB) ? 0 : tB) - (Number.isNaN(tA) ? 0 : tA);
+  });
+}
+
 function resolverMediaUrl(item, extra = {}) {
   const ej = item?.ejercicio && typeof item.ejercicio === 'object' ? item.ejercicio : {};
   const raw =
@@ -143,6 +173,7 @@ export default function PautaDetailScreen({ route, navigation }) {
 
   const [pauta, setPauta] = useState(null);
   const [catalogoMap, setCatalogoMap] = useState({});
+  const [respuestasPauta, setRespuestasPauta] = useState([]);
   const [error, setError] = useState(false);
   const [metaCumplidaApi, setMetaCumplidaApi] = useState(Boolean(soloConsultaParam));
 
@@ -158,16 +189,30 @@ export default function PautaDetailScreen({ route, navigation }) {
   const cargar = useCallback(async () => {
     setError(false);
     try {
-      const [resPauta, listaEj, resMe] = await Promise.all([
+      const [resPauta, listaEj, resMe, resFb] = await Promise.all([
         api.get(`/api/pautas/${id}/`),
         fetchTodosLosEjercicios(),
         api.get('/api/me/').catch(() => null),
+        api.get(`/api/v1/feedback/?pauta=${id}`).catch(() => ({ data: [] })),
       ]);
 
       setPauta(resPauta.data);
       cacheSet(`pauta_${id}`, resPauta.data);
 
-      // Evalúa el límite propio de esta pauta
+      const rawFb = resFb?.data?.results ?? resFb?.data ?? [];
+      const filtradas = Array.isArray(rawFb)
+        ? ordenarRespuestasRecientes(
+            rawFb.filter(
+              (item) =>
+                Number(item?.pauta) === Number(id) &&
+                item?.respuesta_kinesiologo &&
+                String(item.respuesta_kinesiologo).trim().length > 0
+            )
+          )
+        : [];
+      setRespuestasPauta(filtradas);
+      cacheSet(`pauta_feedback_${id}`, filtradas);
+
       if (resPauta?.data && resPauta.data.sesiones_semana != null) {
         const metaP = Math.max(1, Number(resPauta.data.meta_semanal || 3));
         setMetaCumplidaApi(Number(resPauta.data.sesiones_semana) >= metaP);
@@ -190,9 +235,13 @@ export default function PautaDetailScreen({ route, navigation }) {
         if (cachedMap) setCatalogoMap(cachedMap);
       }
     } catch {
-      const cachedPauta = await cacheGet(`pauta_${id}`);
-      const cachedMap = await cacheGet('catalogo_ejercicios_map_v2');
+      const [cachedPauta, cachedMap, cachedFb] = await Promise.all([
+        cacheGet(`pauta_${id}`),
+        cacheGet('catalogo_ejercicios_map_v2'),
+        cacheGet(`pauta_feedback_${id}`),
+      ]);
       if (cachedMap) setCatalogoMap(cachedMap);
+      if (Array.isArray(cachedFb)) setRespuestasPauta(ordenarRespuestasRecientes(cachedFb));
       if (cachedPauta) setPauta(cachedPauta);
       else setError(true);
     }
@@ -242,7 +291,7 @@ export default function PautaDetailScreen({ route, navigation }) {
 
   if (error) {
     return (
-      <View style={[styles.screen, { backgroundColor: c.bg }]}>
+      <View style={[styles.screen, { backgroundColor: c.bg, paddingBottom: insets.bottom }]}>
         <EmptyState icon="wifi-off" title="No pudimos cargar la pauta" onRetry={cargar} />
       </View>
     );
@@ -251,7 +300,12 @@ export default function PautaDetailScreen({ route, navigation }) {
   if (!pauta) {
     return (
       <View style={[styles.screen, { backgroundColor: c.bg }]}>
-        <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + 16 }]}>
+        <ScrollView
+          contentContainerStyle={[
+            styles.container,
+            { paddingTop: insets.top + 16, paddingBottom: Math.max(56, insets.bottom + 32) },
+          ]}
+        >
           <Skeleton height={90} />
           <Skeleton height={240} />
         </ScrollView>
@@ -367,10 +421,10 @@ export default function PautaDetailScreen({ route, navigation }) {
   const renderBannerSoloConsulta = () => {
     if (!esSoloConsulta) return null;
     return (
-      <View style={[styles.readOnlyBanner, { backgroundColor: c.accentBg, borderColor: c.primary }]}>
-        <MaterialCommunityIcons name="eye-check-outline" size={20} color={c.primary} />
+      <View style={[styles.readOnlyBanner, { backgroundColor: c.successBg, borderColor: c.success }]}>
+        <MaterialCommunityIcons name="eye-check-outline" size={20} color={c.success} />
         <View style={{ flex: 1 }}>
-          <Text style={{ color: c.accentText, fontSize: 12.5, fontWeight: '800' }}>
+          <Text style={{ color: c.success, fontSize: 12.5, fontWeight: '800' }}>
             Modo Solo Consulta • Meta semanal cumplida
           </Text>
           <Text style={{ color: c.textSub, fontSize: 11.5, marginTop: 2, lineHeight: 16 }}>
@@ -381,9 +435,6 @@ export default function PautaDetailScreen({ route, navigation }) {
     );
   };
 
-  // =========================================================================
-  // VISTA GUIADA PASO A PASO (LIMPIA Y ENFOCADA)
-  // =========================================================================
   if (modoGuiado && totalEjercicios > 0) {
     const ej = ejercicios[indiceActual] || ejercicios[0];
     const hechas = seriesHechas[ej.key] || [];
@@ -391,8 +442,7 @@ export default function PautaDetailScreen({ route, navigation }) {
 
     return (
       <View style={[styles.screen, { backgroundColor: c.bg }]}>
-        <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + 12 }]}>
-          {/* Navegación superior minimalista */}
+        <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + 12, paddingBottom: Math.max(56, insets.bottom + 32) }]}>
           <View style={styles.topRow}>
             <TouchableOpacity
               onPress={() => { setDescansoRestante(null); setModoGuiado(false); }}
@@ -421,7 +471,6 @@ export default function PautaDetailScreen({ route, navigation }) {
 
           {renderBannerSoloConsulta()}
 
-          {/* Tarjeta principal del ejercicio */}
           <View style={[styles.mainCard, { backgroundColor: c.surface, borderColor: c.border }]}>
             {ej.mediaUrl ? (
               <View>
@@ -645,12 +694,9 @@ export default function PautaDetailScreen({ route, navigation }) {
     );
   }
 
-  // =========================================================================
-  // VISTA GENERAL DE LA PAUTA (RESUMEN INICIAL)
-  // =========================================================================
   return (
     <View style={[styles.screen, { backgroundColor: c.bg }]}>
-      <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + 16 }]}>
+      <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + 16, paddingBottom: Math.max(56, insets.bottom + 32) }]}>
         <Text style={{ color: c.textMain, fontSize: 22, fontWeight: '800' }}>
           {pauta.titulo || 'Tu Sesión'}
         </Text>
@@ -672,7 +718,7 @@ export default function PautaDetailScreen({ route, navigation }) {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <MaterialCommunityIcons name="stethoscope" size={17} color={c.primary} />
                 <Text style={{ color: c.accentText, fontSize: 12.5, fontWeight: '800' }}>
-                  Indicación de {pauta.kinesiologo_nombre || 'tu Kinesiólogo'}
+                  Indicación de {capitalizarNombre(pauta.kinesiologo_nombre) || 'tu Kinesiólogo'}
                 </Text>
               </View>
               {!!pauta.actualizado_en && (
@@ -760,6 +806,27 @@ export default function PautaDetailScreen({ route, navigation }) {
           );
         })}
 
+        {respuestasPauta.length > 0 && (
+          <View style={[styles.kineReplyBox, { backgroundColor: c.surfaceSoft, borderColor: c.primary, borderWidth: 1.5, borderLeftWidth: 4 }]}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+                <MaterialCommunityIcons name="doctor" size={17} color={c.primary} />
+                <Text style={{ color: c.primary, fontSize: 12.5, fontWeight: '800' }}>
+                  Respuesta de {capitalizarNombre(pauta.kinesiologo_nombre) || 'tu Kinesiólogo'}
+                </Text>
+              </View>
+              {!!formatearFechaHora(respuestasPauta[0].fecha_respuesta || respuestasPauta[0].fecha_ejecucion) && (
+                <Text style={{ color: c.textSub, fontSize: 11, fontWeight: '600' }}>
+                  {formatearFechaHora(respuestasPauta[0].fecha_respuesta || respuestasPauta[0].fecha_ejecucion)}
+                </Text>
+              )}
+            </View>
+            <Text style={{ color: c.textMain, fontSize: 13.5, lineHeight: 19 }}>
+              {String(respuestasPauta[0].respuesta_kinesiologo).trim()}
+            </Text>
+          </View>
+        )}
+
         {!esSoloConsulta && (
           <Button
             mode="contained"
@@ -826,4 +893,12 @@ const styles = StyleSheet.create({
   summaryBox: { padding: 16, borderRadius: 16, borderWidth: 1, marginTop: 4 },
   listCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 16, borderWidth: 1.5 },
   badgeStatus: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
+  kineReplyBox: {
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderLeftWidth: 4,
+    marginTop: 4,
+    gap: 6,
+  },
 });

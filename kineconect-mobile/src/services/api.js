@@ -4,12 +4,17 @@ import { API_URL } from '../constants/config';
 
 const api = axios.create({ baseURL: API_URL, timeout: 30000 });
 
-let onSessionExpired = () => { };
-export const setSessionExpiredHandler = (fn) => { onSessionExpired = fn; };
+let onSessionExpired = () => {};
+export const setSessionExpiredHandler = (fn) => {
+  onSessionExpired = fn;
+};
 
 api.interceptors.request.use(async (config) => {
   const token = await SecureStore.getItemAsync('access_token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    config.headers = config.headers || {};
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 
@@ -20,26 +25,35 @@ api.interceptors.response.use(
   async (error) => {
     const original = error.config;
     const isLoginRequest = original?.url?.includes('/auth/login/');
+
     if (error.response?.status === 401 && !original?._retry && !isLoginRequest) {
       original._retry = true;
       try {
-        refreshing = refreshing || (async () => {
-          const refresh = await SecureStore.getItemAsync('refresh_token');
-          if (!refresh) throw new Error('sin refresh');
-          const { data } = await axios.post(`${API_URL}/api/token/refresh/`, { refresh });
-          await SecureStore.setItemAsync('access_token', data.access);
-          if (data.refresh) await SecureStore.setItemAsync('refresh_token', data.refresh);
-          return data.access;
-        })();
+        refreshing =
+          refreshing ||
+          (async () => {
+            const refresh = await SecureStore.getItemAsync('refresh_token');
+            if (!refresh) throw new Error('sin refresh');
+            const { data } = await axios.post(`${API_URL}/api/token/refresh/`, { refresh });
+            await SecureStore.setItemAsync('access_token', data.access);
+            if (data.refresh) {
+              await SecureStore.setItemAsync('refresh_token', data.refresh);
+            }
+            return data.access;
+          })();
+
         const newAccess = await refreshing;
         refreshing = null;
+        original.headers = original.headers || {};
         original.headers.Authorization = `Bearer ${newAccess}`;
         return api(original);
       } catch (e) {
         refreshing = null;
         onSessionExpired();
+        return Promise.reject(e);
       }
     }
+
     return Promise.reject(error);
   }
 );
