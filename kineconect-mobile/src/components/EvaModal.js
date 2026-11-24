@@ -18,15 +18,42 @@ const ESCALA_EVA = [
   { valor: 10, titulo: 'Dolor insoportable', guia: 'Máximo dolor posible; requiere revisión kinésica.', color: '#B91C1C', icono: 'alert-circle-outline' },
 ];
 
-const ESCALA_BORG = [
-  { valor: 1, etiqueta: 'Muy suave', desc: 'Esfuerzo mínimo, respiración totalmente normal.', color: '#10B981' },
-  { valor: 2, etiqueta: 'Suave', desc: 'Cómodo, podrías mantenerlo sin problema.', color: '#22C55E' },
-  { valor: 3, etiqueta: 'Moderado', desc: 'Se siente el trabajo muscular, pero es fluido.', color: '#84CC16' },
-  { valor: 4, etiqueta: 'Algo duro', desc: 'Aumenta un poco el pulso y la respiración.', color: '#EAB308' },
-  { valor: 5, etiqueta: 'Duro', desc: 'Exigente, cuesta completar las últimas repeticiones.', color: '#F59E0B' },
-  { valor: 7, etiqueta: 'Muy duro', desc: 'Fatiga muscular marcada, requiere concentración.', color: '#F97316' },
-  { valor: 9, etiqueta: 'Casi máximo', desc: 'Muy cerca del límite de tu energía actual.', color: '#EF4444' },
-  { valor: 10, etiqueta: 'Agotamiento total', desc: 'Máximo esfuerzo físico posible.', color: '#B91C1C' },
+const NIVELES_ESFUERZO = [
+  {
+    valor: 2,
+    etiqueta: 'Muy liviano',
+    desc: 'Casi sin esfuerzo, pude hacerlo muy fácil.',
+    icono: 'feather',
+    color: '#10B981',
+  },
+  {
+    valor: 4,
+    etiqueta: 'Moderado',
+    desc: 'Se sintió el trabajo muscular, pero a buen ritmo.',
+    icono: 'walk',
+    color: '#84CC16',
+  },
+  {
+    valor: 6,
+    etiqueta: 'Exigente',
+    desc: 'Me costó un poco, manteniendo buena técnica.',
+    icono: 'run',
+    color: '#EAB308',
+  },
+  {
+    valor: 8,
+    etiqueta: 'Muy exigente',
+    desc: 'Terminé bastante cansado en las últimas series.',
+    icono: 'fire',
+    color: '#F97316',
+  },
+  {
+    valor: 10,
+    etiqueta: 'Al límite',
+    desc: 'Agotamiento máximo, no podía dar más.',
+    icono: 'lightning-bolt',
+    color: '#EF4444',
+  },
 ];
 
 const SENSACIONES_RAPIDAS = [
@@ -43,7 +70,7 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
 
   const [paso, setPaso] = useState(1);
   const [dolor, setDolor] = useState(0);
-  const [borg, setBorg] = useState(3);
+  const [borg, setBorg] = useState(4);
   const [tagsSeleccionados, setTagsSeleccionados] = useState([]);
   const [comentario, setComentario] = useState('');
 
@@ -58,14 +85,14 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
   };
 
   const nivelActual = ESCALA_EVA[dolor] || ESCALA_EVA[0];
-  const borgActual = ESCALA_BORG.find((b) => b.valor === borg) || ESCALA_BORG[2];
+  const esfuerzoActual = NIVELES_ESFUERZO.find((b) => b.valor === borg) || NIVELES_ESFUERZO[1];
 
   const seleccionarDolor = (val) => {
     Haptics.selectionAsync();
     setDolor(val);
   };
 
-  const seleccionarBorg = (val) => {
+  const seleccionarEsfuerzo = (val) => {
     Haptics.selectionAsync();
     setBorg(val);
   };
@@ -80,7 +107,7 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
   const reiniciarEstado = () => {
     setPaso(1);
     setDolor(0);
-    setBorg(3);
+    setBorg(4);
     setTagsSeleccionados([]);
     setComentario('');
   };
@@ -101,7 +128,7 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
   };
 
   const limpiarYEnviar = () => {
-    const partes = [`Esfuerzo Borg: ${borgActual.valor}/10 (${borgActual.etiqueta})`];
+    const partes = [`Esfuerzo Borg: ${esfuerzoActual.valor}/10 (${esfuerzoActual.etiqueta})`];
     if (tagsSeleccionados.length > 0) {
       partes.push(`[${tagsSeleccionados.join(', ')}]`);
     }
@@ -255,77 +282,73 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
             </View>
           )}
 
-          {/* ================= PASO 2: CANSANCIO (BORG) ================= */}
+          {/* ================= PASO 2: CANSANCIO / ESFUERZO ================= */}
           {paso === 2 && (
             <View>
               <Text style={[styles.title, { color: c.textMain }]}>
                 ¿Qué tan cansado quedaste?
               </Text>
               <Text style={[styles.subtitle, { color: c.textSub }]}>
-                Mide el esfuerzo físico o fatiga de la rutina (Escala Borg CR-10)
+                Elige la opción que mejor describa tu agotamiento físico al terminar
               </Text>
 
-              <View
-                style={[
-                  styles.heroCard,
-                  {
-                    backgroundColor: c.surfaceSoft,
-                    borderColor: borgActual.color,
-                  },
-                ]}
-              >
-                <View style={styles.heroTopRow}>
-                  <View style={[styles.scoreBadge, { backgroundColor: borgActual.color }]}>
-                    <Text style={styles.scoreNumber}>{borgActual.valor}</Text>
-                    <Text style={styles.scoreMax}>/10</Text>
-                  </View>
-
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: borgActual.color, fontWeight: '800', fontSize: 16 }}>
-                      Esfuerzo {borgActual.etiqueta}
-                    </Text>
-                    <Text style={{ color: c.textSub, fontSize: 13, marginTop: 4, lineHeight: 18 }}>
-                      {borgActual.desc}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-
-              <View style={styles.borgGrid}>
-                {ESCALA_BORG.map((item) => {
+              <View style={styles.esfuerzoList}>
+                {NIVELES_ESFUERZO.map((item) => {
                   const activo = borg === item.valor;
                   return (
                     <TouchableOpacity
                       key={item.valor}
-                      activeOpacity={0.75}
-                      onPress={() => seleccionarBorg(item.valor)}
+                      activeOpacity={0.78}
+                      onPress={() => seleccionarEsfuerzo(item.valor)}
                       style={[
-                        styles.borgBtn,
+                        styles.esfuerzoCard,
                         {
-                          backgroundColor: activo ? item.color : c.surfaceSoft,
+                          backgroundColor: activo ? c.surfaceSoft : c.surface,
                           borderColor: activo ? item.color : c.border,
+                          borderWidth: activo ? 2 : 1,
                         },
                       ]}
                     >
-                      <Text
-                        style={{
-                          color: activo ? '#FFFFFF' : c.textMain,
-                          fontWeight: '900',
-                          fontSize: 16,
-                        }}
+                      <View
+                        style={[
+                          styles.esfuerzoIconBox,
+                          { backgroundColor: activo ? item.color : c.surfaceSoft },
+                        ]}
                       >
-                        {item.valor}
-                      </Text>
-                      <Text
-                        numberOfLines={1}
-                        style={{
-                          color: activo ? '#FFFFFF' : c.textSub,
-                          fontSize: 11.5,
-                          fontWeight: '700',
-                        }}
-                      >
-                        {item.etiqueta}
-                      </Text>
+                        <MaterialCommunityIcons
+                          name={item.icono}
+                          size={20}
+                          color={activo ? '#FFFFFF' : item.color}
+                        />
+                      </View>
+
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={{
+                            color: activo ? item.color : c.textMain,
+                            fontWeight: '800',
+                            fontSize: 14.5,
+                          }}
+                        >
+                          {item.etiqueta}
+                        </Text>
+                        <Text
+                          style={{
+                            color: c.textSub,
+                            fontSize: 12,
+                            marginTop: 1,
+                            lineHeight: 16,
+                          }}
+                        >
+                          {item.desc}
+                        </Text>
+                      </View>
+
+                      <MaterialCommunityIcons
+                        name={activo ? 'check-circle' : 'radiobox-blank'}
+                        size={22}
+                        color={activo ? item.color : c.border}
+                      />
                     </TouchableOpacity>
                   );
                 })}
@@ -369,16 +392,16 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
               {/* Resumen compacto de los pasos 1 y 2 */}
               <View style={[styles.resumenStrip, { backgroundColor: c.surfaceSoft, borderColor: c.border }]}>
                 <View style={styles.resumenItem}>
-                  <Text style={{ color: c.textSub, fontSize: 11, fontWeight: '600' }}>DOLOR (EVA)</Text>
+                  <Text style={{ color: c.textSub, fontSize: 11, fontWeight: '600' }}>DOLOR</Text>
                   <Text style={{ color: nivelActual.color, fontSize: 14, fontWeight: '800', marginTop: 2 }}>
                     {nivelActual.valor}/10 • {nivelActual.titulo}
                   </Text>
                 </View>
                 <View style={[styles.resumenDivider, { backgroundColor: c.border }]} />
                 <View style={styles.resumenItem}>
-                  <Text style={{ color: c.textSub, fontSize: 11, fontWeight: '600' }}>ESFUERZO (BORG)</Text>
-                  <Text style={{ color: borgActual.color, fontSize: 14, fontWeight: '800', marginTop: 2 }}>
-                    {borgActual.valor}/10 • {borgActual.etiqueta}
+                  <Text style={{ color: c.textSub, fontSize: 11, fontWeight: '600' }}>CANSANCIO</Text>
+                  <Text style={{ color: esfuerzoActual.color, fontSize: 14, fontWeight: '800', marginTop: 2 }}>
+                    {esfuerzoActual.etiqueta}
                   </Text>
                 </View>
               </View>
@@ -565,22 +588,24 @@ const styles = StyleSheet.create({
     marginTop: 6,
     marginBottom: 16,
   },
-  borgGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  esfuerzoList: {
     gap: 8,
-    justifyContent: 'space-between',
     marginBottom: 16,
   },
-  borgBtn: {
-    width: '48%',
+  esfuerzoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     paddingVertical: 11,
-    paddingHorizontal: 8,
-    borderRadius: 12,
-    borderWidth: 1.5,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+  },
+  esfuerzoIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 2,
   },
   resumenStrip: {
     flexDirection: 'row',

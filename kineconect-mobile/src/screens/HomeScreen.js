@@ -519,7 +519,8 @@ export default function HomeScreen({ navigation }) {
           respuestasKine.slice(0, 3).map((item, idx) => {
             const fechaTexto = formatearFechaCorta(item.fecha_respuesta || item.fecha_ejecucion);
             const tituloPauta = item.pauta_titulo || item.titulo_pauta || '';
-            const pautaId = obtenerPautaIdRespuesta(item);
+            const requiereRevisionPauta = Number(item?.nivel_dolor ?? 0) >= 6;
+            const pautaId = requiereRevisionPauta ? obtenerPautaIdRespuesta(item) : null;
             const esNueva = esRespuestaNueva(item);
             const esDestacada = idx === 0 || esNueva;
 
