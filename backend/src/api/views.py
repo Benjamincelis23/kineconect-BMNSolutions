@@ -639,8 +639,10 @@ class PautaViewSet(viewsets.ModelViewSet):
                 fecha_ejecucion__gte=_inicio_ciclo_pauta(instance),
             ).count()
 
-            if hechas_ciclo >= meta_pauta:
-                ahora = timezone.now()
+            # H-27: 'ahora' se definía solo dentro del if y se usaba fuera → UnboundLocalError (500).
+            # Nota: hechas_ciclo se calcula después de serializer.save() (auto_now en actualizado_en),
+            # así que hoy siempre vale 0; la lógica de "conservar el ciclo" queda pendiente (ver REVISION.md).
+            ahora = timezone.now()
             if hasattr(instance, 'actualizado_en'):
                 instance.actualizado_en = ahora
                 instance.save(update_fields=['actualizado_en'])

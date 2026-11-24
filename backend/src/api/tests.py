@@ -1,7 +1,7 @@
 from rest_framework.test import APITestCase
 from rest_framework import status
 from django.contrib.auth.models import User
-from api.models import Perfil
+from api.models import Ejercicio, Pauta, PautaEjercicio, Perfil, RegistroFeedback
 
 class KineconectSecurityTests(APITestCase):
     
@@ -121,3 +121,42 @@ class AccionesKinesiologoTests(APITestCase):
         resp = self.client.post(self.url_registrar, self.datos_nuevo, format='json')
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('rut', resp.data)
+
+
+class EdicionPautaTests(APITestCase):
+    """H-27: editar una pauta (no solo archivarla) no debe responder 500."""
+
+    def setUp(self):
+        self.kine = User.objects.create_user(username='kine_h27', password='x-no-usar-6')
+        Perfil.objects.create(user=self.kine, rut='88888888-8', rol='KINE')
+        self.paciente = User.objects.create_user(username='pac_h27', password='x-no-usar-7')
+        Perfil.objects.create(user=self.paciente, rut='99999999-9', rol='PACIENTE', kinesiologo_asignado=self.kine)
+        self.ej = Ejercicio.objects.create(nombre='Puente', descripcion='-', zona_cuerpo='Cadera')
+        self.pauta = Pauta.objects.create(titulo='Original', kinesiologo=self.kine, paciente=self.paciente)
+        PautaEjercicio.objects.create(pauta=self.pauta, ejercicio=self.ej, series=3, repeticiones=10)
+        self.url = f'/api/v1/pautas/{self.pauta.id}/'
+        self.client.force_authenticate(user=self.kine)
+        self.cambios = {
+            'titulo': 'Editada',
+            'ejercicios': [{'ejercicio_id': self.ej.id, 'series': 4, 'repeticiones': 8}],
+        }
+
+    def _assert_editada(self, resp):
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.pauta.refresh_from_db()
+        self.assertEqual(self.pauta.titulo, 'Editada')
+        detalle = self.pauta.ejercicios_detalle.get()
+        self.assertEqual((detalle.series, detalle.repeticiones), (4, 8))
+
+    def test_editar_pauta_sin_sesiones(self):
+        self._assert_editada(self.client.patch(self.url, self.cambios, format='json'))
+
+    def test_editar_pauta_con_ciclo_incompleto(self):
+        RegistroFeedback.objects.create(pauta=self.pauta, completado=True, nivel_dolor=2)  # 1 de 3
+        self._assert_editada(self.client.patch(self.url, self.cambios, format='json'))
+
+    def test_archivar_sigue_funcionando(self):
+        resp = self.client.patch(self.url, {'activo': False}, format='json')
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.pauta.refresh_from_db()
+        self.assertFalse(self.pauta.activo)
