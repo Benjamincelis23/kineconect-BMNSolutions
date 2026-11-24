@@ -76,7 +76,7 @@
             gap: 10px;
         }
 
-        /* Soporte total para Modo Oscuro de KineConnect (dark-mode / dark / data-theme) */
+        /* Soporte total para Modo Oscuro de KineConnect */
         body.dark-mode .modulo-card,
         html.dark-mode .modulo-card,
         [data-theme="dark"] .modulo-card,
@@ -225,19 +225,19 @@
                     </div>
                 </div>
 
-                <!-- 2. BANDEJA DE ATENCIÓN PRIORITARIA (DECISIÓN CLÍNICA KINE <-> PACIENTE) -->
+                <!-- 2. BANDEJA DE ATENCIÓN PRIORITARIA -->
                 <div id="bloque-bandeja-prioritaria" style="display: none; margin-bottom: 22px;">
-                    <div class="card" style="padding: 16px 18px; border-left: 4px solid #ef4444; background: #fef2f2;">
+                    <div class="card bandeja-card" style="padding: 16px 18px; border-left: 4px solid #ef4444;">
                         <div
                             style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
-                            <h3
+                            <h3 class="bandeja-title"
                                 style="margin: 0; font-size: 0.98rem; color: #991b1b; display: flex; align-items: center; gap: 8px;">
                                 <i class='bx bx-bell-ring' style="font-size: 1.2rem;"></i> Bandeja de Atención
-                                Prioritaria — Requieren Ajuste Clínico
+                                Prioritaria — Requieren Revisión Clínica
                             </h3>
-                            <a href="pautas.html"
+                            <a href="mensajes.html"
                                 style="font-size: 0.8rem; font-weight: 700; color: #b91c1c; text-decoration: none;">
-                                Ir a monitoreo completo →
+                                Ir a Consultas y Reportes →
                             </a>
                         </div>
                         <div id="lista-bandeja-prioritaria" style="display: flex; flex-direction: column; gap: 8px;">
@@ -255,7 +255,7 @@
                         </h3>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 15px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 15px;">
 
                         <!-- Módulo 1: Mapa Anatómico -->
                         <a href="crear_pauta.html" class="modulo-card" style="border-top: 3px solid #0284c7;">
@@ -283,33 +283,59 @@
                             </span>
                         </a>
 
-                        <!-- Módulo 2: Pautas y Dolor -->
-                        <a href="pautas.html" class="modulo-card" style="border-top: 3px solid #f59e0b;">
+                        <!-- Módulo 2: Pautas Prescritas -->
+                        <a href="pautas.html" class="modulo-card" style="border-top: 3px solid #0ea5e9;">
                             <div>
                                 <div class="modulo-card-top">
-                                    <span class="modulo-icon" style="background: #fef3c7; color: #d97706;">
-                                        <i class='bx bx-pulse'></i>
+                                    <span class="modulo-icon" style="background: #e0f2fe; color: #0369a1;">
+                                        <i class='bx bx-clipboard'></i>
                                     </span>
-                                    <span id="badge-mod-reportes" class="badge badge-neutro"
+                                    <span id="badge-mod-pautas" class="badge badge-neutro"
                                         style="font-size: 0.72rem;">
-                                        Monitoreo
+                                        Rutinas
                                     </span>
                                 </div>
                                 <strong
                                     style="display: block; color: var(--azul-900); font-size: 1rem; margin-bottom: 5px;">
-                                    Pautas y Dolor (EVA)
+                                    Pautas Prescritas
                                 </strong>
                                 <p
                                     style="margin: 0 0 14px 0; font-size: 0.83rem; color: var(--gris-600); line-height: 1.45;">
-                                    Evalúa reportes de dolor post-sesión, ajusta cargas y exporta PDF por RUT.
+                                    Administra rutinas activas, plantillas maestras y exporta fichas PDF por RUT.
                                 </p>
                             </div>
-                            <span style="font-size: 0.83rem; font-weight: 700; color: #d97706;">
-                                Ver seguimiento →
+                            <span style="font-size: 0.83rem; font-weight: 700; color: #0369a1;">
+                                Gestionar pautas →
                             </span>
                         </a>
 
-                        <!-- Módulo 3: Gestión de Pacientes -->
+                        <!-- Módulo 3: Consultas y Reportes -->
+                        <a href="mensajes.html" class="modulo-card" style="border-top: 3px solid #f59e0b;">
+                            <div>
+                                <div class="modulo-card-top">
+                                    <span class="modulo-icon" style="background: #fef3c7; color: #d97706;">
+                                        <i class='bx bx-message-square-detail'></i>
+                                    </span>
+                                    <span id="badge-mod-reportes" class="badge badge-neutro"
+                                        style="font-size: 0.72rem;">
+                                        Bandeja
+                                    </span>
+                                </div>
+                                <strong
+                                    style="display: block; color: var(--azul-900); font-size: 1rem; margin-bottom: 5px;">
+                                    Consultas y Reportes
+                                </strong>
+                                <p
+                                    style="margin: 0 0 14px 0; font-size: 0.83rem; color: var(--gris-600); line-height: 1.45;">
+                                    Revisa evaluaciones de dolor (EVA), esfuerzo Borg y responde a tus pacientes.
+                                </p>
+                            </div>
+                            <span style="font-size: 0.83rem; font-weight: 700; color: #d97706;">
+                                Revisar bandeja →
+                            </span>
+                        </a>
+
+                        <!-- Módulo 4: Gestión de Pacientes -->
                         <a href="pacientes.html" class="modulo-card" style="border-top: 3px solid #2563eb;">
                             <div>
                                 <div class="modulo-card-top">
@@ -335,7 +361,7 @@
                             </span>
                         </a>
 
-                        <!-- Módulo 4: Catálogo de Ejercicios -->
+                        <!-- Módulo 5: Catálogo de Ejercicios -->
                         <a href="ejercicios.html" class="modulo-card" style="border-top: 3px solid #10b981;">
                             <div>
                                 <div class="modulo-card-top">
@@ -375,9 +401,9 @@
                                 style="margin: 0; font-size: 1rem; color: var(--azul-900); display: flex; align-items: center; gap: 8px;">
                                 <i class='bx bx-pulse' style="color: #ef4444;"></i> Últimos Reportes EVA (App Móvil)
                             </h3>
-                            <a href="pautas.html"
+                            <a href="mensajes.html"
                                 style="font-size: 0.82rem; font-weight: 700; color: #0284c7; text-decoration: none;">
-                                Ver monitoreo →
+                                Ver bandeja →
                             </a>
                         </div>
 
@@ -413,6 +439,7 @@
             </div>
         </main>
     </div>
+
     <!-- Modal de Respuesta Rápida desde Bandeja Prioritaria -->
     <div id="modal-responder-bandeja" class="modal-overlay" style="display: none;"
         onclick="if(event.target === this) cerrarModalBandeja()">
@@ -480,11 +507,31 @@
             </div>
         </div>
     </div>
+
     <script src="js/api.js"></script>
     <script src="js/layout.js"></script>
     <script>
+        const STORAGE_VISTOS_KINE = 'kc_reportes_vistos_kine_v1';
+
         let reportesActualesDashboard = [];
+        let mapaPautasDashboard = {};
         let feedbackBandejaSeleccionado = null;
+
+        function obtenerVistosKine() {
+            try {
+                return JSON.parse(localStorage.getItem(STORAGE_VISTOS_KINE) || '{}');
+            } catch {
+                return {};
+            }
+        }
+
+        function marcarReporteVistoDesdeInicio(feedbackId) {
+            if (feedbackId == null) return;
+            const vistos = obtenerVistosKine();
+            vistos[String(feedbackId)] = new Date().toISOString();
+            localStorage.setItem(STORAGE_VISTOS_KINE, JSON.stringify(vistos));
+            renderizarBandejaPrioritaria([], reportesActualesDashboard, mapaPautasDashboard);
+        }
 
         function escaparHtml(txt) {
             return String(txt ?? '').replace(/[&<>"']/g, c => ({
@@ -504,13 +551,15 @@
             const kpiAlertas = document.getElementById('kpi-alertas-dolor');
             if (!bloque || !lista) return;
 
-            // Mostrar solo alertas críticas (EVA >= 6) sin responder y cuya pauta siga activa en mapaPautas
+            const vistos = obtenerVistosKine();
+
             const alertas = reportes.filter(r => {
                 const dolor = Number(r.nivel_dolor ?? r.escala_dolor ?? 0);
                 const sinResponder = !r.respuesta_kinesiologo || String(r.respuesta_kinesiologo).trim() === '';
+                const noVisto = r.id == null || !vistos[String(r.id)];
                 const pid = typeof r.pauta === 'object' && r.pauta !== null ? r.pauta.id : r.pauta;
                 const pautaActiva = pid && Boolean(mapaPautas[pid]);
-                return dolor >= 6 && sinResponder && pautaActiva;
+                return dolor >= 6 && sinResponder && noVisto && pautaActiva;
             });
 
             if (kpiAlertas) {
@@ -529,9 +578,9 @@
                 const repCompleto = reportes.find(r => r.id === feedbackId) || item;
                 const dolor = Number(repCompleto.nivel_dolor ?? repCompleto.escala_dolor ?? item.nivel_dolor ?? 0);
                 const paciente = repCompleto.paciente_nombre || item.paciente_nombre || 'Paciente';
-                const pautaTitulo = repCompleto.pauta_titulo || item.pauta_titulo || `Pauta #${repCompleto.pauta || ''}`;
+                const pautaId = typeof repCompleto.pauta === 'object' && repCompleto.pauta !== null ? repCompleto.pauta.id : repCompleto.pauta;
+                const pautaTitulo = repCompleto.pauta_titulo || item.pauta_titulo || mapaPautas[pautaId]?.titulo || `Pauta #${pautaId || ''}`;
                 const comentario = repCompleto.comentario || item.comentario || 'Sin observaciones adicionales';
-                const respuesta = repCompleto.respuesta_kinesiologo;
 
                 return `
                     <div class="bandeja-item">
@@ -544,19 +593,17 @@
                             <p style="margin: 0; font-size: 0.81rem; color: var(--gris-600);">
                                 "${escaparHtml(comentario)}"
                             </p>
-                            ${respuesta ? `
-                                <p style="margin: 4px 0 0; font-size: 0.78rem; color: #0284c7; font-weight: 600;">
-                                    ✓ Respondido: "${escaparHtml(respuesta)}"
-                                </p>
-                            ` : ''}
                         </div>
                         <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                             ${feedbackId ? `
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="marcarReporteVistoDesdeInicio(${feedbackId})" title="Descartar alerta de esta bandeja">
+                                    <i class='bx bx-check'></i> Dejar en visto
+                                </button>
                                 <button type="button" class="btn btn-secondary btn-sm" onclick="abrirModalBandeja(${feedbackId})">
-                                    <i class='bx bx-message-square-edit'></i> ${respuesta ? 'Editar Mensaje' : 'Enviar Mensaje'}
+                                    <i class='bx bx-message-square-edit'></i> Responder
                                 </button>
                             ` : ''}
-                            <a href="pautas.html" class="btn btn-primary btn-sm">
+                            <a href="crear_pauta.html?editar=${encodeURIComponent(pautaId || '')}" class="btn btn-primary btn-sm">
                                 <i class='bx bx-slider-alt'></i> Ajustar Pauta
                             </a>
                         </div>
@@ -643,21 +690,28 @@
 
             const mapaPautas = {};
             todasPautas.forEach(p => { mapaPautas[p.id] = p; });
+            mapaPautasDashboard = mapaPautas;
 
-            const alertasAltas = reportes.filter(r => Number(r.nivel_dolor ?? r.escala_dolor ?? 0) >= 6);
+            const pautasActivasCount = todasPautas.filter(p => p.activo !== false && !p.es_plantilla).length;
+            const vistos = obtenerVistosKine();
+            const pendientesCount = reportes.filter(r => {
+                const sinResp = !r.respuesta_kinesiologo || String(r.respuesta_kinesiologo).trim() === '';
+                const noVisto = r.id == null || !vistos[String(r.id)];
+                return sinResp && noVisto;
+            }).length;
 
             // KPIs
             document.getElementById('kpi-pacientes').textContent = resumen?.kpis?.pacientes_activos ?? pacientes.length;
-            document.getElementById('kpi-alertas-dolor').textContent = resumen?.kpis?.alertas_dolor_hoy ?? alertasAltas.length;
             document.getElementById('kpi-adherencia').textContent = resumen?.kpis?.adherencia_global_pct != null
                 ? `${resumen.kpis.adherencia_global_pct}%`
                 : 'Activo';
             document.getElementById('kpi-abandono').textContent = resumen?.kpis?.riesgo_abandono ?? 0;
 
-            // Badges superiores
+            // Badges de Módulos
+            document.getElementById('badge-mod-pautas').textContent = `${pautasActivasCount} activas`;
+            document.getElementById('badge-mod-reportes').textContent = `${pendientesCount} pendientes`;
             document.getElementById('badge-mod-pacientes').textContent = `${pacientes.length} activos`;
             document.getElementById('badge-mod-ejercicios').textContent = `${totalEjercicios} ejercicios`;
-            document.getElementById('badge-mod-reportes').textContent = `${reportes.length} reportes`;
 
             // Bandeja de Atención Prioritaria
             reportesActualesDashboard = reportes;
@@ -716,8 +770,8 @@
                                 <span style="font-size: 0.77rem; color: var(--gris-600);">${escaparHtml(rut)}</span>
                             </div>
                             <div style="display: flex; gap: 6px; flex-shrink: 0;">
-                                <a href="pautas.html?paciente=${encodeURIComponent(userId)}" class="btn btn-secondary btn-sm" title="Ver evolución">
-                                    <i class='bx bx-line-chart'></i>
+                                <a href="pautas.html?paciente=${encodeURIComponent(userId)}" class="btn btn-secondary btn-sm" title="Ver pautas">
+                                    <i class='bx bx-clipboard'></i>
                                 </a>
                                 <a href="crear_pauta.html?paciente=${encodeURIComponent(userId)}" class="btn btn-primary btn-sm" style="white-space: nowrap;">
                                     <i class='bx bx-plus-circle'></i> Prescribir
@@ -737,9 +791,6 @@
             cargarDashboard();
         });
     </script>
-</body>
-
-</html>
 </body>
 
 </html>
