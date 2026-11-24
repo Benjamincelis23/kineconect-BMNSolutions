@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import * as Haptics from 'expo-haptics';
 import { useCallback, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Button, ProgressBar, Text, useTheme } from 'react-native-paper';
@@ -9,6 +10,15 @@ import EmptyState from '../components/EmptyState';
 import Skeleton from '../components/Skeleton';
 import api from '../services/api';
 import { cacheGet, cacheSet, contarPendientesCola, vaciarCola } from '../services/offline';
+
+const CACHE_KEY_VISTAS = 'respuestas_kine_vistas_v1';
+const CACHE_KEY_OCULTAS = 'respuestas_kine_ocultas_v1';
+
+function obtenerClaveRespuesta(item, idx = 0) {
+  const idBase = item?.id != null ? String(item.id) : `idx_${idx}`;
+  const marcaTiempo = String(item?.fecha_respuesta || item?.fecha_ejecucion || '');
+  return `${idBase}_${marcaTiempo}`;
+}
 
 function capitalizarNombre(texto) {
   if (!texto || typeof texto !== 'string') return 'Paciente';
@@ -30,15 +40,6 @@ function formatearFechaCorta(isoStr) {
     hour: '2-digit',
     minute: '2-digit',
   });
-}
-
-function esRespuestaNueva(item) {
-  const rawFecha = item?.fecha_respuesta || item?.fecha_ejecucion;
-  if (!rawFecha) return false;
-  const ts = new Date(rawFecha).getTime();
-  if (Number.isNaN(ts)) return false;
-  const horas48 = 48 * 60 * 60 * 1000;
-  return Date.now() - ts <= horas48;
 }
 
 function obtenerPautaIdRespuesta(item) {
@@ -100,6 +101,8 @@ export default function HomeScreen({ navigation }) {
   const [me, setMe] = useState(null);
   const [pautas, setPautas] = useState(null);
   const [respuestasKine, setRespuestasKine] = useState([]);
+  const [respuestasVistas, setRespuestasVistas] = useState({});
+  const [respuestasOcultas, setRespuestasOcultas] = useState({});
   const [error, setError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [pendientesOffline, setPendientesOffline] = useState(0);
@@ -122,6 +125,13 @@ export default function HomeScreen({ navigation }) {
 
   const cargar = useCallback(async () => {
     setError(false);
+    const [vistasGuardadas, ocultasGuardadas] = await Promise.all([
+      cacheGet(CACHE_KEY_VISTAS),
+      cacheGet(CACHE_KEY_OCULTAS),
+    ]);
+    setRespuestasVistas(vistasGuardadas || {});
+    setRespuestasOcultas(ocultasGuardadas || {});
+
     try {
       await vaciarCola();
       const [m, p, fb, pend] = await Promise.all([
@@ -165,6 +175,38 @@ export default function HomeScreen({ navigation }) {
     setRefreshing(true);
     await cargar();
     setRefreshing(false);
+  };
+
+  const marcarComoVisto = async (clave) => {
+    if (respuestasVistas[clave]) return;
+    Haptics.selectionAsync();
+    const actualizado = { ...respuestasVistas, [clave]: true };
+    setRespuestasVistas(actualizado);
+    await cacheSet(CACHE_KEY_VISTAS, actualizado);
+  };
+
+  const ocultarRespuesta = async (clave) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const nuevasVistas = { ...respuestasVistas, [clave]: true };
+    const nuevasOcultas = { ...respuestasOcultas, [clave]: true };
+    setRespuestasVistas(nuevasVistas);
+    setRespuestasOcultas(nuevasOcultas);
+    await Promise.all([
+      cacheSet(CACHE_KEY_VISTAS, nuevasVistas),
+      cacheSet(CACHE_KEY_OCULTAS, nuevasOcultas),
+    ]);
+  };
+
+  const limpiarRespuestasLeidas = async (listaConClave) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const nuevasOcultas = { ...respuestasOcultas };
+    listaConClave.forEach(({ clave }) => {
+      if (respuestasVistas[clave]) {
+        nuevasOcultas[clave] = true;
+      }
+    });
+    setRespuestasOcultas(nuevasOcultas);
+    await cacheSet(CACHE_KEY_OCULTAS, nuevasOcultas);
   };
 
   const saludoAleatorio = useMemo(() => {
@@ -244,7 +286,8 @@ export default function HomeScreen({ navigation }) {
     });
   };
 
-  const abrirPautaDesdeRespuesta = (item) => {
+  const abrirPautaDesdeRespuesta = async (item, clave) => {
+    await marcarComoVisto(clave);
     const pautaId = obtenerPautaIdRespuesta(item);
     if (!pautaId) return;
     const encontrada = Array.isArray(pautas)
@@ -257,7 +300,13 @@ export default function HomeScreen({ navigation }) {
     });
   };
 
-  const cantidadNuevas = respuestasKine.filter(esRespuestaNueva).length;
+  const respuestasVisibles = respuestasKine
+    .map((item, idx) => ({ item, clave: obtenerClaveRespuesta(item, idx) }))
+    .filter(({ clave }) => !respuestasOcultas[clave])
+    .slice(0, 4);
+
+  const cantidadNuevas = respuestasVisibles.filter(({ clave }) => !respuestasVistas[clave]).length;
+  const hayLeidasVisibles = respuestasVisibles.some(({ clave }) => Boolean(respuestasVistas[clave]));
 
   return (
     <View style={[styles.mainWrapper, { paddingTop: insets.top, backgroundColor: c.bg }]}>
@@ -496,102 +545,169 @@ export default function HomeScreen({ navigation }) {
           })
         )}
 
-        {/* Respuestas del Kinesiólogo */}
-        <View style={[styles.sectionHeader, { marginTop: 12 }]}>
-          <Text style={[styles.sectionTitle, { color: c.textMain }]}>Respuesta de tu kinesiólogo</Text>
-          {respuestasKine.length > 0 && (
-            <View style={[styles.badge, { backgroundColor: c.accentBg }]}>
-              <Text style={[styles.badgeText, { color: c.accentText }]}>
-                {cantidadNuevas > 0 ? `${cantidadNuevas} nueva${cantidadNuevas > 1 ? 's' : ''}` : respuestasKine.length}
+        {/* Respuestas del Kinesiólogo (con Visto y Cerrar) */}
+        <View style={[styles.sectionHeader, { marginTop: 12, justifyContent: 'space-between' }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text style={[styles.sectionTitle, { color: c.textMain }]}>Respuesta de tu kinesiólogo</Text>
+            {respuestasVisibles.length > 0 && (
+              <View
+                style={[
+                  styles.badge,
+                  { backgroundColor: cantidadNuevas > 0 ? c.accentBg : c.surfaceSoft },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.badgeText,
+                    { color: cantidadNuevas > 0 ? c.accentText : c.textSub },
+                  ]}
+                >
+                  {cantidadNuevas > 0
+                    ? `${cantidadNuevas} nueva${cantidadNuevas > 1 ? 's' : ''}`
+                    : 'Todo leído'}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {hayLeidasVisibles && (
+            <TouchableOpacity
+              activeOpacity={0.75}
+              onPress={() => limpiarRespuestasLeidas(respuestasVisibles)}
+            >
+              <Text style={{ color: c.textSub, fontSize: 12, fontWeight: '700' }}>
+                Limpiar leídos
               </Text>
-            </View>
+            </TouchableOpacity>
           )}
         </View>
 
-        {respuestasKine.length === 0 ? (
+        {respuestasVisibles.length === 0 ? (
           <View style={[styles.respuestaEmptyCard, { backgroundColor: c.surface, borderColor: c.border }]}>
             <MaterialCommunityIcons name="message-text-outline" size={20} color={c.textSub} />
             <Text style={{ flex: 1, color: c.textSub, fontSize: 12.5, lineHeight: 18 }}>
-              Cuando tu kinesiólogo responda tus reportes de sesión o consultas, aparecerá aquí.
+              No tienes mensajes pendientes de tu kinesiólogo.
             </Text>
           </View>
         ) : (
-          respuestasKine.slice(0, 3).map((item, idx) => {
+          respuestasVisibles.map(({ item, clave }) => {
             const fechaTexto = formatearFechaCorta(item.fecha_respuesta || item.fecha_ejecucion);
             const tituloPauta = item.pauta_titulo || item.titulo_pauta || '';
             const requiereRevisionPauta = Number(item?.nivel_dolor ?? 0) >= 6;
             const pautaId = requiereRevisionPauta ? obtenerPautaIdRespuesta(item) : null;
-            const esNueva = esRespuestaNueva(item);
-            const esDestacada = idx === 0 || esNueva;
+            const yaVisto = Boolean(respuestasVistas[clave]);
+            const esNueva = !yaVisto;
 
-            const contenidoTarjeta = (
-              <>
+            return (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                key={clave}
+                onPress={() => {
+                  if (pautaId != null) {
+                    abrirPautaDesdeRespuesta(item, clave);
+                  } else if (esNueva) {
+                    marcarComoVisto(clave);
+                  }
+                }}
+                style={[
+                  styles.respuestaCard,
+                  {
+                    backgroundColor: esNueva ? c.surfaceSoft : c.surface,
+                    borderColor: esNueva ? c.primary : c.border,
+                    borderLeftColor: esNueva ? c.primary : c.border,
+                    borderWidth: esNueva ? 1.5 : 1,
+                    opacity: esNueva ? 1 : 0.88,
+                  },
+                ]}
+              >
                 <View style={styles.respuestaHeaderRow}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
-                    <MaterialCommunityIcons name="doctor" size={16} color={c.primary} />
+                    <MaterialCommunityIcons
+                      name="doctor"
+                      size={16}
+                      color={esNueva ? c.primary : c.textSub}
+                    />
                     <Text
                       numberOfLines={1}
-                      style={[styles.respuestaTitle, { color: c.primary }]}
+                      style={[
+                        styles.respuestaTitle,
+                        { color: esNueva ? c.primary : c.textSub },
+                      ]}
                     >
                       {tituloPauta ? `Kinesiólogo • ${tituloPauta}` : 'Respuesta del kinesiólogo'}
                     </Text>
                   </View>
 
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    {esNueva && (
+                    {esNueva ? (
                       <View style={[styles.nuevaPill, { backgroundColor: c.accentBg, borderColor: c.primary }]}>
                         <Text style={[styles.nuevaText, { color: c.accentText }]}>Nueva</Text>
                       </View>
+                    ) : (
+                      <View style={[styles.nuevaPill, { backgroundColor: c.surfaceSoft, borderColor: c.border }]}>
+                        <Text style={[styles.nuevaText, { color: c.textSub }]}>✓ Visto</Text>
+                      </View>
                     )}
+
                     {!!fechaTexto && (
                       <Text style={{ color: c.textSub, fontSize: 11, fontWeight: '600' }}>
                         {fechaTexto}
                       </Text>
                     )}
+
+                    <TouchableOpacity
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      onPress={() => ocultarRespuesta(clave)}
+                      style={[styles.closeMsgBtn, { backgroundColor: c.surfaceSoft, borderColor: c.border }]}
+                    >
+                      <MaterialCommunityIcons name="close" size={14} color={c.textSub} />
+                    </TouchableOpacity>
                   </View>
                 </View>
 
-                <Text style={{ color: c.textMain, fontSize: 13.5, lineHeight: 19, fontWeight: '500' }}>
+                <Text
+                  style={{
+                    color: esNueva ? c.textMain : c.textSub,
+                    fontSize: 13.5,
+                    lineHeight: 19,
+                    fontWeight: esNueva ? '600' : '400',
+                  }}
+                >
                   {String(item.respuesta_kinesiologo).trim()}
                 </Text>
 
-                {pautaId != null && (
+                {(esNueva || pautaId != null) && (
                   <View style={styles.respuestaFooterRow}>
-                    <Text style={[styles.verPautaLink, { color: c.primary }]}>
-                      Abrir pauta relacionada
-                    </Text>
-                    <MaterialCommunityIcons name="arrow-right" size={14} color={c.primary} />
+                    {esNueva ? (
+                      <TouchableOpacity
+                        activeOpacity={0.75}
+                        onPress={() => marcarComoVisto(clave)}
+                        style={[styles.vistoBtn, { backgroundColor: c.accentBg, borderColor: c.primary }]}
+                      >
+                        <MaterialCommunityIcons name="check" size={14} color={c.primary} />
+                        <Text style={[styles.verPautaLink, { color: c.primary }]}>
+                          Marcar como visto
+                        </Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <View style={{ flex: 1 }} />
+                    )}
+
+                    {pautaId != null && (
+                      <TouchableOpacity
+                        activeOpacity={0.75}
+                        onPress={() => abrirPautaDesdeRespuesta(item, clave)}
+                        style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                      >
+                        <Text style={[styles.verPautaLink, { color: c.primary }]}>
+                          Revisar pauta ajustada
+                        </Text>
+                        <MaterialCommunityIcons name="arrow-right" size={14} color={c.primary} />
+                      </TouchableOpacity>
+                    )}
                   </View>
                 )}
-              </>
-            );
-
-            const estiloTarjeta = [
-              styles.respuestaCard,
-              {
-                backgroundColor: esDestacada ? c.surfaceSoft : c.surface,
-                borderColor: c.primary,
-                borderWidth: esDestacada ? 1.5 : 1,
-              },
-            ];
-
-            if (pautaId != null) {
-              return (
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  key={item.id ?? idx}
-                  onPress={() => abrirPautaDesdeRespuesta(item)}
-                  style={estiloTarjeta}
-                >
-                  {contenidoTarjeta}
-                </TouchableOpacity>
-              );
-            }
-
-            return (
-              <View key={item.id ?? idx} style={estiloTarjeta}>
-                {contenidoTarjeta}
-              </View>
+              </TouchableOpacity>
             );
           })
         )}
@@ -747,7 +863,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderLeftWidth: 4,
     marginBottom: 10,
-    gap: 6,
+    gap: 8,
   },
   respuestaHeaderRow: {
     flexDirection: 'row',
@@ -769,12 +885,29 @@ const styles = StyleSheet.create({
     fontSize: 10.5,
     fontWeight: '800',
   },
+  closeMsgBtn: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   respuestaFooterRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 4,
+    justifyContent: 'space-between',
+    gap: 8,
     marginTop: 2,
+  },
+  vistoBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 9,
+    borderWidth: 1,
   },
   verPautaLink: {
     fontSize: 12,

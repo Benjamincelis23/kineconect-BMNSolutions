@@ -23,14 +23,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const isCrearPauta = path.includes('crear_pauta');
     const isEjercicios = path.includes('ejercicios');
     const isPautas = path.includes('pautas');
+    const isMensajes = path.includes('mensajes');
     const isPacientes = path.includes('pacientes');
 
-    let tituloPagina = 'Panel de Control';
-    if (isInicio) tituloPagina = 'Panel Principal';
-    else if (isCrearPauta) tituloPagina = 'Prescripción Biomecánica';
+    let tituloPagina = 'Panel Clínico';
+    if (isInicio) tituloPagina = 'Resumen Clínico';
+    else if (isCrearPauta) tituloPagina = 'Nueva Pauta';
     else if (isEjercicios) tituloPagina = 'Catálogo de Ejercicios';
-    else if (isPautas) tituloPagina = 'Monitoreo de Dolor y Rutinas';
-    else if (isPacientes) tituloPagina = 'Gestión de Pacientes';
+    else if (isPautas) tituloPagina = 'Pautas Prescritas';
+    else if (isMensajes) tituloPagina = 'Consultas y Reportes';
+    else if (isPacientes) tituloPagina = 'Pacientes';
 
     const sidebarHTML = `
         <aside class="sidebar" id="sidebar">
@@ -70,10 +72,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     <i class='bx bx-dumbbell'></i> Catálogo Ejercicios
                 </a>
                 <a href="pautas.html" class="${isPautas ? 'active' : ''}">
-                    <i class='bx bx-clipboard'></i> Pautas y Dolor
+                    <i class='bx bx-clipboard'></i> Pautas Prescritas
+                </a>
+                <a href="mensajes.html" class="${isMensajes ? 'active' : ''}">
+                    <i class='bx bx-message-square-detail'></i> Consultas y Reportes
                 </a>
                 <a href="pacientes.html" class="${isPacientes ? 'active' : ''}">
-                    <i class='bx bx-group'></i> Gestión Pacientes
+                    <i class='bx bx-group'></i> Pacientes
                 </a>
             </nav>
             <div class="sidebar-footer">
@@ -114,7 +119,6 @@ document.addEventListener("DOMContentLoaded", () => {
         main.insertAdjacentHTML('afterbegin', topbarHTML);
     }
 
-    // Control explícito de apertura/cierre del menú
     const btnSidebar = document.getElementById('btn-toggle-sidebar');
     const btnCloseSidebar = document.getElementById('btn-close-sidebar');
     const sidebar = document.getElementById('sidebar');
@@ -146,7 +150,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Modo Oscuro
     const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
     actualizarBotonTema(currentTheme);
 
