@@ -7,3 +7,9 @@ venv/
 
 # H-15: volcados de datos locales (pueden contener datos personales y hashes)
 respaldo*.json
+
+# H-11 / H-12: artefactos de Python, entornos y configuración de editores
+.venv/
+.idea/
+*.iml
+.vscode/
