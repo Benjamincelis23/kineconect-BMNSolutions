@@ -33,6 +33,34 @@
             color: #f8fafc !important;
             border-color: #334155 !important;
         }
+
+        .btn-sugerencia-kine {
+            justify-content: flex-start !important;
+            text-align: left !important;
+            font-size: 0.78rem !important;
+            padding: 7px 10px !important;
+            transition: all 0.18s ease !important;
+        }
+
+        .btn-sugerencia-kine.seleccionada {
+            background: rgba(2, 132, 199, 0.16) !important;
+            border-color: #0284c7 !important;
+            color: #0284c7 !important;
+            font-weight: 700 !important;
+        }
+
+        body.dark-mode .btn-sugerencia-kine.seleccionada,
+        html.dark-mode .btn-sugerencia-kine.seleccionada {
+            background: rgba(56, 189, 248, 0.18) !important;
+            border-color: #38bdf8 !important;
+            color: #38bdf8 !important;
+        }
+
+        .textarea-flash {
+            border-color: #0284c7 !important;
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.25) !important;
+            transition: box-shadow 0.25s ease, border-color 0.25s ease;
+        }
     </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -149,6 +177,8 @@
                         <div style="display: flex; gap: 6px; flex-wrap: wrap;" id="filtros-feedback-container">
                             <button type="button" class="filtro-biomecanico-pill activo-todos"
                                 onclick="filtrarFeedback('todos', this)">Todos</button>
+                            <button type="button" id="pill-sin-responder" class="filtro-biomecanico-pill"
+                                onclick="filtrarFeedback('sin_responder', this)">Sin Responder (0)</button>
                             <button type="button" class="filtro-biomecanico-pill"
                                 onclick="filtrarFeedback('alertas', this)">Alertas EVA ≥ 6</button>
                             <button type="button" class="filtro-biomecanico-pill"
@@ -328,7 +358,6 @@
         </div>
     </div>
 
-    <!-- Scripts Esenciales y Lógica Principal -->
     <!-- Modal de Retroalimentación Clínica del Kinesiólogo -->
     <div id="modal-responder-feedback" class="modal-overlay" style="display: none;"
         onclick="if(event.target === this) cerrarModalResponderFeedback()">
@@ -356,20 +385,20 @@
                     style="display: block; font-size: 0.78rem; font-weight: 700; color: var(--gris-600); margin-bottom: 6px;">
                     Sugerencias rápidas (un clic):
                 </span>
-                <div style="display: flex; flex-direction: column; gap: 6px;">
-                    <button type="button" class="btn btn-secondary btn-sm"
-                        style="justify-content: flex-start; text-align: left; font-size: 0.78rem; padding: 7px 10px;"
-                        onclick="aplicarSugerenciaRespuesta('Excelente tolerancia, mantén la carga actual')">
+                <div id="lista-sugerencias-kine" style="display: flex; flex-direction: column; gap: 6px;">
+                    <button type="button" class="btn btn-secondary btn-sm btn-sugerencia-kine"
+                        data-texto="Excelente tolerancia, mantén la carga actual"
+                        onclick="aplicarSugerenciaRespuesta('Excelente tolerancia, mantén la carga actual', this)">
                         • Excelente tolerancia, mantén la carga actual
                     </button>
-                    <button type="button" class="btn btn-secondary btn-sm"
-                        style="justify-content: flex-start; text-align: left; font-size: 0.78rem; padding: 7px 10px;"
-                        onclick="aplicarSugerenciaRespuesta('Reducir a 2 series si persiste molestia')">
+                    <button type="button" class="btn btn-secondary btn-sm btn-sugerencia-kine"
+                        data-texto="Reducir a 2 series si persiste molestia"
+                        onclick="aplicarSugerenciaRespuesta('Reducir a 2 series si persiste molestia', this)">
                         • Reducir a 2 series si persiste molestia
                     </button>
-                    <button type="button" class="btn btn-secondary btn-sm"
-                        style="justify-content: flex-start; text-align: left; font-size: 0.78rem; padding: 7px 10px;"
-                        onclick="aplicarSugerenciaRespuesta('Suspender ejercicio con dolor y evaluar en próxima sesión')">
+                    <button type="button" class="btn btn-secondary btn-sm btn-sugerencia-kine"
+                        data-texto="Suspender ejercicio con dolor y evaluar en próxima sesión"
+                        onclick="aplicarSugerenciaRespuesta('Suspender ejercicio con dolor y evaluar en próxima sesión', this)">
                         • Suspender ejercicio con dolor y evaluar en próxima sesión
                     </button>
                 </div>
@@ -377,10 +406,14 @@
 
             <div class="field" style="margin-bottom: 14px;">
                 <label for="textarea-respuesta-kine"
-                    style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 6px;">
-                    Indicación o retroalimentación del kinesiólogo
+                    style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-weight: 700; margin-bottom: 6px;">
+                    <span>Indicación o retroalimentación del kinesiólogo</span>
+                    <span id="estado-sugerencia-aplicada" style="display: none; color: #0284c7; font-size: 0.74rem; font-weight: 700;">
+                        ✓ Sugerencia aplicada
+                    </span>
                 </label>
                 <textarea id="textarea-respuesta-kine" rows="3"
+                    oninput="sincronizarSeleccionSugerencia()"
                     placeholder="Escribe tu indicación clínica para el paciente..."
                     style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #cbd5e1; font-family: inherit; font-size: 0.86rem; resize: vertical;"></textarea>
                 <div id="modal-resp-error"
@@ -397,6 +430,8 @@
             </div>
         </div>
     </div>
+
+    <!-- Scripts Esenciales y Lógica Principal -->
     <script src="js/api.js"></script>
     <script src="js/layout.js"></script>
     <script>
@@ -453,6 +488,10 @@
             if (dolor <= 5) return 'Moderado';
             if (dolor <= 7) return 'Fuerte';
             return 'Severo';
+        }
+
+        function tieneRespuestaClinica(item) {
+            return Boolean(item?.respuesta_kinesiologo && String(item.respuesta_kinesiologo).trim().length > 0);
         }
 
         async function cargarPacientesParaInforme() {
@@ -533,8 +572,6 @@
             renderizarTablaPautas();
         }
 
-        // H-45: los handlers reciben solo el id; título y estado se leen del modelo,
-        // nunca de un string interpolado en un atributo onclick.
         function buscarPautaCargada(pautaId) {
             return todasPautasBase.find(p => Number(p.id) === Number(pautaId)) || null;
         }
@@ -563,7 +600,7 @@
         async function eliminarPauta(pautaId) {
             const pauta = buscarPautaCargada(pautaId);
             const titulo = pauta?.titulo || 'Sin Título';
-            const esActiva = pauta ? pauta.activo !== false : true;  // si no se encuentra, nunca forzar borrado
+            const esActiva = pauta ? pauta.activo !== false : true;
             const mensaje = esActiva
                 ? `¿Qué deseas hacer con la pauta "${titulo}"?\n\n` +
                 `• Si no tiene sesiones registradas, se eliminará de inmediato.\n` +
@@ -793,6 +830,7 @@
             const total = lista.length;
             const completadas = lista.filter(f => Boolean(f.completado)).length;
             const alertas = lista.filter(f => Number(f.nivel_dolor ?? f.escala_dolor ?? 0) >= 6).length;
+            const sinResponder = lista.filter(f => !tieneRespuestaClinica(f)).length;
             const sumaEva = lista.reduce((acc, f) => acc + Number(f.nivel_dolor ?? f.escala_dolor ?? 0), 0);
             const promedio = total > 0 ? (sumaEva / total).toFixed(1) : '0.0';
 
@@ -800,6 +838,11 @@
             document.getElementById('kpi-completadas').textContent = `${completadas} / ${total}`;
             document.getElementById('kpi-promedio-eva').textContent = `${promedio} / 10`;
             document.getElementById('kpi-alertas-eva').textContent = alertas;
+
+            const pillSinResp = document.getElementById('pill-sin-responder');
+            if (pillSinResp) {
+                pillSinResp.textContent = `Sin Responder (${sinResponder})`;
+            }
         }
 
         function filtrarFeedback(tipo, btnEl) {
@@ -819,6 +862,17 @@
             if (!match) return null;
             const valor = match[1].replace(/\s+/g, '');
             return valor.includes('/') ? `Esfuerzo Borg: ${valor}` : `Esfuerzo Borg: ${valor}/10`;
+        }
+
+        function sincronizarSeleccionSugerencia() {
+            const textarea = document.getElementById('textarea-respuesta-kine');
+            const val = (textarea?.value || '').trim();
+            document.querySelectorAll('#lista-sugerencias-kine .btn-sugerencia-kine').forEach(btn => {
+                const textoBtn = btn.getAttribute('data-texto') || '';
+                const coincide = val === textoBtn;
+                btn.classList.toggle('seleccionada', coincide);
+                btn.textContent = coincide ? `✓ ${textoBtn}` : `• ${textoBtn}`;
+            });
         }
 
         function abrirModalResponderFeedback(feedbackId) {
@@ -848,6 +902,10 @@
 
             const textarea = document.getElementById('textarea-respuesta-kine');
             textarea.value = item.respuesta_kinesiologo || '';
+            sincronizarSeleccionSugerencia();
+
+            const badgeAplicada = document.getElementById('estado-sugerencia-aplicada');
+            if (badgeAplicada) badgeAplicada.style.display = 'none';
 
             const errEl = document.getElementById('modal-resp-error');
             errEl.style.display = 'none';
@@ -867,6 +925,25 @@
             const textarea = document.getElementById('textarea-respuesta-kine');
             if (!textarea) return;
             textarea.value = texto;
+            sincronizarSeleccionSugerencia();
+
+            const badgeAplicada = document.getElementById('estado-sugerencia-aplicada');
+            if (badgeAplicada) {
+                badgeAplicada.style.display = 'inline';
+                clearTimeout(badgeAplicada._timer);
+                badgeAplicada._timer = setTimeout(() => {
+                    badgeAplicada.style.display = 'none';
+                }, 1800);
+            }
+
+            textarea.classList.remove('textarea-flash');
+            void textarea.offsetWidth;
+            textarea.classList.add('textarea-flash');
+            clearTimeout(textarea._flashTimer);
+            textarea._flashTimer = setTimeout(() => {
+                textarea.classList.remove('textarea-flash');
+            }, 650);
+
             textarea.focus();
         }
 
@@ -884,6 +961,7 @@
 
             reportesBaseTodos = aplicarCambio(reportesBaseTodos);
             reportesCargados = aplicarCambio(reportesCargados);
+            actualizarKpisMonitoreo(reportesCargados);
             renderizarTablaFeedback();
         }
 
@@ -927,7 +1005,9 @@
             const noFeed = document.getElementById('no-feedback');
 
             let listaFiltrada = [...reportesCargados];
-            if (filtroFeedbackActual === 'alertas') {
+            if (filtroFeedbackActual === 'sin_responder') {
+                listaFiltrada = listaFiltrada.filter(f => !tieneRespuestaClinica(f));
+            } else if (filtroFeedbackActual === 'alertas') {
                 listaFiltrada = listaFiltrada.filter(f => Number(f.nivel_dolor ?? f.escala_dolor ?? 0) >= 6);
             } else if (filtroFeedbackActual === 'completados') {
                 listaFiltrada = listaFiltrada.filter(f => Boolean(f.completado));
@@ -972,7 +1052,7 @@
                     ? `<div style="color: var(--azul-900); font-size: 0.86rem;">${escaparHtml(parsed.textoLibre)}</div>`
                     : (!tagsHtml ? `<div style="color: var(--gris-400); font-style: italic; font-size: 0.84rem;">Sin observaciones adicionales</div>` : '');
 
-                const tieneRespuesta = Boolean(f.respuesta_kinesiologo && String(f.respuesta_kinesiologo).trim());
+                const tieneRespuesta = tieneRespuestaClinica(f);
                 const fechaRespFormateada = f.fecha_respuesta
                     ? new Date(f.fecha_respuesta).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })
                     : '';
@@ -991,8 +1071,8 @@
 
                 const botonResponderHtml = f.id != null
                     ? `<div style="margin-top: 8px;">
-                        <button type="button" class="btn btn-secondary btn-sm"
-                            style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; padding: 4px 9px;"
+                        <button type="button" class="btn ${tieneRespuesta ? 'btn-secondary' : 'btn-primary'} btn-sm"
+                            style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; padding: 4px 10px;"
                             onclick="abrirModalResponderFeedback('${escaparHtml(f.id)}')">
                             <i class='bx ${tieneRespuesta ? 'bx-edit' : 'bx-message-square-add'}'></i>
                             ${tieneRespuesta ? 'Editar respuesta' : 'Responder'}
@@ -1063,7 +1143,6 @@
 
             const paciente = pacientesRegistrados.find(p => normalizarRut(p.rut) === rutNorm);
 
-            // Filtra pautas asignadas a ese paciente (por ID de usuario o por coincidencia de nombre)
             const pautasPaciente = todasPautasBase.filter(p => {
                 if (p.es_plantilla) return false;
                 const pUserId = typeof p.paciente === 'object' && p.paciente !== null ? p.paciente.id : p.paciente;
