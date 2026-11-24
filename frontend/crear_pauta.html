@@ -416,19 +416,6 @@
             }[c]));
         }
 
-        function obtenerTokenJWT() {
-            const claves = ['access_token', 'access', 'token', 'kc_token', 'jwt'];
-            for (const k of claves) {
-                const v = localStorage.getItem(k);
-                if (v) return v.replace(/^"|"$/g, '');
-            }
-            for (let i = 0; i < localStorage.length; i++) {
-                const v = (localStorage.getItem(localStorage.key(i)) || '').replace(/^"|"$/g, '');
-                if (v.startsWith('eyJ') && v.split('.').length === 3) return v;
-            }
-            return null;
-        }
-
         function renderizarCarritoEdicion() {
             const cont = document.getElementById('carrito-items-container');
             const badge = document.getElementById('badge-total-items');
@@ -500,16 +487,10 @@
             if (btnVolver) btnVolver.classList.remove('is-hidden');
             if (btnGuardar) btnGuardar.innerHTML = `<i class='bx bx-save'></i> Guardar Cambios de Pauta`;
 
-            const token = obtenerTokenJWT();
-            const base = (typeof BACKEND_ORIGIN !== 'undefined' ? BACKEND_ORIGIN : 'https://kineconect-bmnsolutions.onrender.com');
-            const headers = token
-                ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
-                : { 'Content-Type': 'application/json' };
-
             try {
                 const [resPauta, resEjs] = await Promise.all([
-                    fetch(`${base}/api/v1/pautas/${editId}/`, { headers }),
-                    fetch(`${base}/api/v1/ejercicios/`, { headers })
+                    api.fetchConSesion(`/api/v1/pautas/${editId}/`),
+                    api.fetchConSesion('/api/v1/ejercicios/')
                 ]);
 
                 if (!resPauta.ok) throw new Error(`Error ${resPauta.status} al cargar la pauta.`);
@@ -645,9 +626,8 @@
                                 })),
                             };
 
-                            const respPatch = await fetch(`${base}/api/v1/pautas/${editId}/`, {
+                            const respPatch = await api.fetchConSesion(`/api/v1/pautas/${editId}/`, {
                                 method: 'PATCH',
-                                headers,
                                 body: JSON.stringify(payload),
                             });
 

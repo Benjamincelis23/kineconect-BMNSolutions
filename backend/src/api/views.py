@@ -60,10 +60,8 @@ def _pacientes_visibles(user):
     """Perfiles de pacientes que el usuario puede ver."""
     if _es_admin(user):
         return Perfil.objects.filter(rol='PACIENTE')
-    qs = Perfil.objects.filter(rol='PACIENTE', kinesiologo_asignado=user)
-    if not qs.exists() and settings.DEBUG:
-        return Perfil.objects.filter(rol='PACIENTE')
-    return qs
+    # H-29: sin fallbacks por DEBUG; un kine sin asignados ve una lista vacía.
+    return Perfil.objects.filter(rol='PACIENTE', kinesiologo_asignado=user)
 
 
 def _inicio_ciclo_pauta(pauta):
@@ -85,6 +83,15 @@ class SoloLecturaParaPacientes(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
         return _es_admin(user) or _rol(user) != 'PACIENTE'
+
+
+class EsKinesiologo(permissions.BasePermission):
+    """Solo kinesiólogos (Perfil.rol == 'KINE') o administradores (H-21)."""
+    message = 'Esta acción está reservada para kinesiólogos.'
+
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(user and user.is_authenticated and (_es_admin(user) or _rol(user) == 'KINE'))
 
 
 # =========================================================
@@ -547,14 +554,16 @@ def _construir_resumen_clinico(user, pautas_qs):
 # VIEWSETS PRINCIPALES (WEB Y API REST)
 # =========================================================
 
-class PerfilViewSet(viewsets.ModelViewSet):
+class PerfilViewSet(viewsets.ReadOnlyModelViewSet):
+    """Perfil propio en solo lectura. Rol, RUT y kinesiólogo asignado los gestiona un admin.
+    Las acciones (registrar-paciente, mis-pacientes, alertas-abandono) declaran sus propios métodos."""
     serializer_class = PerfilSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         return Perfil.objects.filter(user=self.request.user)
 
-    @action(detail=False, methods=['post'], url_path='registrar-paciente')
+    @action(detail=False, methods=['post'], url_path='registrar-paciente', permission_classes=[EsKinesiologo])
     def registrar_paciente(self, request):
         serializer = PacienteRegistroSerializer(data=request.data, context={'request': request})
         if not serializer.is_valid():
@@ -571,12 +580,12 @@ class PerfilViewSet(viewsets.ModelViewSet):
             "password_temporal": password_temporal,
         }, status=status.HTTP_201_CREATED)
 
-    @action(detail=False, methods=['get'], url_path='mis-pacientes')
+    @action(detail=False, methods=['get'], url_path='mis-pacientes', permission_classes=[EsKinesiologo])
     def mis_pacientes(self, request):
         serializer = PerfilSerializer(_pacientes_visibles(request.user), many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'], url_path='alertas-abandono')
+    @action(detail=False, methods=['get'], url_path='alertas-abandono', permission_classes=[EsKinesiologo])
     def alertas_abandono(self, request):
         return Response(_calcular_alertas_abandono(request.user), status=status.HTTP_200_OK)
 
@@ -622,10 +631,8 @@ class PautaViewSet(viewsets.ModelViewSet):
                     | Q(paciente__perfil__kinesiologo_asignado=user)
                     | Q(es_plantilla=True)
                 ).distinct()
-                if not qs.exists() and settings.DEBUG:
-                    qs = base_qs
             else:
-                qs = base_qs if settings.DEBUG else base_qs.none()
+                qs = base_qs.none()  # H-29: usuario sin perfil/rol no ve nada, también con DEBUG
 
         es_plantilla_param = self.request.query_params.get('es_plantilla')
         if es_plantilla_param is not None:
@@ -663,6 +670,9 @@ class PautaViewSet(viewsets.ModelViewSet):
                 fecha_ejecucion__gte=_inicio_ciclo_pauta(instance),
             ).count()
 
+            # H-27: 'ahora' se definía solo dentro del if y se usaba fuera → UnboundLocalError (500).
+            # Nota: hechas_ciclo se calcula después de serializer.save() (auto_now en actualizado_en),
+            # así que hoy siempre vale 0; la lógica de "conservar el ciclo" queda pendiente (ver REVISION.md).
             ahora = timezone.now()
             if hasattr(instance, 'actualizado_en'):
                 instance.actualizado_en = ahora
@@ -782,14 +792,11 @@ class RegistroFeedbackViewSet(viewsets.ModelViewSet):
             return base.filter(pauta__paciente=user)
 
         if rol == 'KINE':
-            qs = base.filter(
+            return base.filter(
                 Q(pauta__kinesiologo=user) | Q(pauta__paciente__perfil__kinesiologo_asignado=user)
             ).distinct()
-            if not qs.exists() and settings.DEBUG:
-                return base
-            return qs
 
-        return base if settings.DEBUG else base.none()
+        return base.none()  # H-29: usuario sin perfil/rol no ve nada, también con DEBUG
 
     def perform_create(self, serializer):
         user = self.request.user

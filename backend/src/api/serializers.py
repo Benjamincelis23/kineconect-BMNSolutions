@@ -38,6 +38,9 @@ class PacienteRegistroSerializer(serializers.ModelSerializer):
         rut_valido = validar_rut_chileno(value)
         if Perfil.objects.filter(rut=rut_valido).exists():
             raise serializers.ValidationError("Este RUT ya se encuentra registrado en el sistema.")
+        username = rut_valido.replace('-', '').replace('.', '').upper()
+        if User.objects.filter(username=username).exists():
+            raise serializers.ValidationError("Ya existe una cuenta de usuario asociada a este RUT.")
         return rut_valido
 
     def create(self, validated_data):
@@ -84,6 +87,8 @@ class PerfilSerializer(serializers.ModelSerializer):
     class Meta:
         model = Perfil
         fields = ('id', 'user_id', 'user', 'rut', 'rol', 'nombre_completo', 'email', 'kinesiologo_asignado')
+        # H-20: nunca editables por el propio usuario vía API
+        read_only_fields = ('rut', 'rol', 'kinesiologo_asignado')
 
     def get_user(self, obj):
         return {
