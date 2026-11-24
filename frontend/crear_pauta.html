@@ -501,7 +501,7 @@
             if (btnGuardar) btnGuardar.innerHTML = `<i class='bx bx-save'></i> Guardar Cambios de Pauta`;
 
             const token = obtenerTokenJWT();
-            const base = (typeof BACKEND_ORIGIN !== 'undefined' ? BACKEND_ORIGIN : 'https://kineconect-bmnsolutions.onrender.com');
+            const base = BACKEND_ORIGIN;
             const headers = token
                 ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
                 : { 'Content-Type': 'application/json' };

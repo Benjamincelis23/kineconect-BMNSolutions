@@ -1,5 +1,10 @@
-const API_BASE_URL = 'https://kineconect-bmnsolutions.onrender.com/api/v1';
-const BACKEND_ORIGIN = 'https://kineconect-bmnsolutions.onrender.com';
+// Backend según dónde corre la web: local -> runserver, cualquier otro host -> Render.
+const BACKEND_ORIGIN = (() => {
+    const host = window.location.hostname;
+    const esLocal = host === 'localhost' || host === '127.0.0.1' || host === '';  // '' = file://
+    return esLocal ? 'http://127.0.0.1:8000' : 'https://kineconect-bmnsolutions.onrender.com';
+})();
+const API_BASE_URL = `${BACKEND_ORIGIN}/api/v1`;
 
 const api = {
     // ==========================================

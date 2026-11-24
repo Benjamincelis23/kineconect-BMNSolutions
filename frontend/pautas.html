@@ -471,7 +471,7 @@
         async function cargarPacientesParaInforme() {
             try {
                 const token = obtenerTokenLocal();
-                const base = (typeof BACKEND_ORIGIN !== 'undefined' ? BACKEND_ORIGIN : 'https://kineconect-bmnsolutions.onrender.com');
+                const base = BACKEND_ORIGIN;
                 const res = await fetch(`${base}/api/v1/perfiles/mis-pacientes/`, {
                     headers: token ? { Authorization: `Bearer ${token}` } : {}
                 });
@@ -555,7 +555,7 @@
 
             try {
                 const token = obtenerTokenLocal();
-                const base = (typeof BACKEND_ORIGIN !== 'undefined' ? BACKEND_ORIGIN : 'https://kineconect-bmnsolutions.onrender.com');
+                const base = BACKEND_ORIGIN;
                 const res = await fetch(`${base}/api/v1/pautas/${pautaId}/`, {
                     method: 'PATCH',
                     headers: {
@@ -589,7 +589,7 @@
 
             try {
                 const token = obtenerTokenLocal();
-                const base = (typeof BACKEND_ORIGIN !== 'undefined' ? BACKEND_ORIGIN : 'https://kineconect-bmnsolutions.onrender.com');
+                const base = BACKEND_ORIGIN;
                 const query = esActiva ? '' : '?forzar=true';
                 const res = await fetch(`${base}/api/v1/pautas/${pautaId}/${query}`, {
                     method: 'DELETE',
@@ -1416,7 +1416,7 @@
 
             async function fetchListaApi(rutas) {
                 const token = obtenerTokenLocal();
-                const base = window.API_BASE_URL || 'https://kineconect-bmnsolutions.onrender.com';
+                const base = BACKEND_ORIGIN;
                 for (const ruta of rutas) {
                     try {
                         const res = await fetch(`${base}${ruta}`, {
