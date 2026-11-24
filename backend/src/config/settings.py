@@ -2,6 +2,8 @@ from pathlib import Path
 from datetime import timedelta
 import os
 
+from django.core.exceptions import ImproperlyConfigured
+
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -10,9 +12,20 @@ except ImportError:
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-kineconect-dev-key-cambiar-en-prod')
-
 DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 'yes')
+
+# H-04: fuera de DEBUG, SECRET_KEY es obligatoria y no puede ser la clave de desarrollo
+# (es pública en el repo y SimpleJWT firma los tokens con ella).
+_SECRET_KEY_DESARROLLO = 'django-insecure-kineconect-dev-key-cambiar-en-prod'
+SECRET_KEY = os.environ.get('SECRET_KEY', '').strip()
+if not SECRET_KEY:
+    if not DEBUG:
+        raise ImproperlyConfigured(
+            'Falta la variable de entorno SECRET_KEY (obligatoria con DEBUG=False).'
+        )
+    SECRET_KEY = _SECRET_KEY_DESARROLLO
+elif not DEBUG and SECRET_KEY == _SECRET_KEY_DESARROLLO:
+    raise ImproperlyConfigured('SECRET_KEY no puede ser la clave de desarrollo con DEBUG=False.')
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
