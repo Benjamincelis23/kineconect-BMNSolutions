@@ -34,6 +34,76 @@
             border-color: #334155 !important;
         }
 
+        .inbox-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .inbox-card {
+            display: grid;
+            grid-template-columns: minmax(220px, 290px) 1fr;
+            gap: 16px;
+            padding: 16px 18px;
+            border-radius: 12px;
+            border: 1px solid var(--gris-200);
+            border-left-width: 4px;
+            background: var(--blanco, #ffffff);
+            transition: box-shadow 0.16s ease;
+        }
+
+        .inbox-card:hover {
+            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.07);
+        }
+
+        .inbox-card.sev-alta {
+            border-left-color: #ef4444;
+        }
+
+        .inbox-card.sev-media {
+            border-left-color: #f59e0b;
+        }
+
+        .inbox-card.sev-baja {
+            border-left-color: #10b981;
+        }
+
+        .inbox-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            border-right: 1px solid var(--gris-200);
+            padding-right: 14px;
+        }
+
+        .inbox-body {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        @media (max-width: 760px) {
+            .inbox-card {
+                grid-template-columns: 1fr;
+            }
+            .inbox-meta {
+                border-right: none;
+                border-bottom: 1px solid var(--gris-200);
+                padding-right: 0;
+                padding-bottom: 10px;
+            }
+        }
+
+        [data-theme="dark"] .inbox-card {
+            background: #162236;
+            border-color: #24344d;
+        }
+
+        [data-theme="dark"] .inbox-meta {
+            border-color: #24344d;
+        }
+
         .btn-sugerencia-kine {
             justify-content: flex-start !important;
             text-align: left !important;
@@ -64,7 +134,7 @@
     </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consultas y Reportes - KineConnect</title>
+    <title>Bandeja de Reportes - KineConnect</title>
     <link rel="stylesheet" href="public/css/style.css">
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 </head>
@@ -77,8 +147,8 @@
                 <!-- ENCABEZADO -->
                 <div class="page-header" style="flex-wrap: wrap; gap: 12px;">
                     <div>
-                        <h2>Consultas y Reportes de Pacientes</h2>
-                        <p>Revisa las evaluaciones post-sesión enviadas desde la app móvil, responde consultas o déjalas en visto.</p>
+                        <h2>Bandeja de Reportes</h2>
+                        <p>Triage clínico de sesiones ejecutadas en la app móvil: prioriza dolores altos, responde o deja en visto.</p>
                     </div>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                         <select id="select-filtro-paciente" onchange="aplicarFiltroPacienteUI(this.value)"
@@ -92,8 +162,7 @@
                     </div>
                 </div>
 
-                <!-- KPIS COMPACTOS -->
-                <!-- KPIS DE CONSULTAS Y REPORTES -->
+                <!-- KPIS DE TRIAGE -->
                 <div
                     style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 22px;">
                     <div class="card"
@@ -144,13 +213,14 @@
                         </div>
                     </div>
                 </div>
-                <!-- BANDEJA DE EVALUACIONES Y MENSAJES -->
-                <div class="card">
+
+                <!-- BARRA DE FILTROS + BANDEJA DE TARJETAS -->
+                <div class="card" style="margin-bottom: 16px; padding: 14px 18px;">
                     <div
-                        style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
-                        <h3 style="margin: 0; font-size: 1.05rem; color: var(--azul-900);">
-                            Bandeja de Reportes Post-Sesión
-                        </h3>
+                        style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <strong style="font-size: 0.96rem; color: var(--azul-900);">
+                            Feed de Sesiones Reportadas
+                        </strong>
 
                         <div style="display: flex; gap: 6px; flex-wrap: wrap;" id="filtros-feedback-container">
                             <button type="button" id="pill-sin-revisar" class="filtro-biomecanico-pill activo-todos"
@@ -163,32 +233,19 @@
                                 onclick="filtrarFeedback('revisados', this)">Revisados / Vistos</button>
                         </div>
                     </div>
+                </div>
 
-                    <div id="loading-feedback" class="empty-state">
-                        <i class='bx bx-loader-alt bx-spin loading-icon'></i>
-                        <p class="loading-text">Cargando reportes...</p>
-                    </div>
+                <div id="loading-feedback" class="card empty-state">
+                    <i class='bx bx-loader-alt bx-spin loading-icon'></i>
+                    <p class="loading-text">Cargando reportes...</p>
+                </div>
 
-                    <div id="container-tabla-feedback" class="is-hidden" style="overflow-x: auto;">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Paciente y Pauta</th>
-                                    <th>Cumplimiento</th>
-                                    <th>Dolor y Esfuerzo</th>
-                                    <th>Observaciones y Gestión</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tbody-feedback"></tbody>
-                        </table>
-                    </div>
+                <div id="lista-inbox-feedback" class="inbox-list is-hidden"></div>
 
-                    <div id="no-feedback" class="empty-state is-hidden">
-                        <i class='bx bx-check-circle'
-                            style="font-size: 2.2rem; color: var(--verde-500); margin-bottom: 8px;"></i>
-                        <p class="empty-text" style="margin: 0; font-size: 0.9rem;">No hay reportes pendientes en esta vista.</p>
-                    </div>
+                <div id="no-feedback" class="card empty-state is-hidden">
+                    <i class='bx bx-check-circle'
+                        style="font-size: 2.2rem; color: var(--verde-500); margin-bottom: 8px;"></i>
+                    <p class="empty-text" style="margin: 0; font-size: 0.9rem;">No hay reportes pendientes en esta vista.</p>
                 </div>
 
             </div>
@@ -354,7 +411,7 @@
             vistos[String(feedbackId)] = new Date().toISOString();
             guardarVistosKine(vistos);
             actualizarKpis(reportesCargados);
-            renderizarTablaFeedback();
+            renderizarBandejaFeedback();
         }
 
         function desmarcarReporteEnVisto(feedbackId) {
@@ -362,7 +419,7 @@
             delete vistos[String(feedbackId)];
             guardarVistosKine(vistos);
             actualizarKpis(reportesCargados);
-            renderizarTablaFeedback();
+            renderizarBandejaFeedback();
         }
 
         async function cargarPacientesFiltro() {
@@ -423,7 +480,7 @@
                 b.className = 'filtro-biomecanico-pill';
             });
             if (btnEl) btnEl.classList.add('activo-todos');
-            renderizarTablaFeedback();
+            renderizarBandejaFeedback();
         }
 
         function sincronizarSeleccionSugerencia() {
@@ -524,7 +581,7 @@
             reportesBaseTodos = aplicarCambio(reportesBaseTodos);
             reportesCargados = aplicarCambio(reportesCargados);
             actualizarKpis(reportesCargados);
-            renderizarTablaFeedback();
+            renderizarBandejaFeedback();
         }
 
         async function guardarRespuestaFeedback() {
@@ -561,9 +618,8 @@
             }
         }
 
-        function renderizarTablaFeedback() {
-            const containerFeed = document.getElementById('container-tabla-feedback');
-            const tbodyFeed = document.getElementById('tbody-feedback');
+        function renderizarBandejaFeedback() {
+            const listaInbox = document.getElementById('lista-inbox-feedback');
             const noFeed = document.getElementById('no-feedback');
 
             let listaFiltrada = [...reportesCargados];
@@ -576,17 +632,18 @@
             }
 
             if (listaFiltrada.length === 0) {
-                containerFeed.classList.add('is-hidden');
+                listaInbox.classList.add('is-hidden');
                 noFeed.classList.remove('is-hidden');
                 return;
             }
 
             noFeed.classList.add('is-hidden');
-            containerFeed.classList.remove('is-hidden');
-            tbodyFeed.innerHTML = '';
+            listaInbox.classList.remove('is-hidden');
+            listaInbox.innerHTML = '';
 
             listaFiltrada.forEach(f => {
                 const dolor = Number(f.nivel_dolor ?? f.escala_dolor ?? 0);
+                const sevClass = dolor >= 6 ? 'sev-alta' : (dolor >= 4 ? 'sev-media' : 'sev-baja');
                 const badgeColor = dolor >= 6 ? 'badge-alerta' : (dolor >= 4 ? 'badge-neutro' : 'badge-ok');
                 const textoEva = describirNivelEva(dolor);
                 const borgBadgeTexto = extraerEsfuerzoBorg(f.comentario);
@@ -597,7 +654,7 @@
                 const pautaId = typeof f.pauta === 'object' && f.pauta !== null ? f.pauta.id : f.pauta;
                 const infoPauta = mapaPautas[pautaId] || {};
                 const tituloRutina = f.pauta_titulo || infoPauta.titulo || `Pauta #${pautaId || 'N/A'}`;
-                const nombrePaciente = f.paciente_nombre || infoPauta.paciente_nombre || '';
+                const nombrePaciente = f.paciente_nombre || infoPauta.paciente_nombre || 'Paciente';
 
                 const parsed = parsearComentarioApp(f.comentario);
                 const completadoBadge = f.completado
@@ -605,14 +662,14 @@
                     : '<span class="badge badge-alerta">Incompleta</span>';
 
                 const tagsHtml = parsed.tags.length > 0
-                    ? `<div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: ${parsed.textoLibre ? '5px' : '0'};">
+                    ? `<div style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px;">
                         ${parsed.tags.map(t => `<span class="badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 0.72rem;">${escaparHtml(t)}</span>`).join('')}
                        </div>`
                     : '';
 
                 const textoHtml = parsed.textoLibre
-                    ? `<div style="color: var(--azul-900); font-size: 0.86rem;">${escaparHtml(parsed.textoLibre)}</div>`
-                    : (!tagsHtml ? `<div style="color: var(--gris-400); font-style: italic; font-size: 0.84rem;">Sin observaciones adicionales</div>` : '');
+                    ? `<div style="color: var(--azul-900); font-size: 0.9rem; line-height: 1.45;">"${escaparHtml(parsed.textoLibre)}"</div>`
+                    : (!tagsHtml ? `<div style="color: var(--gris-500); font-style: italic; font-size: 0.85rem;">Sin observaciones escritas por el paciente.</div>` : '');
 
                 const tieneRespuesta = tieneRespuestaClinica(f);
                 const enVisto = !tieneRespuesta && estaEnVistoKine(f);
@@ -620,21 +677,21 @@
                     ? new Date(f.fecha_respuesta).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })
                     : '';
 
-                let estadoRespuestaHtml = '';
+                let hiloRespuestaHtml = '';
                 if (tieneRespuesta) {
-                    estadoRespuestaHtml = `
-                        <div style="margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: rgba(2, 132, 199, 0.10); border-left: 3px solid #0284c7;">
+                    hiloRespuestaHtml = `
+                        <div style="padding: 9px 12px; border-radius: 9px; background: rgba(2, 132, 199, 0.09); border-left: 3px solid #0284c7;">
                             <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 3px;">
-                                <span style="font-size: 0.74rem; font-weight: 800; color: #0284c7;">Respuesta enviada</span>
-                                ${fechaRespFormateada ? `<span style="font-size: 0.7rem; color: var(--gris-500);">${escaparHtml(fechaRespFormateada)}</span>` : ''}
+                                <span style="font-size: 0.75rem; font-weight: 800; color: #0284c7;">Tu indicación clínica</span>
+                                ${fechaRespFormateada ? `<span style="font-size: 0.71rem; color: var(--gris-500);">${escaparHtml(fechaRespFormateada)}</span>` : ''}
                             </div>
-                            <div style="font-size: 0.82rem; line-height: 1.35;">${escaparHtml(f.respuesta_kinesiologo)}</div>
+                            <div style="font-size: 0.85rem; line-height: 1.4; color: var(--azul-900);">${escaparHtml(f.respuesta_kinesiologo)}</div>
                         </div>
                     `;
                 } else if (enVisto) {
-                    estadoRespuestaHtml = `
-                        <div style="margin-top: 8px;">
-                            <span class="badge badge-neutro" style="font-size: 0.73rem;">✓ Dejado en visto (sin respuesta escrita)</span>
+                    hiloRespuestaHtml = `
+                        <div>
+                            <span class="badge badge-neutro" style="font-size: 0.74rem;">✓ Dejado en visto</span>
                         </div>
                     `;
                 }
@@ -642,26 +699,34 @@
                 const botonVistoHtml = !tieneRespuesta && f.id != null
                     ? (enVisto
                         ? `<button type="button" class="btn btn-secondary btn-sm"
-                            style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; padding: 4px 10px;"
+                            style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem;"
                             onclick="desmarcarReporteEnVisto('${escaparHtml(f.id)}')">
                             <i class='bx bx-undo'></i> Marcar pendiente
                            </button>`
                         : `<button type="button" class="btn btn-secondary btn-sm"
-                            style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; padding: 4px 10px;"
+                            style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem;"
                             onclick="marcarReporteEnVisto('${escaparHtml(f.id)}')">
                             <i class='bx bx-check'></i> Dejar en visto
                            </button>`)
                     : '';
 
-                const botonResponderHtml = f.id != null
-                    ? `<div style="margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap;">
+                const botonAjustarHtml = (dolor >= 6 && pautaId)
+                    ? `<a href="crear_pauta.html?editar=${encodeURIComponent(pautaId)}" class="btn btn-secondary btn-sm"
+                        style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem;">
+                        <i class='bx bx-slider-alt'></i> Ajustar pauta
+                       </a>`
+                    : '';
+
+                const accionesHtml = f.id != null
+                    ? `<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                         <button type="button" class="btn ${tieneRespuesta || enVisto ? 'btn-secondary' : 'btn-primary'} btn-sm"
-                            style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; padding: 4px 10px;"
+                            style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem;"
                             onclick="abrirModalResponderFeedback('${escaparHtml(f.id)}')">
                             <i class='bx ${tieneRespuesta ? 'bx-edit' : 'bx-message-square-add'}'></i>
                             ${tieneRespuesta ? 'Editar respuesta' : 'Responder'}
                         </button>
                         ${botonVistoHtml}
+                        ${botonAjustarHtml}
                        </div>`
                     : '';
 
@@ -669,35 +734,35 @@
                     ? new Date(f.fecha_ejecucion).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })
                     : 'N/A';
 
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td style="white-space: nowrap; font-size: 0.85rem; color: var(--gris-700);">${fecha}</td>
-                    <td>
-                        <strong style="color: var(--azul-900); display: block; font-size: 0.9rem;">${escaparHtml(tituloRutina)}</strong>
-                        <span style="font-size: 0.78rem; color: var(--gris-600);">
-                            ${nombrePaciente ? `${escaparHtml(nombrePaciente)} • ` : ''}ID #${pautaId || 'N/A'}
-                        </span>
-                    </td>
-                    <td>
-                        <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">
-                            ${completadoBadge}
-                            ${parsed.seriesInfo ? `<span style="font-size: 0.76rem; color: var(--gris-600); font-weight: 600;">${escaparHtml(parsed.seriesInfo)}</span>` : ''}
+                const card = document.createElement('div');
+                card.className = `inbox-card ${sevClass}`;
+                card.innerHTML = `
+                    <div class="inbox-meta">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                            <strong style="color: var(--azul-900); font-size: 0.95rem;">${escaparHtml(nombrePaciente)}</strong>
+                            <span style="font-size: 0.75rem; color: var(--gris-500); white-space: nowrap;">${fecha}</span>
                         </div>
-                    </td>
-                    <td>
-                        <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 5px;">
+                        <span style="font-size: 0.82rem; font-weight: 600; color: #0284c7;">
+                            ${escaparHtml(tituloRutina)}
+                        </span>
+                        <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px;">
                             <span class="badge ${badgeColor}" style="font-weight: 700;">EVA ${dolor}/10 • ${textoEva}</span>
                             ${borgBadgeHtml}
+                            ${completadoBadge}
                         </div>
-                    </td>
-                    <td>
-                        ${tagsHtml}
-                        ${textoHtml}
-                        ${estadoRespuestaHtml}
-                        ${botonResponderHtml}
-                    </td>
+                        ${parsed.seriesInfo ? `<span style="font-size: 0.76rem; color: var(--gris-600);">${escaparHtml(parsed.seriesInfo)}</span>` : ''}
+                    </div>
+
+                    <div class="inbox-body">
+                        <div>
+                            ${tagsHtml}
+                            ${textoHtml}
+                        </div>
+                        ${hiloRespuestaHtml}
+                        ${accionesHtml}
+                    </div>
                 `;
-                tbodyFeed.appendChild(tr);
+                listaInbox.appendChild(card);
             });
         }
 
@@ -725,18 +790,18 @@
             }
 
             actualizarKpis(reportesCargados);
-            renderizarTablaFeedback();
+            renderizarBandejaFeedback();
         }
 
         async function cargarTodo() {
             const loadingFeed = document.getElementById('loading-feedback');
-            const containerFeed = document.getElementById('container-tabla-feedback');
+            const listaInbox = document.getElementById('lista-inbox-feedback');
             const noFeed = document.getElementById('no-feedback');
             const params = new URLSearchParams(window.location.search);
             const pacienteFiltro = params.get('paciente') || '';
 
             if (loadingFeed) loadingFeed.classList.remove('is-hidden');
-            if (containerFeed) containerFeed.classList.add('is-hidden');
+            if (listaInbox) listaInbox.classList.add('is-hidden');
             if (noFeed) noFeed.classList.add('is-hidden');
 
             try {

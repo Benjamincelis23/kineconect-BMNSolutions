@@ -28,11 +28,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let tituloPagina = 'Panel Clínico';
     if (isInicio) tituloPagina = 'Resumen Clínico';
-    else if (isCrearPauta) tituloPagina = 'Nueva Pauta';
+    else if (isCrearPauta) tituloPagina = 'Prescripción Biomecánica';
     else if (isEjercicios) tituloPagina = 'Catálogo de Ejercicios';
-    else if (isPautas) tituloPagina = 'Pautas Prescritas';
-    else if (isMensajes) tituloPagina = 'Consultas y Reportes';
-    else if (isPacientes) tituloPagina = 'Pacientes';
+    else if (isPautas) tituloPagina = 'Pautas y Plantillas';
+    else if (isMensajes) tituloPagina = 'Bandeja de Reportes';
+    else if (isPacientes) tituloPagina = 'Gestión de Pacientes';
 
     const sidebarHTML = `
         <aside class="sidebar" id="sidebar">
@@ -72,13 +72,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     <i class='bx bx-dumbbell'></i> Catálogo Ejercicios
                 </a>
                 <a href="pautas.html" class="${isPautas ? 'active' : ''}">
-                    <i class='bx bx-clipboard'></i> Pautas Prescritas
+                    <i class='bx bx-clipboard'></i> Pautas y Plantillas
                 </a>
                 <a href="mensajes.html" class="${isMensajes ? 'active' : ''}">
-                    <i class='bx bx-message-square-detail'></i> Consultas y Reportes
+                    <i class='bx bx-message-square-detail'></i> Bandeja de Reportes
                 </a>
                 <a href="pacientes.html" class="${isPacientes ? 'active' : ''}">
-                    <i class='bx bx-group'></i> Pacientes
+                    <i class='bx bx-group'></i> Gestión Pacientes
                 </a>
             </nav>
             <div class="sidebar-footer">

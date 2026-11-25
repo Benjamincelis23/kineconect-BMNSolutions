@@ -19,10 +19,82 @@
             background-color: #162236;
             color: #f8fafc;
         }
+
+        .pautas-tabs-bar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--gris-200);
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+        }
+
+        .pauta-tab-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--gris-200);
+            background: var(--gris-50, #f8fafc);
+            color: var(--gris-700);
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.16s ease;
+        }
+
+        .pauta-tab-btn:hover {
+            border-color: #0284c7;
+            color: #0284c7;
+        }
+
+        .pauta-tab-btn.active {
+            background: #0284c7;
+            border-color: #0284c7;
+            color: #ffffff;
+        }
+
+        .pauta-tab-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1px 7px;
+            border-radius: 999px;
+            font-size: 0.74rem;
+            font-weight: 800;
+            background: rgba(15, 23, 42, 0.08);
+            color: inherit;
+        }
+
+        .pauta-tab-btn.active .pauta-tab-count {
+            background: rgba(255, 255, 255, 0.22);
+            color: #ffffff;
+        }
+
+        [data-theme="dark"] .pautas-tabs-bar {
+            border-bottom-color: #24344d;
+        }
+
+        [data-theme="dark"] .pauta-tab-btn {
+            background: #0f1929;
+            border-color: #24344d;
+            color: #cbd5e1;
+        }
+
+        [data-theme="dark"] .pauta-tab-btn.active {
+            background: #0284c7;
+            border-color: #0284c7;
+            color: #ffffff;
+        }
+
+        [data-theme="dark"] .pauta-tab-count {
+            background: rgba(255, 255, 255, 0.1);
+        }
     </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pautas Prescritas - KineConnect</title>
+    <title>Pautas y Plantillas - KineConnect</title>
     <link rel="stylesheet" href="public/css/style.css">
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 </head>
@@ -35,8 +107,8 @@
                 <!-- ENCABEZADO -->
                 <div class="page-header" style="flex-wrap: wrap; gap: 12px;">
                     <div>
-                        <h2>Pautas Prescritas</h2>
-                        <p>Administra las rutinas asignadas a tus pacientes, plantillas maestras e informes clínicos.</p>
+                        <h2>Pautas y Plantillas</h2>
+                        <p>Configura las rutinas prescritas a tus pacientes y administra tus protocolos reutilizables.</p>
                     </div>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                         <select id="select-filtro-paciente" onchange="aplicarFiltroPacienteUI(this.value)"
@@ -44,69 +116,29 @@
                             style="height: 38px; padding: 0 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
                             <option value="">Todos los pacientes</option>
                         </select>
-                        <button type="button" class="btn btn-secondary" onclick="abrirModalInformeRut()">
-                            <i class='bx bxs-file-pdf' style="color: #ef4444;"></i> Informe Clínico (RUT)
-                        </button>
-                        <a href="mensajes.html" class="btn btn-secondary">
-                            <i class='bx bx-message-square-detail'></i> Ver Reportes y Mensajes
-                        </a>
                         <a href="crear_pauta.html" class="btn btn-primary">
                             <i class='bx bx-plus'></i> Nueva Pauta
                         </a>
                     </div>
                 </div>
 
-                <!-- RESUMEN COMPACTO DE PAUTAS -->
-                <!-- RESUMEN DE PAUTAS -->
-                <div
-                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 22px;">
-                    <div class="card"
-                        style="padding: 16px 18px; display: flex; align-items: center; gap: 14px; border-left: 4px solid #0284c7;">
-                        <div
-                            style="width: 42px; height: 42px; border-radius: 12px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">
-                            <i class='bx bx-clipboard'></i>
-                        </div>
-                        <div>
-                            <span style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--gris-600);">Pautas Activas</span>
-                            <strong id="kpi-pautas-activas" style="font-size: 1.45rem; color: var(--azul-900);">0</strong>
-                        </div>
-                    </div>
-
-                    <div class="card"
-                        style="padding: 16px 18px; display: flex; align-items: center; gap: 14px; border-left: 4px solid #10b981;">
-                        <div
-                            style="width: 42px; height: 42px; border-radius: 12px; background: #d1fae5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">
-                            <i class='bx bx-bookmark-alt'></i>
-                        </div>
-                        <div>
-                            <span style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--gris-600);">Plantillas Maestras</span>
-                            <strong id="kpi-plantillas" style="font-size: 1.45rem; color: var(--azul-900);">0</strong>
-                        </div>
-                    </div>
-
-                    <div class="card"
-                        style="padding: 16px 18px; display: flex; align-items: center; gap: 14px; border-left: 4px solid #f59e0b;">
-                        <div
-                            style="width: 42px; height: 42px; border-radius: 12px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">
-                            <i class='bx bx-archive'></i>
-                        </div>
-                        <div>
-                            <span style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--gris-600);">Pautas Archivadas</span>
-                            <strong id="kpi-archivadas" style="font-size: 1.45rem; color: var(--azul-900);">0</strong>
-                        </div>
-                    </div>
-                </div>
-                <!-- LISTADO DE PAUTAS DE EJERCICIOS PRESCRITAS -->
+                <!-- CONTENEDOR PRINCIPAL CON PESTAÑAS -->
                 <div class="card">
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
-                        <h3 style="margin: 0; font-size: 1.05rem; color: var(--azul-900);">
-                            Rutinas Asignadas y Protocolos
-                        </h3>
-
-                        <button type="button" id="btn-toggle-archivadas" class="btn btn-secondary btn-sm is-hidden"
-                            onclick="toggleMostrarArchivadas()">
-                            <i class='bx bx-archive'></i> Ver archivadas (0)
+                    <div class="pautas-tabs-bar" role="tablist">
+                        <button type="button" id="tab-btn-asignadas" class="pauta-tab-btn active"
+                            onclick="cambiarTabPautas('asignadas')">
+                            <i class='bx bx-user-check'></i> Asignadas
+                            <span id="count-tab-asignadas" class="pauta-tab-count">0</span>
+                        </button>
+                        <button type="button" id="tab-btn-plantillas" class="pauta-tab-btn"
+                            onclick="cambiarTabPautas('plantillas')">
+                            <i class='bx bx-bookmark-alt'></i> Plantillas Maestras
+                            <span id="count-tab-plantillas" class="pauta-tab-count">0</span>
+                        </button>
+                        <button type="button" id="tab-btn-archivadas" class="pauta-tab-btn"
+                            onclick="cambiarTabPautas('archivadas')">
+                            <i class='bx bx-archive'></i> Archivadas
+                            <span id="count-tab-archivadas" class="pauta-tab-count">0</span>
                         </button>
                     </div>
 
@@ -120,8 +152,8 @@
                             <thead>
                                 <tr>
                                     <th>Título de la Pauta</th>
-                                    <th>Paciente Asignado</th>
-                                    <th>Ejercicios</th>
+                                    <th id="col-destino-header">Paciente Asignado</th>
+                                    <th>Dosificación</th>
                                     <th>Fecha Creación</th>
                                     <th>Estado</th>
                                     <th>Acciones</th>
@@ -134,7 +166,7 @@
                     <div id="no-pautas" class="empty-state is-hidden">
                         <i class='bx bx-folder-open'
                             style="font-size: 2.2rem; color: var(--gris-400); margin-bottom: 8px;"></i>
-                        <p class="empty-text" style="margin: 0; font-size: 0.9rem;">No hay pautas activas para mostrar.</p>
+                        <p id="no-pautas-texto" class="empty-text" style="margin: 0; font-size: 0.9rem;">No hay pautas en esta categoría.</p>
                     </div>
                 </div>
 
@@ -184,64 +216,14 @@
         </div>
     </div>
 
-    <!-- Modal Generador de Informe Clínico PDF por RUT -->
-    <div id="modal-informe-rut" class="modal-overlay" style="display: none;"
-        onclick="if(event.target === this) cerrarModalInformeRut()">
-        <div class="modal-card"
-            style="max-width: 780px; width: 94%; padding: 22px; max-height: 90vh; display: flex; flex-direction: column;">
-            <div
-                style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px;">
-                <div>
-                    <h3 style="margin: 0; color: var(--azul-900); font-size: 1.15rem;">
-                        Informe Clínico de Evolución por RUT
-                    </h3>
-                    <p style="margin: 3px 0 0; font-size: 0.82rem; color: var(--gris-600);">
-                        Genera un documento imprimible / PDF con el historial de pautas, sesiones y dolor EVA del paciente.
-                    </p>
-                </div>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="cerrarModalInformeRut()">
-                    <i class='bx bx-x' style="font-size: 1.4rem;"></i>
-                </button>
-            </div>
-
-            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 14px;">
-                <div class="field" style="flex: 1; min-width: 230px; margin: 0;">
-                    <label for="input-rut-informe" style="font-size: 0.8rem; font-weight: 700;">RUT del Paciente (ej:
-                        21.671.721-K)</label>
-                    <input type="text" id="input-rut-informe" list="datalist-pacientes-rut"
-                        placeholder="Escribe o selecciona un RUT..." />
-                    <datalist id="datalist-pacientes-rut"></datalist>
-                </div>
-                <button type="button" class="btn btn-primary" onclick="generarVistaPreviaInforme()">
-                    <i class='bx bx-search-alt'></i> Generar Informe
-                </button>
-                <button type="button" id="btn-descargar-pdf-informe" class="btn btn-secondary is-hidden"
-                    onclick="imprimirInformeClinico()">
-                    <i class='bx bx-printer'></i> Descargar / Guardar PDF
-                </button>
-            </div>
-
-            <div id="contenedor-preview-informe"
-                style="flex: 1; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 10px; background: #ffffff; color: #0f172a; padding: 24px;">
-                <div style="text-align: center; padding: 36px 16px; color: #64748b;">
-                    Ingresa el RUT de un paciente y presiona <strong>Generar Informe</strong> para previsualizar su
-                    ficha clínica.
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script src="js/api.js"></script>
     <script src="js/layout.js"></script>
     <script>
         let todasPautasBase = [];
         let pautasCargadas = [];
-        let mapaPautas = {};
         let mapaEjercicios = {};
-        let reportesBaseTodos = [];
-        let reportesCargados = [];
         let pacientesRegistrados = [];
-        let mostrarArchivadas = false;
+        let tabPautasActual = 'asignadas';
 
         function escaparHtml(txt) {
             return String(txt ?? '').replace(/[&<>"']/g, c => ({
@@ -261,15 +243,7 @@
             return `${cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}-${dv}`;
         }
 
-        function describirNivelEva(dolor) {
-            if (dolor === 0) return 'Sin dolor';
-            if (dolor <= 3) return 'Leve';
-            if (dolor <= 5) return 'Moderado';
-            if (dolor <= 7) return 'Fuerte';
-            return 'Severo';
-        }
-
-        async function cargarPacientesParaInforme() {
+        async function cargarPacientesFiltro() {
             try {
                 const res = await api.fetchConSesion('/api/v1/perfiles/mis-pacientes/');
                 if (!res.ok) return;
@@ -285,8 +259,7 @@
                         'Paciente';
                     const rut = p.rut || u.username || '';
                     const userId = p.usuario_id || p.user_id || u.id || (typeof p.user === 'number' ? p.user : null);
-                    const email = p.email || u.email || '';
-                    return { id: userId, perfilId: p.id, nombre, rut, email };
+                    return { id: userId, nombre, rut };
                 });
 
                 const selectPac = document.getElementById('select-filtro-paciente');
@@ -297,14 +270,6 @@
                             .filter(p => p.id)
                             .map(p => `<option value="${escaparHtml(p.id)}" ${String(p.id) === String(filtroActual) ? 'selected' : ''}>${escaparHtml(p.nombre)} (${escaparHtml(p.rut)})</option>`)
                             .join('');
-                }
-
-                const datalist = document.getElementById('datalist-pacientes-rut');
-                if (datalist) {
-                    datalist.innerHTML = pacientesRegistrados
-                        .filter(p => p.rut)
-                        .map(p => `<option value="${escaparHtml(p.rut)}">${escaparHtml(p.nombre)}</option>`)
-                        .join('');
                 }
             } catch (e) {
                 console.warn('No se pudo precargar lista de pacientes:', e);
@@ -343,18 +308,12 @@
             }
         }
 
-        function actualizarKpisPautas(lista) {
-            const activas = lista.filter(p => p.activo !== false && !p.es_plantilla).length;
-            const plantillas = lista.filter(p => p.es_plantilla === true).length;
-            const archivadas = lista.filter(p => p.activo === false).length;
-
-            document.getElementById('kpi-pautas-activas').textContent = activas;
-            document.getElementById('kpi-plantillas').textContent = plantillas;
-            document.getElementById('kpi-archivadas').textContent = archivadas;
-        }
-
-        function toggleMostrarArchivadas() {
-            mostrarArchivadas = !mostrarArchivadas;
+        function cambiarTabPautas(tab) {
+            tabPautasActual = tab;
+            ['asignadas', 'plantillas', 'archivadas'].forEach(t => {
+                const btn = document.getElementById(`tab-btn-${t}`);
+                if (btn) btn.classList.toggle('active', t === tab);
+            });
             renderizarTablaPautas();
         }
 
@@ -388,11 +347,11 @@
             const titulo = pauta?.titulo || 'Sin Título';
             const esActiva = pauta ? pauta.activo !== false : true;
             const mensaje = esActiva
-                ? `¿Qué deseas hacer con la pauta "${titulo}"?\n\n` +
+                ? `¿Qué deseas hacer con "${titulo}"?\n\n` +
                 `• Si no tiene sesiones registradas, se eliminará de inmediato.\n` +
                 `• Si ya tiene reportes clínicos, pasará a ARCHIVADA.`
                 : `ELIMINACIÓN DEFINITIVA\n\n` +
-                `La pauta "${titulo}" ya está archivada. Si confirmas, se borrará PERMANENTEMENTE junto con todos sus reportes asociados.\n\n` +
+                `"${titulo}" ya está archivada. Si confirmas, se borrará PERMANENTEMENTE junto con todos sus reportes asociados.\n\n` +
                 `¿Continuar?`;
 
             if (!window.confirm(mensaje)) return;
@@ -416,30 +375,40 @@
             const containerPautas = document.getElementById('container-tabla-pautas');
             const tbodyPautas = document.getElementById('tbody-pautas');
             const noPautas = document.getElementById('no-pautas');
-            const btnArchivadas = document.getElementById('btn-toggle-archivadas');
+            const noPautasTxt = document.getElementById('no-pautas-texto');
+            const colDestino = document.getElementById('col-destino-header');
 
-            actualizarKpisPautas(pautasCargadas);
+            const asignadas = pautasCargadas.filter(p => p.activo !== false && !p.es_plantilla);
+            const plantillas = pautasCargadas.filter(p => p.activo !== false && p.es_plantilla === true);
+            const archivadas = pautasCargadas.filter(p => p.activo === false);
 
-            const archivadasCount = pautasCargadas.filter(p => p.activo === false).length;
-            if (btnArchivadas) {
-                if (archivadasCount > 0) {
-                    btnArchivadas.classList.remove('is-hidden');
-                    btnArchivadas.innerHTML = mostrarArchivadas
-                        ? `<i class='bx bx-hide'></i> Ocultar archivadas (${archivadasCount})`
-                        : `<i class='bx bx-archive'></i> Ver archivadas (${archivadasCount})`;
-                } else {
-                    btnArchivadas.classList.add('is-hidden');
-                    mostrarArchivadas = false;
-                }
+            document.getElementById('count-tab-asignadas').textContent = asignadas.length;
+            document.getElementById('count-tab-plantillas').textContent = plantillas.length;
+            document.getElementById('count-tab-archivadas').textContent = archivadas.length;
+
+            let visibles = asignadas;
+            if (tabPautasActual === 'plantillas') {
+                visibles = plantillas;
+                if (colDestino) colDestino.textContent = 'Tipo de Protocolo';
+            } else if (tabPautasActual === 'archivadas') {
+                visibles = archivadas;
+                if (colDestino) colDestino.textContent = 'Paciente / Tipo';
+            } else {
+                if (colDestino) colDestino.textContent = 'Paciente Asignado';
             }
-
-            const visibles = mostrarArchivadas
-                ? pautasCargadas
-                : pautasCargadas.filter(p => p.activo !== false);
 
             if (visibles.length === 0) {
                 if (containerPautas) containerPautas.classList.add('is-hidden');
                 if (noPautas) noPautas.classList.remove('is-hidden');
+                if (noPautasTxt) {
+                    if (tabPautasActual === 'plantillas') {
+                        noPautasTxt.textContent = 'No tienes plantillas maestras guardadas todavía.';
+                    } else if (tabPautasActual === 'archivadas') {
+                        noPautasTxt.textContent = 'No hay pautas archivadas.';
+                    } else {
+                        noPautasTxt.textContent = 'No hay pautas asignadas activas para mostrar.';
+                    }
+                }
                 return;
             }
 
@@ -456,27 +425,28 @@
 
                 const rutVisual = p.paciente_rut ? formatearRutVisual(p.paciente_rut) : '';
                 const pacienteBadge = esPlantilla
-                    ? '<span class="badge" style="background-color: #e0f2fe; color: #0369a1; font-weight: 600;">Plantilla Maestra</span>'
+                    ? '<span class="badge" style="background-color: #e0f2fe; color: #0369a1; font-weight: 600;">Plantilla Reutilizable</span>'
                     : `<div style="display: flex; flex-direction: column; gap: 2px;">
                         <strong style="color: var(--azul-900); font-size: 0.9rem;">${escaparHtml(p.paciente_nombre || 'Paciente')}</strong>
                         ${rutVisual ? `<span style="font-size: 0.76rem; color: var(--gris-500);">RUT: ${escaparHtml(rutVisual)}</span>` : ''}
                        </div>`;
 
                 const estadoBadge = esActiva
-                    ? '<span class="badge badge-ok">ACTIVA</span>'
+                    ? (esPlantilla ? '<span class="badge badge-neutro">PROTOCOLO</span>' : '<span class="badge badge-ok">ACTIVA</span>')
                     : '<span class="badge badge-alerta">ARCHIVADA</span>';
+
                 const idPauta = Number(p.id);
-                const evo = p.evolucion_clinica;
                 const cicloHtml = !esPlantilla
                     ? `<span class="badge badge-neutro" style="font-size: 0.72rem; margin-left: 4px;">${p.sesiones_semana ?? 0}/${p.meta_semanal ?? 3} sem.</span>`
                     : '';
-                const evoPill = (evo && !esPlantilla)
-                    ? `<div style="margin-top: 4px; font-size: 0.76rem; font-weight: 600; color: ${evo.estado === 'ALERTA_DOLOR' || evo.estado === 'AUMENTO_BRUSCO' ? '#ef4444' : (evo.estado === 'PROGRESION_OPTIMA' ? '#10b981' : '#38bdf8')};">
-                        ${escaparHtml(evo.etiqueta)}
-                       </div>`
-                    : '';
 
                 const btnStyleBase = 'display: inline-flex; align-items: center; justify-content: center; gap: 5px; height: 32px; padding: 0 10px; font-size: 0.8rem; line-height: 1; white-space: nowrap;';
+
+                const botonUsarPlantilla = esPlantilla && esActiva
+                    ? `<a href="crear_pauta.html?plantilla=${idPauta}" class="btn btn-primary btn-sm" style="${btnStyleBase}">
+                        <i class='bx bx-copy'></i> Asignar
+                       </a>`
+                    : '';
 
                 const botonDesarchivar = !esActiva
                     ? `<button type="button" class="btn btn-sm"
@@ -493,7 +463,6 @@
                 tr.innerHTML = `
                     <td>
                         <strong>${escaparHtml(p.titulo || 'Sin Título')}</strong>
-                        ${evoPill}
                     </td>
                     <td>${pacienteBadge}</td>
                     <td><span class="badge badge-neutro">${cant} ejercicios</span>${cicloHtml}</td>
@@ -501,6 +470,7 @@
                     <td>${estadoBadge}</td>
                     <td>
                         <div style="display: flex; gap: 6px; align-items: center; flex-wrap: nowrap;">
+                            ${botonUsarPlantilla}
                             <button type="button" class="btn btn-secondary btn-sm" style="${btnStyleBase}" onclick="verDetallePauta(${idPauta})">
                                 <i class='bx bx-show'></i> Ver
                             </button>
@@ -511,7 +481,7 @@
                             <button type="button" class="btn btn-sm"
                                 style="${btnStyleBase} background: rgba(239, 68, 68, 0.14); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.35);"
                                 onclick="eliminarPauta(${idPauta})"
-                                title="${esActiva ? 'Archivar o eliminar pauta' : 'Eliminar definitivamente'}">
+                                title="${esActiva ? 'Archivar o eliminar' : 'Eliminar definitivamente'}">
                                 <i class='bx bx-trash'></i>${esActiva ? '' : ' Borrar'}
                             </button>
                         </div>
@@ -542,32 +512,9 @@
             document.getElementById('detalle-pauta-subtitulo').textContent = `${destinatario} | Creada el ${fecha}`;
 
             const indicaciones = (pauta.notas || pauta.descripcion || pauta.objetivo || '').trim();
-            const evo = pauta.evolucion_clinica;
-            let evoHtml = '';
-            if (evo && !esPlantilla) {
-                const esAlerta = evo.estado === 'ALERTA_DOLOR' || evo.estado === 'AUMENTO_BRUSCO';
-                const barrasHtml = (evo.historial_eva || []).map(h => `
-                    <span class="badge ${h.nivel_dolor >= 6 ? 'badge-alerta' : (h.nivel_dolor >= 4 ? 'badge-neutro' : 'badge-ok')}" style="font-size: 0.74rem;">
-                        ${escaparHtml(h.fecha)} → EVA ${h.nivel_dolor}/10
-                    </span>
-                `).join(' ');
-
-                evoHtml = `
-                    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #cbd5e1;">
-                        <div style="font-weight: 700; font-size: 0.84rem; color: ${esAlerta ? '#dc2626' : '#0369a1'};">
-                            Evolución Clínica: ${escaparHtml(evo.etiqueta)}
-                        </div>
-                        <div style="font-size: 0.8rem; color: #334155; margin-top: 2px;">
-                            ${escaparHtml(evo.recomendacion)}
-                        </div>
-                        ${barrasHtml ? `<div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">${barrasHtml}</div>` : ''}
-                    </div>
-                `;
-            }
-
-            document.getElementById('detalle-pauta-indicaciones').innerHTML = (indicaciones
+            document.getElementById('detalle-pauta-indicaciones').innerHTML = indicaciones
                 ? `<strong>Indicación del Kinesiólogo:</strong> ${escaparHtml(indicaciones)}`
-                : `<span style="color: var(--gris-500); font-style: italic;">Sin indicaciones adicionales.</span>`) + evoHtml;
+                : `<span style="color: var(--gris-500); font-style: italic;">Sin indicaciones adicionales.</span>`;
 
             const listaEl = document.getElementById('detalle-pauta-lista-ejercicios');
             const detalles = Array.isArray(pauta.ejercicios_detalle) ? pauta.ejercicios_detalle : [];
@@ -614,225 +561,6 @@
             if (modal) modal.style.display = 'none';
         }
 
-        function abrirModalInformeRut() {
-            document.getElementById('modal-informe-rut').style.display = 'flex';
-            const input = document.getElementById('input-rut-informe');
-            if (input) input.focus();
-        }
-
-        function cerrarModalInformeRut() {
-            document.getElementById('modal-informe-rut').style.display = 'none';
-        }
-
-        function generarVistaPreviaInforme() {
-            const rawRut = (document.getElementById('input-rut-informe')?.value || '').trim();
-            const rutNorm = normalizarRut(rawRut);
-            const previewEl = document.getElementById('contenedor-preview-informe');
-            const btnPdf = document.getElementById('btn-descargar-pdf-informe');
-
-            if (!rutNorm) {
-                alert('Ingresa el RUT del paciente para generar el informe.');
-                return;
-            }
-
-            const paciente = pacientesRegistrados.find(p => normalizarRut(p.rut) === rutNorm);
-
-            const pautasPaciente = todasPautasBase.filter(p => {
-                if (p.es_plantilla) return false;
-                const pUserId = typeof p.paciente === 'object' && p.paciente !== null ? p.paciente.id : p.paciente;
-                if (paciente && paciente.id && String(pUserId) === String(paciente.id)) return true;
-                if (paciente && paciente.nombre && p.paciente_nombre &&
-                    p.paciente_nombre.trim().toLowerCase() === paciente.nombre.trim().toLowerCase()) return true;
-                return false;
-            });
-
-            const idsPautas = new Set(pautasPaciente.map(p => p.id));
-            const sesionesPaciente = reportesBaseTodos.filter(f => {
-                const pid = typeof f.pauta === 'object' && f.pauta !== null ? f.pauta.id : f.pauta;
-                if (idsPautas.has(pid)) return true;
-                if (paciente && paciente.nombre && f.paciente_nombre &&
-                    f.paciente_nombre.trim().toLowerCase() === paciente.nombre.trim().toLowerCase()) return true;
-                return false;
-            });
-
-            if (!paciente && pautasPaciente.length === 0 && sesionesPaciente.length === 0) {
-                btnPdf.classList.add('is-hidden');
-                previewEl.innerHTML = `
-                    <div style="text-align: center; padding: 32px 16px; color: #dc2626;">
-                        No se encontraron registros asociados al RUT <strong>${escaparHtml(formatearRutVisual(rawRut))}</strong>.
-                    </div>
-                `;
-                return;
-            }
-
-            const nombreMostrar = paciente?.nombre || pautasPaciente[0]?.paciente_nombre || 'Paciente KineConnect';
-            const emailMostrar = paciente?.email || 'No registrado';
-            const rutFormateado = formatearRutVisual(paciente?.rut || rawRut);
-
-            const totalSesiones = sesionesPaciente.length;
-            const completas = sesionesPaciente.filter(s => Boolean(s.completado)).length;
-            const promedioEva = totalSesiones > 0
-                ? (sesionesPaciente.reduce((acc, s) => acc + Number(s.nivel_dolor ?? s.escala_dolor ?? 0), 0) / totalSesiones).toFixed(1)
-                : '0.0';
-
-            const userKine = (typeof api !== 'undefined' && api.getUser) ? api.getUser() : null;
-            const nombreKine = userKine?.nombre_completo || userKine?.username || 'Kinesiólogo Tratante';
-            const fechaEmision = new Date().toLocaleString('es-CL', { dateStyle: 'long', timeStyle: 'short' });
-
-            const pautasHtml = pautasPaciente.length === 0
-                ? `<p style="color: #64748b; font-size: 0.86rem;">Sin pautas prescritas registradas.</p>`
-                : pautasPaciente.map(p => {
-                    const detalles = Array.isArray(p.ejercicios_detalle) ? p.ejercicios_detalle : [];
-                    const ejerciciosTxt = detalles.map(d => {
-                        const ejId = d.ejercicio_id || (typeof d.ejercicio === 'object' ? d.ejercicio.id : d.ejercicio);
-                        const nom = d.ejercicio_nombre || d.nombre || mapaEjercicios[ejId]?.nombre || `Ejercicio #${ejId}`;
-                        return `${escaparHtml(nom)} (${d.series ?? 3}x${d.repeticiones ?? 12}, desc. ${d.tiempo_descanso_segundos ?? 60}s)`;
-                    }).join(' • ');
-
-                    return `
-                        <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; background: #f8fafc;">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <strong style="color: #0f172a; font-size: 0.92rem;">${escaparHtml(p.titulo)}</strong>
-                                <span style="font-size: 0.75rem; font-weight: 700; color: ${p.activo !== false ? '#059669' : '#64748b'};">
-                                    ${p.activo !== false ? 'ACTIVA' : 'ARCHIVADA'}
-                                </span>
-                            </div>
-                            ${p.notas ? `<div style="font-size: 0.8rem; color: #475569; margin-top: 3px;">Indicación: ${escaparHtml(p.notas)}</div>` : ''}
-                            <div style="font-size: 0.8rem; color: #0369a1; margin-top: 4px;">
-                                ${ejerciciosTxt || 'Sin ejercicios detallados'}
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-
-            const filasSesionesHtml = sesionesPaciente.length === 0
-                ? `<tr><td colspan="4" style="text-align: center; color: #64748b; padding: 12px;">El paciente aún no registra ejecuciones en la app móvil.</td></tr>`
-                : sesionesPaciente.map(s => {
-                    const pid = typeof s.pauta === 'object' && s.pauta !== null ? s.pauta.id : s.pauta;
-                    const tituloP = mapaPautas[pid]?.titulo || `Pauta #${pid}`;
-                    const eva = Number(s.nivel_dolor ?? s.escala_dolor ?? 0);
-                    const fechaS = s.fecha_ejecucion
-                        ? new Date(s.fecha_ejecucion).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })
-                        : 'N/A';
-                    return `
-                        <tr>
-                            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 0.82rem;">${fechaS}</td>
-                            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 0.82rem;"><strong>${escaparHtml(tituloP)}</strong></td>
-                            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 0.82rem; font-weight: 700; color: ${eva >= 6 ? '#dc2626' : '#059669'};">
-                                EVA ${eva}/10 (${describirNivelEva(eva)})
-                            </td>
-                            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 0.8rem; color: #334155;">
-                                ${escaparHtml(s.comentario || (s.completado ? 'Rutina completada' : 'Sesión parcial'))}
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-
-            btnPdf.classList.remove('is-hidden');
-            previewEl.innerHTML = `
-                <div id="documento-clinico-imprimible" style="font-family: Arial, Helvetica, sans-serif; color: #0f172a; line-height: 1.45;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0284c7; padding-bottom: 12px; margin-bottom: 16px;">
-                        <div>
-                            <div style="font-size: 1.25rem; font-weight: 800; color: #0369a1;">KineConnect • Ficha de Evolución Clínica</div>
-                            <div style="font-size: 0.8rem; color: #475569;">Historial de adherencia terapéutica y dolor (Escala EVA)</div>
-                        </div>
-                        <div style="text-align: right; font-size: 0.78rem; color: #475569;">
-                            <div><strong>Emitido:</strong> ${escaparHtml(fechaEmision)}</div>
-                            <div><strong>Kinesiólogo:</strong> ${escaparHtml(nombreKine)}</div>
-                        </div>
-                    </div>
-
-                    <div style="background: #f1f5f9; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; font-size: 0.85rem;">
-                        <div><strong>Paciente:</strong> ${escaparHtml(nombreMostrar)}</div>
-                        <div><strong>RUT:</strong> ${escaparHtml(rutFormateado)}</div>
-                        <div><strong>Contacto:</strong> ${escaparHtml(emailMostrar)}</div>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; text-align: center;">
-                        <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px;">
-                            <div style="font-size: 1.25rem; font-weight: 800; color: #0284c7;">${pautasPaciente.length}</div>
-                            <div style="font-size: 0.74rem; color: #475569;">Pautas Asignadas</div>
-                        </div>
-                        <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px;">
-                            <div style="font-size: 1.25rem; font-weight: 800; color: #0f172a;">${totalSesiones}</div>
-                            <div style="font-size: 0.74rem; color: #475569;">Reportes Totales</div>
-                        </div>
-                        <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px;">
-                            <div style="font-size: 1.25rem; font-weight: 800; color: #059669;">${completas}</div>
-                            <div style="font-size: 0.74rem; color: #475569;">Sesiones Completas</div>
-                        </div>
-                        <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px;">
-                            <div style="font-size: 1.25rem; font-weight: 800; color: #d97706;">${promedioEva} / 10</div>
-                            <div style="font-size: 0.74rem; color: #475569;">EVA Promedio</div>
-                        </div>
-                    </div>
-
-                    <h4 style="margin: 0 0 8px; font-size: 0.95rem; color: #0369a1; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
-                        1. Pautas Terapéuticas Prescritas
-                    </h4>
-                    <div style="margin-bottom: 18px;">${pautasHtml}</div>
-
-                    <h4 style="margin: 0 0 8px; font-size: 0.95rem; color: #0369a1; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
-                        2. Registro Cronológico de Ejecución y Dolor
-                    </h4>
-                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 28px;">
-                        <thead>
-                            <tr style="background: #f8fafc; text-align: left;">
-                                <th style="padding: 8px; border-bottom: 2px solid #cbd5e1; font-size: 0.78rem;">Fecha</th>
-                                <th style="padding: 8px; border-bottom: 2px solid #cbd5e1; font-size: 0.78rem;">Rutina</th>
-                                <th style="padding: 8px; border-bottom: 2px solid #cbd5e1; font-size: 0.78rem;">Dolor (EVA)</th>
-                                <th style="padding: 8px; border-bottom: 2px solid #cbd5e1; font-size: 0.78rem;">Detalle y Observaciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>${filasSesionesHtml}</tbody>
-                    </table>
-
-                    <div style="margin-top: 34px; display: flex; justify-content: flex-end;">
-                        <div style="width: 240px; text-align: center; border-top: 1px solid #475569; padding-top: 6px; font-size: 0.8rem; color: #334155;">
-                            <strong>${escaparHtml(nombreKine)}</strong><br>
-                            Kinesiólogo/a • KineConnect
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function imprimirInformeClinico() {
-            const docEl = document.getElementById('documento-clinico-imprimible');
-            if (!docEl) return;
-
-            const ventanaPrint = window.open('', '_blank', 'width=900,height=700');
-            if (!ventanaPrint) {
-                alert('Habilita las ventanas emergentes para descargar el PDF.');
-                return;
-            }
-
-            ventanaPrint.document.write(`
-                <!DOCTYPE html>
-                <html lang="es">
-                <head>
-                    <meta charset="UTF-8">
-                    <title>Informe Clínico - KineConnect</title>
-                    <style>
-                        body { margin: 24px; background: #fff; color: #0f172a; }
-                        @media print {
-                            body { margin: 12mm; }
-                        }
-                    </style>
-                </head>
-                <body>
-                    ${docEl.outerHTML}
-                    <script>
-                        window.onload = function() {
-                            window.print();
-                        };
-                    <\/script>
-                </body>
-                </html>
-            `);
-            ventanaPrint.document.close();
-        }
-
         function aplicarFiltroPacienteUI(pacienteId) {
             const url = new URL(window.location.href);
             if (pacienteId) {
@@ -844,16 +572,11 @@
 
             if (!pacienteId) {
                 pautasCargadas = [...todasPautasBase];
-                reportesCargados = [...reportesBaseTodos];
             } else {
                 pautasCargadas = todasPautasBase.filter(p => {
+                    if (p.es_plantilla) return true;
                     const idPac = typeof p.paciente === 'object' && p.paciente !== null ? p.paciente.id : p.paciente;
                     return String(idPac) === String(pacienteId) || String(p.paciente_user_id) === String(pacienteId);
-                });
-                const idsPautas = new Set(pautasCargadas.map(p => String(p.id)));
-                reportesCargados = reportesBaseTodos.filter(f => {
-                    const pid = typeof f.pauta === 'object' && f.pauta !== null ? f.pauta.id : f.pauta;
-                    return idsPautas.has(String(pid));
                 });
             }
 
@@ -873,18 +596,10 @@
             if (noPautas) noPautas.classList.add('is-hidden');
 
             try {
-                await Promise.all([asegurarCatalogoEjercicios(), cargarPacientesParaInforme()]);
-                const [pautas, feeds] = await Promise.all([
-                    api.getPautas(),
-                    api.getReportesDolor().catch(() => [])
-                ]);
-
-                let todasPautas = Array.isArray(pautas) ? pautas : (pautas?.results || []);
+                await Promise.all([asegurarCatalogoEjercicios(), cargarPacientesFiltro()]);
+                const pautas = await api.getPautas();
+                const todasPautas = Array.isArray(pautas) ? pautas : (pautas?.results || []);
                 todasPautasBase = [...todasPautas];
-                reportesBaseTodos = Array.isArray(feeds) ? feeds : (feeds?.results || []);
-
-                mapaPautas = {};
-                todasPautas.forEach(p => { mapaPautas[p.id] = p; });
 
                 if (loadingPautas) loadingPautas.classList.add('is-hidden');
                 aplicarFiltroPacienteUI(pacienteFiltro);
