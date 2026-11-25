@@ -381,7 +381,47 @@
                 grid-template-columns: 1fr;
             }
         }
+/* Mejora de contraste y definición en Modo Claro (sin alterar Modo Oscuro) */
+        :root:not([data-theme="dark"]) .inbox-card {
+            background: #ffffff;
+            border-color: #cbd5e1;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+        }
 
+        :root:not([data-theme="dark"]) .inbox-card.sev-alta {
+            background: linear-gradient(90deg, #fff5f5 0%, #ffffff 18%);
+        }
+
+        :root:not([data-theme="dark"]) .inbox-metric-box {
+            border-width: 1px !important;
+            border-style: solid !important;
+        }
+
+        :root:not([data-theme="dark"]) .inbox-metric-eva-alta {
+            background: #fef2f2 !important;
+            border-color: #fecaca !important;
+        }
+
+        :root:not([data-theme="dark"]) .inbox-metric-borg {
+            background: #fffbeb !important;
+            border-color: #fde68a !important;
+        }
+
+        :root:not([data-theme="dark"]) .inbox-metric-ok {
+            background: #f0fdf4 !important;
+            border-color: #bbf7d0 !important;
+        }
+
+        :root:not([data-theme="dark"]) .inbox-actions-col .btn-secondary {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            color: #1e293b;
+        }
+
+        :root:not([data-theme="dark"]) .inbox-actions-col .btn-secondary:hover {
+            background: #e2e8f0;
+            border-color: #94a3b8;
+        }
         /* Dark Mode */
         [data-theme="dark"] .inbox-card,
         body.dark-mode .inbox-card,
