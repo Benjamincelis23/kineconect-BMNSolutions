@@ -36,11 +36,11 @@
             border-color: #334155 !important;
         }
 
-        /* ===== FEED DE REPORTES (3 COLUMNAS ALINEADAS) ===== */
+        /* ===== FEED DE REPORTES: PROTAGONISMO AL PACIENTE ===== */
         .inbox-list {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 14px;
             width: 100%;
         }
 
@@ -48,7 +48,7 @@
             position: relative;
             overflow: hidden;
             display: grid;
-            grid-template-columns: 300px minmax(0, 1fr) 186px;
+            grid-template-columns: minmax(0, 1fr) 350px;
             align-items: stretch;
             width: 100%;
             box-sizing: border-box;
@@ -64,12 +64,12 @@
             top: 0;
             bottom: 0;
             left: 0;
-            width: 4px;
+            width: 5px;
             background: #94a3b8;
         }
 
         .inbox-card:hover {
-            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.07);
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
         }
 
         .inbox-card.sev-alta::before {
@@ -77,7 +77,7 @@
         }
 
         .inbox-card.sev-alta {
-            background: linear-gradient(90deg, rgba(239, 68, 68, 0.04) 0%, var(--blanco, #ffffff) 22%);
+            background: linear-gradient(90deg, rgba(239, 68, 68, 0.04) 0%, var(--blanco, #ffffff) 24%);
         }
 
         .inbox-card.sev-media::before {
@@ -88,170 +88,199 @@
             background: #10b981;
         }
 
-        /* Columna 1: Paciente y Métricas Estructuradas */
-        .inbox-meta {
+        /* ===== BLOQUE PRINCIPAL (IZQUIERDA): DATOS CLÍNICOS DEL PACIENTE ===== */
+        .inbox-patient-panel {
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            gap: 10px;
-            padding: 16px 18px 16px 22px;
-            border-right: 1px solid var(--gris-200, #e2e8f0);
+            justify-content: center;
+            gap: 12px;
+            padding: 18px 22px 18px 24px;
             min-width: 0;
         }
 
-        .inbox-patient-head {
+        .inbox-patient-header {
             display: flex;
-            flex-direction: column;
-            gap: 2px;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 8px 14px;
+        }
+
+        .inbox-patient-identity {
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 6px 10px;
+            min-width: 0;
         }
 
         .inbox-patient-name {
             color: var(--azul-900, #0f172a);
-            font-size: 0.96rem;
-            font-weight: 700;
-            line-height: 1.25;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            font-size: 1.04rem;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .inbox-routine-sub {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--gris-500, #64748b);
         }
 
         .inbox-patient-date {
-            font-size: 0.76rem;
+            font-size: 0.8rem;
+            font-weight: 500;
             color: var(--gris-500, #64748b);
             display: inline-flex;
             align-items: center;
             gap: 4px;
+            white-space: nowrap;
         }
 
-        .inbox-eva-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
+        /* Cuadros de métricas clínicas amplios */
+        .inbox-metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+            gap: 10px;
         }
 
-        .kc-eva-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 4px 10px;
-            border-radius: 999px;
-            font-size: 0.77rem;
-            font-weight: 700;
-            letter-spacing: 0.01em;
-            text-transform: none;
-            line-height: 1.2;
-        }
-
-        .kc-eva-pill.eva-alta {
-            background: #fee2e2;
-            color: #b91c1c;
-            border: 1px solid #fecaca;
-        }
-
-        .kc-eva-pill.eva-media {
-            background: #fef3c7;
-            color: #b45309;
-            border: 1px solid #fde68a;
-        }
-
-        .kc-eva-pill.eva-baja {
-            background: #d1fae5;
-            color: #047857;
-            border: 1px solid #a7f3d0;
-        }
-
-        .kc-eva-prev {
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--gris-500, #64748b);
-            display: inline-flex;
-            align-items: center;
-            gap: 3px;
-        }
-
-        .kc-eva-prev.subio {
-            color: #dc2626;
-        }
-
-        .kc-eva-prev.bajo {
-            color: #059669;
-        }
-
-        .inbox-metrics-list {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            padding-top: 8px;
-            border-top: 1px dashed var(--gris-200, #e2e8f0);
-        }
-
-        .inbox-metric-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.78rem;
-            color: var(--gris-600, #475569);
-            line-height: 1.3;
-        }
-
-        .inbox-metric-item i {
-            font-size: 0.95rem;
-            flex-shrink: 0;
-        }
-
-        .inbox-metric-item.metric-warn {
-            color: #b45309;
-            font-weight: 600;
-        }
-
-        .inbox-metric-item.metric-ok {
-            color: #047857;
-            font-weight: 600;
-        }
-
-        .inbox-metric-item.metric-danger {
-            color: #dc2626;
-            font-weight: 600;
-        }
-
-        /* Columna 2: Contenido Clínico, Síntomas y Respuesta */
-        .inbox-content-col {
+        .kc-metric-box {
             display: flex;
             flex-direction: column;
             justify-content: center;
-            gap: 10px;
-            padding: 16px 20px;
+            gap: 3px;
+            padding: 10px 13px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
             min-width: 0;
         }
 
-        .inbox-content-top {
+        .kc-metric-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            opacity: 0.82;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 6px;
         }
 
-        .inbox-routine-label {
+        .kc-metric-value {
+            font-size: 0.94rem;
+            font-weight: 800;
+            line-height: 1.25;
+        }
+
+        .kc-metric-sub {
             font-size: 0.76rem;
             font-weight: 600;
-            color: var(--gris-500, #64748b);
+            opacity: 0.85;
+            line-height: 1.25;
+        }
+
+        /* Variantes de color de los cuadros */
+        .kc-metric-box.tone-danger {
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: #b91c1c;
+        }
+
+        .kc-metric-box.tone-warn {
+            background: #fffbeb;
+            border-color: #fde68a;
+            color: #b45309;
+        }
+
+        .kc-metric-box.tone-ok {
+            background: #ecfdf5;
+            border-color: #a7f3d0;
+            color: #047857;
+        }
+
+        .kc-metric-box.tone-neutral {
+            background: #f8fafc;
+            border-color: #e2e8f0;
+            color: #334155;
+        }
+
+        .kc-prev-pill {
+            font-size: 0.69rem;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.78);
+            color: #475569;
+            text-transform: none;
+            letter-spacing: 0;
+            white-space: nowrap;
+        }
+
+        /* Fila opcional de síntomas y comentario del paciente */
+        .inbox-patient-extra {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px 10px;
+            padding-top: 2px;
+        }
+
+        .kc-symptom-tag {
             display: inline-flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 7px;
+            background: #e0f2fe;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+            font-size: 0.76rem;
+            font-weight: 700;
+        }
+
+        .inbox-patient-quote {
+            margin: 0;
+            font-size: 0.86rem;
+            line-height: 1.4;
+            color: var(--azul-900, #0f172a);
+        }
+
+        /* ===== BLOQUE DERECHO (ACOTADO): SEGUIMIENTO Y ACCIONES ===== */
+        .inbox-followup-panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 16px 18px;
+            border-left: 1px solid var(--gris-200, #e2e8f0);
+            background: rgba(248, 250, 252, 0.65);
             min-width: 0;
+        }
+
+        .inbox-followup-content {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .inbox-status-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
         }
 
         .kc-status-chip {
             display: inline-flex;
             align-items: center;
-            gap: 4px;
-            padding: 3px 9px;
+            gap: 5px;
+            padding: 4px 10px;
             border-radius: 999px;
-            font-size: 0.72rem;
+            font-size: 0.74rem;
             font-weight: 700;
-            text-transform: none;
             white-space: nowrap;
         }
 
@@ -260,54 +289,22 @@
             color: #0369a1;
         }
 
-        .kc-status-chip.st-respondido {
-            background: #dcfce7;
-            color: #15803d;
-        }
-
         .kc-status-chip.st-revisado {
-            background: #f1f5f9;
-            color: #475569;
+            background: #e2e8f0;
+            color: #334155;
         }
 
-        .inbox-tags-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-
-        .kc-symptom-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 3px 9px;
-            border-radius: 6px;
-            background: #f0f9ff;
-            color: #0369a1;
-            border: 1px solid #bae6fd;
-            font-size: 0.74rem;
-            font-weight: 600;
-            text-transform: none;
-        }
-
-        .inbox-comment-text {
-            color: var(--azul-900, #0f172a);
-            font-size: 0.9rem;
-            line-height: 1.45;
-            margin: 0;
-        }
-
-        .inbox-comment-empty {
+        .inbox-no-comment-hint {
+            font-size: 0.76rem;
             color: var(--gris-500, #94a3b8);
-            font-size: 0.81rem;
             margin: 0;
         }
 
         .inbox-reply-box {
-            padding: 10px 13px;
+            padding: 9px 12px;
             border-radius: 9px;
-            background: rgba(2, 132, 199, 0.07);
-            border: 1px solid rgba(2, 132, 199, 0.16);
+            background: rgba(2, 132, 199, 0.08);
+            border: 1px solid rgba(2, 132, 199, 0.18);
             border-left: 3px solid #0284c7;
         }
 
@@ -315,13 +312,13 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             margin-bottom: 3px;
         }
 
         .inbox-reply-title {
-            font-size: 0.74rem;
-            font-weight: 700;
+            font-size: 0.73rem;
+            font-weight: 800;
             color: #0284c7;
             display: inline-flex;
             align-items: center;
@@ -329,78 +326,59 @@
         }
 
         .inbox-reply-date {
-            font-size: 0.71rem;
+            font-size: 0.7rem;
             color: var(--gris-500, #64748b);
             white-space: nowrap;
         }
 
         .inbox-reply-body {
-            font-size: 0.85rem;
-            line-height: 1.42;
+            font-size: 0.82rem;
+            line-height: 1.4;
             color: var(--azul-900, #0f172a);
+            word-break: break-word;
         }
 
-        /* Columna 3: Acciones Alineadas */
-        .inbox-actions-col {
+        .inbox-actions-row {
             display: flex;
-            flex-direction: column;
-            justify-content: center;
-            gap: 7px;
-            padding: 14px 16px;
-            border-left: 1px solid var(--gris-200, #e2e8f0);
-            background: rgba(248, 250, 252, 0.55);
+            flex-wrap: wrap;
+            gap: 6px;
         }
 
-        .inbox-actions-col .btn {
-            width: 100%;
-            justify-content: center;
+        .inbox-actions-row .btn {
+            flex: 1 1 auto;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            font-size: 0.78rem;
-            padding: 7px 10px;
-            box-sizing: border-box;
+            justify-content: center;
+            gap: 5px;
+            font-size: 0.76rem;
+            padding: 7px 9px;
             white-space: nowrap;
         }
 
         /* Responsive */
-        @media (max-width: 1080px) {
-            .inbox-card {
-                grid-template-columns: 270px minmax(0, 1fr);
-            }
-
-            .inbox-actions-col {
-                grid-column: 1 / -1;
-                flex-direction: row;
-                flex-wrap: wrap;
-                justify-content: flex-end;
-                border-left: none;
-                border-top: 1px solid var(--gris-200, #e2e8f0);
-                padding: 10px 18px;
-            }
-
-            .inbox-actions-col .btn {
-                width: auto;
-            }
-        }
-
-        @media (max-width: 760px) {
+        @media (max-width: 1020px) {
             .inbox-card {
                 grid-template-columns: 1fr;
             }
 
-            .inbox-meta {
-                border-right: none;
-                border-bottom: 1px solid var(--gris-200, #e2e8f0);
+            .inbox-followup-panel {
+                border-left: none;
+                border-top: 1px solid var(--gris-200, #e2e8f0);
+                padding: 14px 18px 14px 22px;
+            }
+
+            .inbox-actions-row .btn {
+                flex: 0 1 auto;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .inbox-patient-panel {
                 padding: 14px 16px 14px 20px;
             }
 
-            .inbox-content-col {
-                padding: 14px 16px 14px 20px;
-            }
-
-            .inbox-actions-col {
-                justify-content: flex-start;
+            .inbox-metrics-grid {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -418,31 +396,61 @@
             background: linear-gradient(90deg, rgba(239, 68, 68, 0.14) 0%, #162236 28%);
         }
 
-        [data-theme="dark"] .inbox-meta,
-        body.dark-mode .inbox-meta,
-        html.dark-mode .inbox-meta,
-        [data-theme="dark"] .inbox-metrics-list,
-        body.dark-mode .inbox-metrics-list,
-        html.dark-mode .inbox-metrics-list,
-        [data-theme="dark"] .inbox-actions-col,
-        body.dark-mode .inbox-actions-col,
-        html.dark-mode .inbox-actions-col {
-            border-color: #24344d;
+        [data-theme="dark"] .inbox-patient-name,
+        [data-theme="dark"] .inbox-patient-quote,
+        [data-theme="dark"] .inbox-reply-body,
+        body.dark-mode .inbox-patient-name,
+        body.dark-mode .inbox-patient-quote,
+        body.dark-mode .inbox-reply-body {
+            color: #f1f5f9;
         }
 
-        [data-theme="dark"] .inbox-actions-col,
-        body.dark-mode .inbox-actions-col,
-        html.dark-mode .inbox-actions-col {
+        [data-theme="dark"] .inbox-followup-panel,
+        body.dark-mode .inbox-followup-panel,
+        html.dark-mode .inbox-followup-panel {
+            border-color: #24344d;
             background: rgba(15, 23, 42, 0.35);
         }
 
-        [data-theme="dark"] .inbox-patient-name,
-        [data-theme="dark"] .inbox-comment-text,
-        [data-theme="dark"] .inbox-reply-body,
-        body.dark-mode .inbox-patient-name,
-        body.dark-mode .inbox-comment-text,
-        body.dark-mode .inbox-reply-body {
-            color: #f1f5f9;
+        [data-theme="dark"] .kc-metric-box.tone-danger,
+        body.dark-mode .kc-metric-box.tone-danger {
+            background: rgba(239, 68, 68, 0.14);
+            border-color: rgba(239, 68, 68, 0.32);
+            color: #fca5a5;
+        }
+
+        [data-theme="dark"] .kc-metric-box.tone-warn,
+        body.dark-mode .kc-metric-box.tone-warn {
+            background: rgba(245, 158, 11, 0.14);
+            border-color: rgba(245, 158, 11, 0.32);
+            color: #fcd34d;
+        }
+
+        [data-theme="dark"] .kc-metric-box.tone-ok,
+        body.dark-mode .kc-metric-box.tone-ok {
+            background: rgba(16, 185, 129, 0.14);
+            border-color: rgba(16, 185, 129, 0.32);
+            color: #6ee7b7;
+        }
+
+        [data-theme="dark"] .kc-metric-box.tone-neutral,
+        body.dark-mode .kc-metric-box.tone-neutral {
+            background: #1e293b;
+            border-color: #334155;
+            color: #e2e8f0;
+        }
+
+        [data-theme="dark"] .kc-prev-pill,
+        body.dark-mode .kc-prev-pill {
+            background: rgba(15, 23, 42, 0.65);
+            color: #cbd5e1;
+        }
+
+        [data-theme="dark"] .kc-symptom-tag,
+        body.dark-mode .kc-symptom-tag {
+            background: rgba(56, 189, 248, 0.14);
+            color: #7dd3fc;
+            border-color: rgba(56, 189, 248, 0.3);
         }
 
         [data-theme="dark"] .kc-status-chip.st-revisado,
@@ -451,17 +459,10 @@
             color: #cbd5e1;
         }
 
-        [data-theme="dark"] .kc-symptom-tag,
-        body.dark-mode .kc-symptom-tag {
-            background: rgba(56, 189, 248, 0.12);
-            color: #7dd3fc;
-            border-color: rgba(56, 189, 248, 0.3);
-        }
-
         [data-theme="dark"] .inbox-reply-box,
         body.dark-mode .inbox-reply-box {
             background: rgba(56, 189, 248, 0.1);
-            border-color: rgba(56, 189, 248, 0.22);
+            border-color: rgba(56, 189, 248, 0.24);
             border-left-color: #38bdf8;
         }
 
@@ -748,17 +749,17 @@
             let texto = String(raw || '').trim();
             let seriesInfo = '';
             let tags = [];
-            let borgTexto = '';
+            let borgDetalle = '';
             let borgValor = null;
 
             // 1. Extraer Series al final
             const matchSeries = texto.match(/(?:[|•]\s*)?(Series:\s*[^|•]+)\.?$/i);
             if (matchSeries) {
-                seriesInfo = matchSeries[1].replace(/\.$/, '').trim();
+                seriesInfo = matchSeries[1].replace(/^Series:\s*/i, '').replace(/\.$/, '').trim();
                 texto = texto.slice(0, matchSeries.index).trim();
             }
 
-            // 2. Extraer TODOS los [tags] en cualquier posición (arregla el choque con Borg)
+            // 2. Extraer TODOS los [tags] antes de parsear Borg (evita que se peguen)
             texto = texto.replace(/\[([^\]]+)\]/g, (_, contenido) => {
                 contenido.split(',').map(t => t.trim()).filter(Boolean).forEach(t => {
                     if (!tags.includes(t)) tags.push(t);
@@ -766,24 +767,30 @@
                 return ' ';
             });
 
-            // 3. Extraer Esfuerzo Borg deteniéndose antes de | o •
+            // 3. Extraer Esfuerzo Borg limpio
             const matchBorg = texto.match(/(?:^|[|•]\s*)(Esfuerzo\s*Borg\s*[:\-]?\s*([^|•]+?))(?:\s*[|•]|$)/i);
             if (matchBorg) {
-                const detalleBorg = matchBorg[2].trim();
-                borgTexto = `Borg ${detalleBorg}`;
-                const numMatch = detalleBorg.match(/(\d+(?:[.,]\d+)?)/);
+                borgDetalle = matchBorg[2].trim();
+                const numMatch = borgDetalle.match(/(\d+(?:[.,]\d+)?)/);
                 if (numMatch) borgValor = Number(numMatch[1].replace(',', '.'));
                 texto = texto.replace(matchBorg[0], ' ');
             }
 
-            // 4. Limpiar separadores residuales
+            // 4. Limpiar separadores sobrantes
             texto = texto
                 .replace(/^[\s|•\-]+|[\s|•\-]+$/g, '')
                 .replace(/\s*[|•]\s*[|•]\s*/g, ' • ')
                 .replace(/\s{2,}/g, ' ')
                 .trim();
 
-            return { tags, seriesInfo, borgTexto, borgValor, textoLibre: texto };
+            return {
+                tags,
+                seriesInfo,
+                borgDetalle,
+                borgTexto: borgDetalle ? `Esfuerzo Borg: ${borgDetalle}` : '',
+                borgValor,
+                textoLibre: texto
+            };
         }
 
         function describirNivelEva(dolor) {
@@ -970,10 +977,10 @@
             document.getElementById('modal-resp-contexto').innerHTML = `
                 <div><strong>Comentario del paciente:</strong> ${escaparHtml(parsed.textoLibre || 'Sin comentario escrito')}</div>
                 <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
-                    <span class="kc-eva-pill ${dolor >= 6 ? 'eva-alta' : (dolor >= 4 ? 'eva-media' : 'eva-baja')}">EVA ${dolor}/10</span>
-                    ${parsed.borgTexto ? `<span class="kc-symptom-tag" style="background: #fef3c7; color: #92400e; border-color: #fde68a;">${escaparHtml(parsed.borgTexto)}</span>` : ''}
-                    ${parsed.tags.map(t => `<span class="kc-symptom-tag">${escaparHtml(t)}</span>`).join('')}
-                    ${parsed.seriesInfo ? `<span class="kc-status-chip st-revisado">${escaparHtml(parsed.seriesInfo)}</span>` : ''}
+                    <span class="badge ${dolor >= 6 ? 'badge-alerta' : 'badge-ok'}" style="font-size: 0.72rem;">EVA ${dolor}/10</span>
+                    ${parsed.borgTexto ? `<span class="badge" style="background: #fef3c7; color: #92400e; font-size: 0.72rem;">${escaparHtml(parsed.borgTexto)}</span>` : ''}
+                    ${parsed.tags.map(t => `<span class="kc-symptom-tag" style="padding: 2px 7px; font-size: 0.72rem;">${escaparHtml(t)}</span>`).join('')}
+                    ${parsed.seriesInfo ? `<span class="badge badge-neutro" style="font-size: 0.72rem;">Series: ${escaparHtml(parsed.seriesInfo)}</span>` : ''}
                 </div>
             `;
 
@@ -1105,87 +1112,106 @@
                 const dolor = Number(f.nivel_dolor ?? f.escala_dolor ?? 0);
                 const evaAnterior = obtenerEvaAnteriorPaciente(f);
                 const sevClass = dolor >= 6 ? 'sev-alta' : (dolor >= 4 ? 'sev-media' : 'sev-baja');
-                const evaPillClass = dolor >= 6 ? 'eva-alta' : (dolor >= 4 ? 'eva-media' : 'eva-baja');
+                const evaTone = dolor >= 6 ? 'tone-danger' : (dolor >= 4 ? 'tone-warn' : 'tone-ok');
                 const textoEva = describirNivelEva(dolor);
 
                 const pautaId = typeof f.pauta === 'object' && f.pauta !== null ? f.pauta.id : f.pauta;
                 const infoPauta = mapaPautas[pautaId] || {};
                 const nombrePaciente = capitalizarNombre(f.paciente_nombre || infoPauta.paciente_nombre || 'Paciente');
-                const tituloRutina = f.pauta_titulo || infoPauta.titulo || (pautaId ? `Pauta #${pautaId}` : 'Sesión registrada');
+                const tituloRutina = f.pauta_titulo || infoPauta.titulo || '';
 
                 const parsed = parsearComentarioApp(f.comentario);
                 const fecha = formatearFechaChile(f.fecha_ejecucion);
 
-                // Tendencia EVA vs sesión anterior
-                let evaAnteriorHtml = '';
+                // Cuadro 1: Dolor EVA + comparación anterior
+                let prevPillHtml = '';
                 if (evaAnterior != null) {
-                    const diff = dolor - evaAnterior;
-                    const cls = diff > 0 ? 'subio' : (diff < 0 ? 'bajo' : '');
-                    const icono = diff > 0 ? '↑' : (diff < 0 ? '↓' : '=');
-                    evaAnteriorHtml = `<span class="kc-eva-prev ${cls}" title="EVA sesión anterior">${icono} Antes ${evaAnterior}/10</span>`;
+                    const flecha = dolor > evaAnterior ? '↑ ' : (dolor < evaAnterior ? '↓ ' : '');
+                    prevPillHtml = `<span class="kc-prev-pill">${flecha}Antes: ${evaAnterior}/10</span>`;
                 }
 
-                // Métricas limpias y consistentes en la columna izquierda
-                const borgRowHtml = parsed.borgTexto
-                    ? `<div class="inbox-metric-item ${parsed.borgValor >= 8 ? 'metric-warn' : ''}">
-                           <i class='bx bx-tachometer'></i>
-                           <span>${escaparHtml(parsed.borgTexto)}</span>
-                       </div>`
-                    : '';
-
-                const estadoSesionTexto = f.completado ? 'Sesión completa' : 'Sesión incompleta';
-                const estadoSesionDetalle = parsed.seriesInfo ? ` · ${escaparHtml(parsed.seriesInfo)}` : '';
-                const sesionRowHtml = `
-                    <div class="inbox-metric-item ${f.completado ? 'metric-ok' : 'metric-danger'}">
-                        <i class='bx ${f.completado ? 'bx-check-circle' : 'bx-error-circle'}'></i>
-                        <span>${estadoSesionTexto}${estadoSesionDetalle}</span>
+                const cuadroEvaHtml = `
+                    <div class="kc-metric-box ${evaTone}">
+                        <div class="kc-metric-label">
+                            <span>Dolor EVA</span>
+                            ${prevPillHtml}
+                        </div>
+                        <div class="kc-metric-value">${dolor}/10 · ${textoEva}</div>
                     </div>
                 `;
 
-                // Estado de gestión
+                // Cuadro 2: Esfuerzo Borg (si viene reportado)
+                const borgTone = parsed.borgValor != null
+                    ? (parsed.borgValor >= 7 ? 'tone-warn' : 'tone-neutral')
+                    : 'tone-neutral';
+                const cuadroBorgHtml = parsed.borgDetalle
+                    ? `<div class="kc-metric-box ${borgTone}">
+                           <div class="kc-metric-label"><span>Esfuerzo Borg</span></div>
+                           <div class="kc-metric-value">${escaparHtml(parsed.borgDetalle)}</div>
+                       </div>`
+                    : '';
+
+                // Cuadro 3: Cumplimiento + Series
+                const sesionTone = f.completado ? 'tone-ok' : 'tone-danger';
+                const cuadroSesionHtml = `
+                    <div class="kc-metric-box ${sesionTone}">
+                        <div class="kc-metric-label"><span>Ejecución</span></div>
+                        <div class="kc-metric-value">${f.completado ? '100% Completa' : 'Sesión Incompleta'}</div>
+                        ${parsed.seriesInfo ? `<div class="kc-metric-sub">Series: ${escaparHtml(parsed.seriesInfo)}</div>` : ''}
+                    </div>
+                `;
+
+                // Extras del paciente: tags de síntomas y comentario escrito (solo si existen)
+                const tieneExtrasPaciente = parsed.tags.length > 0 || Boolean(parsed.textoLibre);
+                const extrasPacienteHtml = tieneExtrasPaciente
+                    ? `<div class="inbox-patient-extra">
+                           ${parsed.tags.map(t => `<span class="kc-symptom-tag"><i class='bx bx-purchase-tag-alt'></i>${escaparHtml(t)}</span>`).join('')}
+                           ${parsed.textoLibre ? `<p class="inbox-patient-quote">"${escaparHtml(parsed.textoLibre)}"</p>` : ''}
+                       </div>`
+                    : '';
+
+                // Bloque derecho (acotado): Respuesta del kinesiólogo o estado
                 const tieneRespuesta = tieneRespuestaClinica(f);
                 const enVisto = !tieneRespuesta && estaEnVistoKine(f);
                 const fechaRespFormateada = formatearFechaChile(f.fecha_respuesta);
 
-                const statusChipHtml = tieneRespuesta
-                    ? `<span class="kc-status-chip st-respondido"><i class='bx bx-check-double'></i> Respondido</span>`
-                    : (enVisto
-                        ? `<span class="kc-status-chip st-revisado"><i class='bx bx-check'></i> Revisado</span>`
-                        : `<span class="kc-status-chip st-pendiente"><i class='bx bx-time-five'></i> Pendiente</span>`);
+                let seguimientoHtml = '';
+                if (tieneRespuesta) {
+                    seguimientoHtml = `
+                        <div class="inbox-reply-box">
+                            <div class="inbox-reply-header">
+                                <span class="inbox-reply-title"><i class='bx bx-message-rounded-check'></i> Tu indicación</span>
+                                ${fechaRespFormateada !== 'N/A' ? `<span class="inbox-reply-date">${escaparHtml(fechaRespFormateada)}</span>` : ''}
+                            </div>
+                            <div class="inbox-reply-body">${escaparHtml(f.respuesta_kinesiologo)}</div>
+                        </div>
+                    `;
+                } else if (enVisto) {
+                    seguimientoHtml = `
+                        <div class="inbox-status-row">
+                            <span class="kc-status-chip st-revisado"><i class='bx bx-check-double'></i> Revisado por kinesiólogo</span>
+                        </div>
+                        ${!parsed.textoLibre ? `<p class="inbox-no-comment-hint">Sin comentario escrito adicional.</p>` : ''}
+                    `;
+                } else {
+                    seguimientoHtml = `
+                        <div class="inbox-status-row">
+                            <span class="kc-status-chip st-pendiente"><i class='bx bx-time-five'></i> Pendiente de revisión</span>
+                        </div>
+                        ${!parsed.textoLibre ? `<p class="inbox-no-comment-hint">Sin comentario escrito adicional.</p>` : ''}
+                    `;
+                }
 
-                // Tags de síntomas separados del Borg
-                const tagsHtml = parsed.tags.length > 0
-                    ? `<div class="inbox-tags-row">
-                           ${parsed.tags.map(t => `<span class="kc-symptom-tag"><i class='bx bx-purchase-tag-alt'></i>${escaparHtml(t)}</span>`).join('')}
-                       </div>`
-                    : '';
-
-                // Comentario del paciente
-                const textoHtml = parsed.textoLibre
-                    ? `<p class="inbox-comment-text">"${escaparHtml(parsed.textoLibre)}"</p>`
-                    : `<p class="inbox-comment-empty">Sin comentario escrito del paciente.</p>`;
-
-                // Indicación clínica del kinesiólogo
-                const hiloRespuestaHtml = tieneRespuesta
-                    ? `<div class="inbox-reply-box">
-                           <div class="inbox-reply-header">
-                               <span class="inbox-reply-title"><i class='bx bx-message-rounded-check'></i> Tu indicación clínica</span>
-                               ${fechaRespFormateada !== 'N/A' ? `<span class="inbox-reply-date">${escaparHtml(fechaRespFormateada)}</span>` : ''}
-                           </div>
-                           <div class="inbox-reply-body">${escaparHtml(f.respuesta_kinesiologo)}</div>
-                       </div>`
-                    : '';
-
-                // Acciones alineadas a la derecha
+                // Botones de acción
                 const botonVistoHtml = !tieneRespuesta && f.id != null
                     ? (enVisto
                         ? `<button type="button" class="btn btn-secondary btn-sm"
                             onclick="desmarcarReporteEnVisto('${escaparHtml(f.id)}')">
-                            <i class='bx bx-undo'></i> Marcar pendiente
+                            <i class='bx bx-undo'></i> Pendiente
                            </button>`
                         : `<button type="button" class="btn btn-secondary btn-sm"
                             onclick="marcarReporteEnVisto('${escaparHtml(f.id)}')">
-                            <i class='bx bx-check'></i> Marcar revisado
+                            <i class='bx bx-check'></i> Revisado
                            </button>`)
                     : '';
 
@@ -1208,37 +1234,31 @@
                 const card = document.createElement('div');
                 card.className = `inbox-card ${sevClass}`;
                 card.innerHTML = `
-                    <div class="inbox-meta">
-                        <div class="inbox-patient-head">
-                            <span class="inbox-patient-name" title="${escaparHtml(nombrePaciente)}">${escaparHtml(nombrePaciente)}</span>
+                    <div class="inbox-patient-panel">
+                        <div class="inbox-patient-header">
+                            <div class="inbox-patient-identity">
+                                <span class="inbox-patient-name">${escaparHtml(nombrePaciente)}</span>
+                                ${tituloRutina ? `<span class="inbox-routine-sub">• ${escaparHtml(tituloRutina)}</span>` : ''}
+                            </div>
                             <span class="inbox-patient-date"><i class='bx bx-calendar'></i> ${fecha}</span>
                         </div>
 
-                        <div class="inbox-eva-row">
-                            <span class="kc-eva-pill ${evaPillClass}">EVA ${dolor}/10 · ${textoEva}</span>
-                            ${evaAnteriorHtml}
+                        <div class="inbox-metrics-grid">
+                            ${cuadroEvaHtml}
+                            ${cuadroBorgHtml}
+                            ${cuadroSesionHtml}
                         </div>
 
-                        <div class="inbox-metrics-list">
-                            ${borgRowHtml}
-                            ${sesionRowHtml}
-                        </div>
+                        ${extrasPacienteHtml}
                     </div>
 
-                    <div class="inbox-content-col">
-                        <div class="inbox-content-top">
-                            <span class="inbox-routine-label">
-                                <i class='bx bx-dumbbell'></i> ${escaparHtml(tituloRutina)}
-                            </span>
-                            ${statusChipHtml}
+                    <div class="inbox-followup-panel">
+                        <div class="inbox-followup-content">
+                            ${seguimientoHtml}
                         </div>
-                        ${tagsHtml}
-                        ${textoHtml}
-                        ${hiloRespuestaHtml}
-                    </div>
-
-                    <div class="inbox-actions-col">
-                        ${accionesHtml}
+                        <div class="inbox-actions-row">
+                            ${accionesHtml}
+                        </div>
                     </div>
                 `;
                 listaInbox.appendChild(card);
