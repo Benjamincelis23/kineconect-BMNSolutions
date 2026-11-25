@@ -8,6 +8,22 @@
     <!-- Estilos unificados y Boxicons -->
     <link rel="stylesheet" href="public/css/style.css">
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <style>
+        .skeleton-box {
+            background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+            background-size: 200% 100%;
+            animation: kcShimmer 1.35s infinite ease-in-out;
+            border-radius: 10px;
+        }
+        [data-theme="dark"] .skeleton-box {
+            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+            background-size: 200% 100%;
+        }
+        @keyframes kcShimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
 </head>
 
 <body>
@@ -299,10 +315,12 @@
                                 placeholder="Buscar ejercicio por nombre o músculo..." />
                         </div>
 
-                        <!-- Estado de Carga -->
-                        <div id="loading-ejercicios" class="empty-state">
-                            <i class='bx bx-loader-alt bx-spin loading-icon'></i>
-                            <p class="loading-text">Cargando catálogo desde la API...</p>
+                        <!-- Estado de Carga con Skeletons -->
+                        <div id="loading-ejercicios" style="display: flex; flex-direction: column; gap: 10px; padding: 6px 0;">
+                            <div class="skeleton-box" style="height: 68px; width: 100%;"></div>
+                            <div class="skeleton-box" style="height: 68px; width: 100%;"></div>
+                            <div class="skeleton-box" style="height: 68px; width: 100%;"></div>
+                            <div class="skeleton-box" style="height: 68px; width: 100%;"></div>
                         </div>
 
                         <!-- Lista de Ejercicios Filtrados -->
@@ -399,7 +417,6 @@
     <!-- Script principal con la lógica interactiva del mapa, prescripción y plantillas -->
     <script src="js/crear_pautas.js"></script>
 
-    <!-- Soporte para Edición de Pautas Existentes (?editar=<id>) -->
     <!-- Soporte para Edición de Pautas Existentes (?editar=<id>) -->
     <script>
     (function habilitarModoEdicionPauta() {
@@ -545,7 +562,6 @@
 
                 renderizarCarritoEdicion();
 
-                // Permite sumar nuevos ejercicios desde la columna central durante la edición
                 const listaCentral = document.getElementById('lista-ejercicios-disponibles');
                 if (listaCentral) {
                     listaCentral.addEventListener('click', (ev) => {
@@ -560,7 +576,6 @@
                         );
                         if (!ejId) return;
 
-                        // Ignora botones de vista previa multimedia
                         if (onclickAttr.toLowerCase().includes('multimedia') || onclickAttr.toLowerCase().includes('video')) return;
 
                         ev.stopImmediatePropagation();
@@ -582,7 +597,6 @@
                     }, true);
                 }
 
-                // Intercepta el envío del formulario para ejecutar PATCH en /api/v1/pautas/<id>/
                 const form = document.getElementById('form-guardar-pauta');
                 if (form) {
                     form.addEventListener('submit', async (ev) => {

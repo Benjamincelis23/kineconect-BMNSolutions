@@ -7,6 +7,28 @@
     <title>Gestión de Pacientes - KineConnect</title>
     <link rel="stylesheet" href="public/css/style.css">
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <style>
+        .rut-feedback {
+            display: block;
+            font-size: 0.78rem;
+            font-weight: 600;
+            margin-top: 4px;
+            min-height: 18px;
+        }
+        .rut-feedback.valido {
+            color: #059669;
+        }
+        .rut-feedback.invalido {
+            color: #dc2626;
+        }
+        input.input-rut-error {
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.14);
+        }
+        input.input-rut-ok {
+            border-color: #10b981 !important;
+        }
+    </style>
 </head>
 
 <body>
@@ -36,27 +58,28 @@
                         <li id="registro-msg-item"></li>
                     </ul>
 
-                    <form id="form-registrar-paciente">
+                    <form id="form-registrar-paciente" autocomplete="off">
                         <div class="form-paciente-grid">
                             <div class="field">
                                 <label for="first_name">Nombre *</label>
-                                <input type="text" id="first_name" required placeholder="ej: Juan">
+                                <input type="text" id="first_name" required placeholder="ej: Juan" autocomplete="off">
                             </div>
 
                             <div class="field">
                                 <label for="last_name">Apellido *</label>
-                                <input type="text" id="last_name" required placeholder="ej: Pérez">
+                                <input type="text" id="last_name" required placeholder="ej: Pérez" autocomplete="off">
                             </div>
 
                             <div class="field">
-                                <label for="rut">RUT Chileno (sin puntos y con guión) *</label>
-                                <input type="text" id="rut" required placeholder="ej: 11700900-K">
-                                <span class="help-text">Formato válido (ej: 11700900-K o 18934125-K)</span>
+                                <label for="rut">RUT Chileno *</label>
+                                <input type="text" id="rut" required maxlength="12" placeholder="ej: 21.671.721-K"
+                                    autocomplete="off" oninput="manejarInputRut(this)">
+                                <span id="rut-validacion-msg" class="rut-feedback">Formato válido con dígito verificador (ej: 11.700.900-K)</span>
                             </div>
 
                             <div class="field">
                                 <label for="email">Correo Electrónico</label>
-                                <input type="email" id="email" placeholder="paciente@correo.cl">
+                                <input type="email" id="email" placeholder="paciente@correo.cl" autocomplete="off">
                                 <span class="help-text">Se intentará enviar por correo y además se mostrarán aquí en pantalla.</span>
                             </div>
 
@@ -213,12 +236,74 @@
                 .join(' ');
         }
 
+        function limpiarRut(rut) {
+            return String(rut ?? '').replace(/[^0-9kK]/g, '').toUpperCase();
+        }
+
         function formatearRutVisual(rut) {
-            const limpio = String(rut ?? '').replace(/[^0-9kK]/g, '').toUpperCase();
-            if (limpio.length < 2) return rut || 'N/A';
+            const limpio = limpiarRut(rut);
+            if (limpio.length === 0) return '';
+            if (limpio.length === 1) return limpio;
             const cuerpo = limpio.slice(0, -1);
             const dv = limpio.slice(-1);
             return `${cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}-${dv}`;
+        }
+
+        function validarRutModulo11(rutRaw) {
+            const limpio = limpiarRut(rutRaw);
+            if (limpio.length < 7 || limpio.length > 9) return false;
+
+            const cuerpo = limpio.slice(0, -1);
+            const dvIngresado = limpio.slice(-1);
+            if (!/^\d+$/.test(cuerpo)) return false;
+
+            let suma = 0;
+            let multiplicador = 2;
+            for (let i = cuerpo.length - 1; i >= 0; i--) {
+                suma += parseInt(cuerpo[i], 10) * multiplicador;
+                multiplicador = multiplicador === 7 ? 2 : multiplicador + 1;
+            }
+
+            const resto = 11 - (suma % 11);
+            let dvEsperado = String(resto);
+            if (resto === 11) dvEsperado = '0';
+            else if (resto === 10) dvEsperado = 'K';
+
+            return dvIngresado === dvEsperado;
+        }
+
+        function manejarInputRut(inputEl) {
+            const formateado = formatearRutVisual(inputEl.value);
+            inputEl.value = formateado;
+
+            const msgEl = document.getElementById('rut-validacion-msg');
+            const limpio = limpiarRut(formateado);
+
+            if (!limpio) {
+                inputEl.classList.remove('input-rut-error', 'input-rut-ok');
+                if (msgEl) {
+                    msgEl.className = 'rut-feedback';
+                    msgEl.textContent = 'Formato válido con dígito verificador (ej: 11.700.900-K)';
+                }
+                return;
+            }
+
+            const esValido = validarRutModulo11(formateado);
+            inputEl.classList.toggle('input-rut-ok', esValido);
+            inputEl.classList.toggle('input-rut-error', !esValido && limpio.length >= 7);
+
+            if (msgEl) {
+                if (esValido) {
+                    msgEl.className = 'rut-feedback valido';
+                    msgEl.textContent = '✓ RUT chileno válido (Módulo 11)';
+                } else if (limpio.length >= 7) {
+                    msgEl.className = 'rut-feedback invalido';
+                    msgEl.textContent = '✕ Dígito verificador inválido. Revisa el número ingresado.';
+                } else {
+                    msgEl.className = 'rut-feedback';
+                    msgEl.textContent = 'Completa el RUT incluyendo su dígito verificador...';
+                }
+            }
         }
 
         function formatearFechaChile(isoStr) {
@@ -326,7 +411,7 @@
                 (pac?.user && typeof pac.user === 'object' ? `${pac.user.first_name} ${pac.user.last_name}`.trim() : '') ||
                 'Paciente'
             );
-            const rutMostrar = formatearRutVisual(pac?.rut || 'N/A');
+            const rutMostrar = formatearRutVisual(pac?.rut || 'N/A') || 'N/A';
             const emailMostrar = pac?.email || (pac?.user && typeof pac.user === 'object' ? pac.user.email : '') || 'No registrado';
 
             const modal = document.getElementById('modal-informe-paciente');
@@ -546,7 +631,7 @@
             lista.forEach(p => {
                 const tr = document.createElement('tr');
                 const nombre = capitalizarNombre(p.nombre_completo || (p.user && typeof p.user === 'object' ? `${p.user.first_name} ${p.user.last_name}`.trim() : '') || 'Paciente');
-                const rutFormateado = formatearRutVisual(p.rut || 'N/A');
+                const rutFormateado = formatearRutVisual(p.rut || 'N/A') || 'N/A';
                 const correo = p.email || (p.user && typeof p.user === 'object' ? p.user.email : '') || 'Sin correo';
                 const userId = p.user_id || ((p.user && typeof p.user === 'object') ? p.user.id : (p.user || p.id));
 
@@ -686,12 +771,24 @@
                 formRegistro.addEventListener('submit', async (e) => {
                     e.preventDefault();
 
-                    const rutLimpio = document.getElementById('rut').value.replace(/\./g, '').trim().toUpperCase();
+                    const rutInput = document.getElementById('rut');
+                    const rutRaw = rutInput.value.trim();
+
+                    if (!validarRutModulo11(rutRaw)) {
+                        msgBox.className = 'messages is-error';
+                        msgItem.textContent = 'El RUT ingresado no es válido. Verifica el número y el dígito verificador.';
+                        msgBox.classList.remove('is-hidden');
+                        rutInput.focus();
+                        return;
+                    }
+
+                    const limpio = limpiarRut(rutRaw);
+                    const rutApi = `${limpio.slice(0, -1)}-${limpio.slice(-1)}`;
                     const firstName = capitalizarNombre(document.getElementById('first_name').value);
                     const lastName = capitalizarNombre(document.getElementById('last_name').value);
                     const correo = document.getElementById('email').value.trim();
 
-                    const payload = { first_name: firstName, last_name: lastName, rut: rutLimpio, email: correo };
+                    const payload = { first_name: firstName, last_name: lastName, rut: rutApi, email: correo };
 
                     btnSubmit.disabled = true;
                     btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
@@ -700,10 +797,17 @@
                     try {
                         const res = await api.registrarPaciente(payload);
                         formRegistro.reset();
+                        rutInput.classList.remove('input-rut-ok', 'input-rut-error');
+                        const msgRut = document.getElementById('rut-validacion-msg');
+                        if (msgRut) {
+                            msgRut.className = 'rut-feedback';
+                            msgRut.textContent = 'Formato válido con dígito verificador (ej: 11.700.900-K)';
+                        }
+
                         toggleFormulario();
                         await cargarPacientes();
 
-                        const userGenerado = res?.username || rutLimpio.replace(/-/g, '');
+                        const userGenerado = res?.username || limpio;
                         const passGenerada = res?.password_temporal || '';
                         abrirModalCredenciales(`${firstName} ${lastName}`, userGenerado, passGenerada, correo);
 
