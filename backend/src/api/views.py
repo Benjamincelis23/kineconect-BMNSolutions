@@ -273,6 +273,7 @@ class MeView(APIView):
         semana = 0
         meta_total = 0
 
+        # 1. En MeView (reemplaza el bucle for p in pautas_activas:)
         for p in pautas_activas:
             meta_pauta = getattr(p, 'frecuencia_semanal', None) or 3
             meta_total += meta_pauta
@@ -280,6 +281,7 @@ class MeView(APIView):
             desde_pauta = _inicio_ciclo_pauta(p)
             hechas_pauta = RegistroFeedback.objects.filter(
                 pauta=p,
+                completado=True,
                 fecha_ejecucion__gte=desde_pauta,
             ).count()
             semana += min(hechas_pauta, meta_pauta)
@@ -318,11 +320,13 @@ class PautaDetailView(generics.RetrieveAPIView):
         )
 
 
+# 2. En _validar_limite_sesiones(pauta):
 def _validar_limite_sesiones(pauta):
-    """Impide registrar más sesiones si el paciente ya cumplió su meta semanal vigente para esta pauta."""
+    """Impide registrar más sesiones completadas si el paciente ya cumplió su meta semanal vigente."""
     desde_fecha = _inicio_ciclo_pauta(pauta)
     sesiones_semana = RegistroFeedback.objects.filter(
         pauta=pauta,
+        completado=True,
         fecha_ejecucion__gte=desde_fecha,
     ).count()
 
@@ -501,10 +505,12 @@ def _construir_resumen_clinico(user, pautas_qs):
     total_sesiones_ciclo = 0
     total_meta_ciclo = 0
 
+    # 3. En _construir_resumen_clinico(user, pautas_qs) (dentro del bucle for pauta in pautas_activas:)
     for pauta in pautas_activas:
         meta = getattr(pauta, 'frecuencia_semanal', None) or 3
         hechas = RegistroFeedback.objects.filter(
             pauta=pauta,
+            completado=True,
             fecha_ejecucion__gte=_inicio_ciclo_pauta(pauta),
         ).count()
         total_sesiones_ciclo += min(hechas, meta)
@@ -665,8 +671,10 @@ class PautaViewSet(viewsets.ModelViewSet):
             # Solo reinicia el contador si la pauta ya había cumplido su meta semanal;
             # si estaba en desarrollo (ej. 1/3 o 2/3), conserva las sesiones ya realizadas.
             meta_pauta = getattr(instance, 'frecuencia_semanal', None) or 3
+            # 4. En PautaViewSet.update (cálculo de hechas_ciclo):
             hechas_ciclo = RegistroFeedback.objects.filter(
                 pauta=instance,
+                completado=True,
                 fecha_ejecucion__gte=_inicio_ciclo_pauta(instance),
             ).count()
 

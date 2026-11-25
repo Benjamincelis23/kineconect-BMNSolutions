@@ -27,6 +27,7 @@ function formatearFechaHora(isoStr) {
   const fecha = new Date(isoStr);
   if (Number.isNaN(fecha.getTime())) return '';
   return fecha.toLocaleString('es-CL', {
+    timeZone: 'America/Santiago',
     day: '2-digit',
     month: '2-digit',
     hour: '2-digit',
@@ -42,6 +43,21 @@ function capitalizarNombre(texto) {
     .split(/\s+/)
     .map((parte) => parte.charAt(0).toUpperCase() + parte.slice(1).toLowerCase())
     .join(' ');
+}
+
+function resolverAutorKinesiologo(pauta, respuestaItem = null) {
+  const nombrePaciente = norm(pauta?.paciente_nombre);
+  const candidatos = [
+    respuestaItem?.kinesiologo_nombre,
+    pauta?.kinesiologo_nombre,
+  ];
+  for (const cand of candidatos) {
+    const limpio = capitalizarNombre(cand);
+    if (limpio && norm(limpio) !== 'kineconnect' && (!nombrePaciente || norm(limpio) !== nombrePaciente)) {
+      return limpio;
+    }
+  }
+  return 'tu Kinesiólogo';
 }
 
 function ordenarRespuestasRecientes(items = []) {
@@ -166,9 +182,9 @@ export default function PautaDetailScreen({ route, navigation }) {
     primary: isDark ? '#38BDF8' : '#0284C7',
     success: '#10B981',
     successBg: isDark ? '#064E3B' : '#D1FAE5',
-    danger: '#EF4444',
-    dangerBg: isDark ? '#450A0A' : '#FEF2F2',
-    dangerBorder: isDark ? '#7F1D1D' : '#FECACA',
+    danger: isDark ? '#FCA5A5' : '#DC2626',
+    dangerBg: isDark ? '#7F1D1D' : '#FEE2E2',
+    dangerBorder: isDark ? '#EF4444' : '#FCA5A5',
   };
 
   const [pauta, setPauta] = useState(null);
@@ -594,8 +610,11 @@ export default function PautaDetailScreen({ route, navigation }) {
                           Descanso: {descansoRestante}s
                         </Text>
                       </View>
-                      <TouchableOpacity onPress={() => setDescansoRestante(null)}>
-                        <Text style={{ color: c.primary, fontWeight: '700', fontSize: 13 }}>Saltar →</Text>
+                      <TouchableOpacity
+                        onPress={() => setDescansoRestante(null)}
+                        style={[styles.skipRestBtn, { backgroundColor: c.surface, borderColor: c.primary }]}
+                      >
+                        <Text style={{ color: c.primary, fontWeight: '800', fontSize: 12.5 }}>Saltar descanso →</Text>
                       </TouchableOpacity>
                     </View>
                   ) : !ejTerminado ? (
@@ -667,18 +686,18 @@ export default function PautaDetailScreen({ route, navigation }) {
             )}
           </View>
 
-          {!esSoloConsulta && (
+          {!esSoloConsulta && !ejTerminado && (
             <TouchableOpacity
-              activeOpacity={0.75}
+              activeOpacity={0.8}
               onPress={abrirEvaluacionDolor}
               style={[
                 styles.painStopBtn,
                 { backgroundColor: c.dangerBg, borderColor: c.dangerBorder },
               ]}
             >
-              <MaterialCommunityIcons name="alert-circle-outline" size={18} color={c.danger} />
-              <Text style={{ color: c.danger, fontWeight: '700', fontSize: 12.5 }}>
-                ¿Sientes dolor agudo? Detener sesión y reportar
+              <MaterialCommunityIcons name="alert-octagon" size={20} color={c.danger} />
+              <Text style={{ color: c.danger, fontWeight: '800', fontSize: 13 }}>
+                ¿Dolor agudo? Detener sesión y reportar
               </Text>
             </TouchableOpacity>
           )}
@@ -693,6 +712,9 @@ export default function PautaDetailScreen({ route, navigation }) {
       </View>
     );
   }
+
+  const autorRespuestaPauta = resolverAutorKinesiologo(pauta, respuestasPauta[0]);
+  const autorIndicacionPauta = resolverAutorKinesiologo(pauta);
 
   return (
     <View style={[styles.screen, { backgroundColor: c.bg }]}>
@@ -718,12 +740,12 @@ export default function PautaDetailScreen({ route, navigation }) {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <MaterialCommunityIcons name="stethoscope" size={17} color={c.primary} />
                 <Text style={{ color: c.accentText, fontSize: 12.5, fontWeight: '800' }}>
-                  Indicación de {capitalizarNombre(pauta.kinesiologo_nombre) || 'tu Kinesiólogo'}
+                  Indicación de {autorIndicacionPauta}
                 </Text>
               </View>
               {!!pauta.actualizado_en && (
                 <Text style={{ color: c.textSub, fontSize: 11, fontWeight: '600' }}>
-                  Act. {new Date(pauta.actualizado_en).toLocaleDateString('es-CL')}
+                  Act. {new Date(pauta.actualizado_en).toLocaleDateString('es-CL', { timeZone: 'America/Santiago' })}
                 </Text>
               )}
             </View>
@@ -793,7 +815,7 @@ export default function PautaDetailScreen({ route, navigation }) {
                   {index + 1}. {ej.nombre}
                 </Text>
                 <Text style={{ color: c.textSub, fontSize: 12.5, marginTop: 3 }}>
-                  {ej.series} series × {ej.repeticiones} reps • Descanso {ej.descanso}s • {ej.zona}
+                  {ej.series} {ej.series === 1 ? 'serie' : 'series'} × {ej.repeticiones} reps • Descanso {ej.descanso}s • {ej.zona}
                 </Text>
               </View>
 
@@ -812,7 +834,7 @@ export default function PautaDetailScreen({ route, navigation }) {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
                 <MaterialCommunityIcons name="doctor" size={17} color={c.primary} />
                 <Text style={{ color: c.primary, fontSize: 12.5, fontWeight: '800' }}>
-                  Respuesta de {capitalizarNombre(pauta.kinesiologo_nombre) || 'tu Kinesiólogo'}
+                  Respuesta de {autorRespuestaPauta}
                 </Text>
               </View>
               {!!formatearFechaHora(respuestasPauta[0].fecha_respuesta || respuestasPauta[0].fecha_ejecucion) && (
@@ -876,7 +898,8 @@ const styles = StyleSheet.create({
   metricDivider: { width: 1, height: 26 },
   seriesDotsRow: { flexDirection: 'row', gap: 8, marginBottom: 14, flexWrap: 'wrap' },
   serieDot: { flex: 1, minWidth: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 9, borderRadius: 10, borderWidth: 1.5 },
-  restActionBox: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 13, borderRadius: 14, borderWidth: 1.5 },
+  restActionBox: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 12, borderRadius: 14, borderWidth: 1.5 },
+  skipRestBtn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10, borderWidth: 1 },
   doneBox: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 14 },
   footerNav: { flexDirection: 'row', gap: 10, marginTop: 6 },
   painStopBtn: {
@@ -884,11 +907,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 11,
+    paddingVertical: 13,
     paddingHorizontal: 14,
     borderRadius: 12,
-    borderWidth: 1,
-    marginTop: 4,
+    borderWidth: 1.5,
+    marginTop: 6,
   },
   summaryBox: { padding: 16, borderRadius: 16, borderWidth: 1, marginTop: 4 },
   listCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 16, borderWidth: 1.5 },

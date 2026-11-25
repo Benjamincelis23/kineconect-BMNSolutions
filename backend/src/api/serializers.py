@@ -147,8 +147,11 @@ def _contar_sesiones_pauta(obj):
     marca = getattr(obj, 'actualizado_en', None) or getattr(obj, 'creado_en', None)
     if marca and marca > desde:
         desde = marca
-    return RegistroFeedback.objects.filter(pauta=obj, fecha_ejecucion__gte=desde).count()
-
+    return RegistroFeedback.objects.filter(
+        pauta=obj,
+        completado=True,
+        fecha_ejecucion__gte=desde,
+    ).count()
 
 def _obtener_ultima_respuesta_kine(obj):
     fb = (
@@ -453,6 +456,7 @@ class RegistroFeedbackSerializer(serializers.ModelSerializer):
     escala_dolor = serializers.IntegerField(source='nivel_dolor', required=False, allow_null=True)
     pauta_titulo = serializers.CharField(source='pauta.titulo', read_only=True)
     paciente_nombre = serializers.SerializerMethodField(read_only=True)
+    kinesiologo_nombre = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = RegistroFeedback
@@ -461,6 +465,7 @@ class RegistroFeedbackSerializer(serializers.ModelSerializer):
             'pauta',
             'pauta_titulo',
             'paciente_nombre',
+            'kinesiologo_nombre',
             'completado',
             'nivel_dolor',
             'escala_dolor',
@@ -476,6 +481,15 @@ class RegistroFeedbackSerializer(serializers.ModelSerializer):
         if not paciente:
             return 'Paciente'
         return _nombre_o_username(paciente)
+
+    def get_kinesiologo_nombre(self, obj):
+        kine = getattr(obj.pauta, 'kinesiologo', None)
+        if not kine and getattr(obj.pauta, 'paciente', None):
+            perfil = getattr(obj.pauta.paciente, 'perfil', None)
+            kine = getattr(perfil, 'kinesiologo_asignado', None)
+        if not kine:
+            return 'Tu Kinesiólogo'
+        return _nombre_o_username(kine)
 
     def validate_nivel_dolor(self, value):
         if value is not None and not (0 <= int(value) <= 10):

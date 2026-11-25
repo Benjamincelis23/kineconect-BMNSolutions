@@ -35,6 +35,7 @@ function formatearFechaCorta(isoStr) {
   const fecha = new Date(isoStr);
   if (Number.isNaN(fecha.getTime())) return '';
   return fecha.toLocaleString('es-CL', {
+    timeZone: 'America/Santiago',
     day: '2-digit',
     month: '2-digit',
     hour: '2-digit',
@@ -63,6 +64,41 @@ function ordenarRespuestasRecientes(items = []) {
     const tB = new Date(b?.fecha_respuesta || b?.fecha_ejecucion || 0).getTime();
     return (Number.isNaN(tB) ? 0 : tB) - (Number.isNaN(tA) ? 0 : tA);
   });
+}
+
+function combinarRespuestasKine(listaFeedback = [], listaPautas = []) {
+  const mapa = new Map();
+
+  if (Array.isArray(listaFeedback)) {
+    listaFeedback.forEach((item) => {
+      if (item?.respuesta_kinesiologo && String(item.respuesta_kinesiologo).trim().length > 0) {
+        const key = item.id != null ? `fb_${item.id}` : `p_${obtenerPautaIdRespuesta(item)}_${item.fecha_respuesta || ''}`;
+        mapa.set(key, item);
+      }
+    });
+  }
+
+  if (Array.isArray(listaPautas)) {
+    listaPautas.forEach((p) => {
+      const ult = p?.ultima_respuesta_kine;
+      if (ult?.respuesta && String(ult.respuesta).trim().length > 0) {
+        const key = ult.feedback_id != null ? `fb_${ult.feedback_id}` : `p_${p.id}_${ult.fecha_respuesta || ''}`;
+        if (!mapa.has(key)) {
+          mapa.set(key, {
+            id: ult.feedback_id ?? `pauta_${p.id}`,
+            pauta: p.id,
+            pauta_titulo: p.titulo,
+            kinesiologo_nombre: p.kinesiologo_nombre,
+            nivel_dolor: ult.nivel_dolor_reportado ?? 0,
+            respuesta_kinesiologo: ult.respuesta,
+            fecha_respuesta: ult.fecha_respuesta,
+          });
+        }
+      }
+    });
+  }
+
+  return ordenarRespuestasRecientes(Array.from(mapa.values()));
 }
 
 function obtenerInfoKinesiologo(me, pautas = []) {
@@ -141,15 +177,9 @@ export default function HomeScreen({ navigation }) {
         contarPendientesCola(),
       ]);
 
-      const lista = p.data.results ?? p.data;
+      const lista = p.data.results ?? p.data ?? [];
       const listaFeedback = fb.data.results ?? fb.data ?? [];
-      const conRespuesta = Array.isArray(listaFeedback)
-        ? ordenarRespuestasRecientes(
-            listaFeedback.filter(
-              (item) => item?.respuesta_kinesiologo && String(item.respuesta_kinesiologo).trim().length > 0
-            )
-          )
-        : [];
+      const conRespuesta = combinarRespuestasKine(listaFeedback, lista);
 
       setMe(m.data);
       setPautas(lista);
@@ -162,7 +192,7 @@ export default function HomeScreen({ navigation }) {
       if (cData) {
         setMe(cData.me);
         setPautas(cData.pautas);
-        setRespuestasKine(ordenarRespuestasRecientes(cData.respuestasKine || []));
+        setRespuestasKine(combinarRespuestasKine(cData.respuestasKine || [], cData.pautas || []));
       } else {
         setError(true);
       }
@@ -260,11 +290,26 @@ export default function HomeScreen({ navigation }) {
   }
 
   const nombrePaciente = capitalizarNombre(me.nombre);
-  const metaSemanal = Math.max(1, Number(me.meta_semanal || 3));
-  const sesionesSemana = Number(me.sesiones_semana || 0);
+  const infoKine = obtenerInfoKinesiologo(me, pautas);
+
+  // Sincroniza el contador global con las pautas activas para evitar contradicciones entre tarjetas
+  const pautasConConteo = Array.isArray(pautas)
+    ? pautas.filter((p) => p && p.sesiones_semana != null)
+    : [];
+
+  const metaSemanal = pautasConConteo.length > 0
+    ? pautasConConteo.reduce((acc, p) => acc + Math.max(1, Number(p.meta_semanal || 3)), 0)
+    : Math.max(1, Number(me.meta_semanal || 3));
+
+  const sesionesSemana = pautasConConteo.length > 0
+    ? pautasConConteo.reduce((acc, p) => {
+        const metaP = Math.max(1, Number(p.meta_semanal || 3));
+        return acc + Math.min(Number(p.sesiones_semana || 0), metaP);
+      }, 0)
+    : Number(me.sesiones_semana || 0);
+
   const progreso = Math.min(1, sesionesSemana / metaSemanal);
   const metaGlobalCumplida = sesionesSemana >= metaSemanal;
-  const infoKine = obtenerInfoKinesiologo(me, pautas);
 
   const esPautaCumplida = (pauta) => {
     if (!pauta) return metaGlobalCumplida;
@@ -593,6 +638,7 @@ export default function HomeScreen({ navigation }) {
           respuestasVisibles.map(({ item, clave }) => {
             const fechaTexto = formatearFechaCorta(item.fecha_respuesta || item.fecha_ejecucion);
             const tituloPauta = item.pauta_titulo || item.titulo_pauta || '';
+            const autorKine = capitalizarNombre(item.kinesiologo_nombre || infoKine.nombre || 'Tu Kinesiólogo');
             const requiereRevisionPauta = Number(item?.nivel_dolor ?? 0) >= 6;
             const pautaId = requiereRevisionPauta ? obtenerPautaIdRespuesta(item) : null;
             const yaVisto = Boolean(respuestasVistas[clave]);
@@ -634,7 +680,7 @@ export default function HomeScreen({ navigation }) {
                         { color: esNueva ? c.primary : c.textSub },
                       ]}
                     >
-                      {tituloPauta ? `Kinesiólogo • ${tituloPauta}` : 'Respuesta del kinesiólogo'}
+                      {tituloPauta ? `${autorKine} • ${tituloPauta}` : autorKine}
                     </Text>
                   </View>
 
