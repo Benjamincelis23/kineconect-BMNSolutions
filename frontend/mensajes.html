@@ -38,13 +38,16 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
+            width: 100%;
         }
 
         .inbox-card {
             display: grid;
-            grid-template-columns: minmax(220px, 290px) 1fr;
-            gap: 16px;
-            padding: 16px 18px;
+            grid-template-columns: minmax(240px, 310px) minmax(0, 1fr);
+            gap: 18px;
+            padding: 16px 20px;
+            width: 100%;
+            box-sizing: border-box;
             border-radius: 12px;
             border: 1px solid var(--gris-200);
             border-left-width: 4px;
@@ -72,26 +75,29 @@
             display: flex;
             flex-direction: column;
             gap: 6px;
+            min-width: 0;
             border-right: 1px solid var(--gris-200);
-            padding-right: 14px;
+            padding-right: 16px;
         }
 
         .inbox-body {
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            gap: 10px;
+            justify-content: flex-start;
+            gap: 12px;
+            min-width: 0;
         }
 
         @media (max-width: 760px) {
             .inbox-card {
                 grid-template-columns: 1fr;
+                gap: 12px;
             }
             .inbox-meta {
                 border-right: none;
                 border-bottom: 1px solid var(--gris-200);
                 padding-right: 0;
-                padding-bottom: 10px;
+                padding-bottom: 12px;
             }
         }
 
