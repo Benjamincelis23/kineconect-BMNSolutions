@@ -21,19 +21,22 @@
         }
 
         body.dark-mode #modal-responder-feedback .modal-card,
-        html.dark-mode #modal-responder-feedback .modal-card {
+        html.dark-mode #modal-responder-feedback .modal-card,
+        [data-theme="dark"] #modal-responder-feedback .modal-card {
             background-color: #162236 !important;
             color: #f8fafc !important;
             border: 1px solid #24344d !important;
         }
 
         body.dark-mode #modal-responder-feedback textarea,
-        html.dark-mode #modal-responder-feedback textarea {
+        html.dark-mode #modal-responder-feedback textarea,
+        [data-theme="dark"] #modal-responder-feedback textarea {
             background-color: #0f172a !important;
             color: #f8fafc !important;
             border-color: #334155 !important;
         }
 
+        /* ===== FEED DE REPORTES (3 COLUMNAS ALINEADAS) ===== */
         .inbox-list {
             display: flex;
             flex-direction: column;
@@ -42,100 +45,429 @@
         }
 
         .inbox-card {
+            position: relative;
+            overflow: hidden;
             display: grid;
-            grid-template-columns: minmax(380px, 470px) minmax(0, 1fr);
-            gap: 22px;
-            padding: 18px 22px;
+            grid-template-columns: 300px minmax(0, 1fr) 186px;
+            align-items: stretch;
             width: 100%;
             box-sizing: border-box;
             border-radius: 12px;
-            border: 1px solid var(--gris-200);
-            border-left-width: 5px;
+            border: 1px solid var(--gris-200, #e2e8f0);
             background: var(--blanco, #ffffff);
-            transition: box-shadow 0.16s ease;
+            transition: box-shadow 0.16s ease, border-color 0.16s ease;
+        }
+
+        .inbox-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 4px;
+            background: #94a3b8;
         }
 
         .inbox-card:hover {
-            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.07);
+        }
+
+        .inbox-card.sev-alta::before {
+            background: #ef4444;
         }
 
         .inbox-card.sev-alta {
-            border-left-color: #ef4444;
-            background: linear-gradient(90deg, rgba(239, 68, 68, 0.04) 0%, var(--blanco, #ffffff) 28%);
+            background: linear-gradient(90deg, rgba(239, 68, 68, 0.04) 0%, var(--blanco, #ffffff) 22%);
         }
 
-        .inbox-card.sev-media {
-            border-left-color: #f59e0b;
+        .inbox-card.sev-media::before {
+            background: #f59e0b;
         }
 
-        .inbox-card.sev-baja {
-            border-left-color: #10b981;
+        .inbox-card.sev-baja::before {
+            background: #10b981;
         }
 
+        /* Columna 1: Paciente y Métricas Estructuradas */
         .inbox-meta {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            min-width: 0;
-            border-right: 1px solid var(--gris-200);
-            padding-right: 22px;
-        }
-
-        .inbox-body {
-            display: flex;
-            flex-direction: row;
             justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 16px;
+            gap: 10px;
+            padding: 16px 18px 16px 22px;
+            border-right: 1px solid var(--gris-200, #e2e8f0);
             min-width: 0;
         }
 
-        .inbox-content-col {
-            flex: 1 1 260px;
+        .inbox-patient-head {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            min-width: 0;
+            gap: 2px;
         }
 
-        .inbox-actions-col {
+        .inbox-patient-name {
+            color: var(--azul-900, #0f172a);
+            font-size: 0.96rem;
+            font-weight: 700;
+            line-height: 1.25;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .inbox-patient-date {
+            font-size: 0.76rem;
+            color: var(--gris-500, #64748b);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .inbox-eva-row {
             display: flex;
+            align-items: center;
             gap: 8px;
             flex-wrap: wrap;
+        }
+
+        .kc-eva-pill {
+            display: inline-flex;
             align-items: center;
-            justify-content: flex-end;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.77rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            text-transform: none;
+            line-height: 1.2;
+        }
+
+        .kc-eva-pill.eva-alta {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+        }
+
+        .kc-eva-pill.eva-media {
+            background: #fef3c7;
+            color: #b45309;
+            border: 1px solid #fde68a;
+        }
+
+        .kc-eva-pill.eva-baja {
+            background: #d1fae5;
+            color: #047857;
+            border: 1px solid #a7f3d0;
+        }
+
+        .kc-eva-prev {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--gris-500, #64748b);
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .kc-eva-prev.subio {
+            color: #dc2626;
+        }
+
+        .kc-eva-prev.bajo {
+            color: #059669;
+        }
+
+        .inbox-metrics-list {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            padding-top: 8px;
+            border-top: 1px dashed var(--gris-200, #e2e8f0);
+        }
+
+        .inbox-metric-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.78rem;
+            color: var(--gris-600, #475569);
+            line-height: 1.3;
+        }
+
+        .inbox-metric-item i {
+            font-size: 0.95rem;
             flex-shrink: 0;
         }
 
-        @media (max-width: 960px) {
+        .inbox-metric-item.metric-warn {
+            color: #b45309;
+            font-weight: 600;
+        }
+
+        .inbox-metric-item.metric-ok {
+            color: #047857;
+            font-weight: 600;
+        }
+
+        .inbox-metric-item.metric-danger {
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        /* Columna 2: Contenido Clínico, Síntomas y Respuesta */
+        .inbox-content-col {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 10px;
+            padding: 16px 20px;
+            min-width: 0;
+        }
+
+        .inbox-content-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .inbox-routine-label {
+            font-size: 0.76rem;
+            font-weight: 600;
+            color: var(--gris-500, #64748b);
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            min-width: 0;
+        }
+
+        .kc-status-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 9px;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: none;
+            white-space: nowrap;
+        }
+
+        .kc-status-chip.st-pendiente {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .kc-status-chip.st-respondido {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .kc-status-chip.st-revisado {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .inbox-tags-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .kc-symptom-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 9px;
+            border-radius: 6px;
+            background: #f0f9ff;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+            font-size: 0.74rem;
+            font-weight: 600;
+            text-transform: none;
+        }
+
+        .inbox-comment-text {
+            color: var(--azul-900, #0f172a);
+            font-size: 0.9rem;
+            line-height: 1.45;
+            margin: 0;
+        }
+
+        .inbox-comment-empty {
+            color: var(--gris-500, #94a3b8);
+            font-size: 0.81rem;
+            margin: 0;
+        }
+
+        .inbox-reply-box {
+            padding: 10px 13px;
+            border-radius: 9px;
+            background: rgba(2, 132, 199, 0.07);
+            border: 1px solid rgba(2, 132, 199, 0.16);
+            border-left: 3px solid #0284c7;
+        }
+
+        .inbox-reply-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 3px;
+        }
+
+        .inbox-reply-title {
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: #0284c7;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .inbox-reply-date {
+            font-size: 0.71rem;
+            color: var(--gris-500, #64748b);
+            white-space: nowrap;
+        }
+
+        .inbox-reply-body {
+            font-size: 0.85rem;
+            line-height: 1.42;
+            color: var(--azul-900, #0f172a);
+        }
+
+        /* Columna 3: Acciones Alineadas */
+        .inbox-actions-col {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 7px;
+            padding: 14px 16px;
+            border-left: 1px solid var(--gris-200, #e2e8f0);
+            background: rgba(248, 250, 252, 0.55);
+        }
+
+        .inbox-actions-col .btn {
+            width: 100%;
+            justify-content: center;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.78rem;
+            padding: 7px 10px;
+            box-sizing: border-box;
+            white-space: nowrap;
+        }
+
+        /* Responsive */
+        @media (max-width: 1080px) {
+            .inbox-card {
+                grid-template-columns: 270px minmax(0, 1fr);
+            }
+
+            .inbox-actions-col {
+                grid-column: 1 / -1;
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: flex-end;
+                border-left: none;
+                border-top: 1px solid var(--gris-200, #e2e8f0);
+                padding: 10px 18px;
+            }
+
+            .inbox-actions-col .btn {
+                width: auto;
+            }
+        }
+
+        @media (max-width: 760px) {
             .inbox-card {
                 grid-template-columns: 1fr;
-                gap: 14px;
             }
+
             .inbox-meta {
                 border-right: none;
-                border-bottom: 1px solid var(--gris-200);
-                padding-right: 0;
-                padding-bottom: 12px;
+                border-bottom: 1px solid var(--gris-200, #e2e8f0);
+                padding: 14px 16px 14px 20px;
             }
+
+            .inbox-content-col {
+                padding: 14px 16px 14px 20px;
+            }
+
             .inbox-actions-col {
-                width: 100%;
                 justify-content: flex-start;
             }
         }
 
-        [data-theme="dark"] .inbox-card {
+        /* Dark Mode */
+        [data-theme="dark"] .inbox-card,
+        body.dark-mode .inbox-card,
+        html.dark-mode .inbox-card {
             background: #162236;
             border-color: #24344d;
         }
 
-        [data-theme="dark"] .inbox-card.sev-alta {
-            background: linear-gradient(90deg, rgba(239, 68, 68, 0.14) 0%, #162236 32%);
+        [data-theme="dark"] .inbox-card.sev-alta,
+        body.dark-mode .inbox-card.sev-alta,
+        html.dark-mode .inbox-card.sev-alta {
+            background: linear-gradient(90deg, rgba(239, 68, 68, 0.14) 0%, #162236 28%);
         }
 
-        [data-theme="dark"] .inbox-meta {
+        [data-theme="dark"] .inbox-meta,
+        body.dark-mode .inbox-meta,
+        html.dark-mode .inbox-meta,
+        [data-theme="dark"] .inbox-metrics-list,
+        body.dark-mode .inbox-metrics-list,
+        html.dark-mode .inbox-metrics-list,
+        [data-theme="dark"] .inbox-actions-col,
+        body.dark-mode .inbox-actions-col,
+        html.dark-mode .inbox-actions-col {
             border-color: #24344d;
+        }
+
+        [data-theme="dark"] .inbox-actions-col,
+        body.dark-mode .inbox-actions-col,
+        html.dark-mode .inbox-actions-col {
+            background: rgba(15, 23, 42, 0.35);
+        }
+
+        [data-theme="dark"] .inbox-patient-name,
+        [data-theme="dark"] .inbox-comment-text,
+        [data-theme="dark"] .inbox-reply-body,
+        body.dark-mode .inbox-patient-name,
+        body.dark-mode .inbox-comment-text,
+        body.dark-mode .inbox-reply-body {
+            color: #f1f5f9;
+        }
+
+        [data-theme="dark"] .kc-status-chip.st-revisado,
+        body.dark-mode .kc-status-chip.st-revisado {
+            background: #1e293b;
+            color: #cbd5e1;
+        }
+
+        [data-theme="dark"] .kc-symptom-tag,
+        body.dark-mode .kc-symptom-tag {
+            background: rgba(56, 189, 248, 0.12);
+            color: #7dd3fc;
+            border-color: rgba(56, 189, 248, 0.3);
+        }
+
+        [data-theme="dark"] .inbox-reply-box,
+        body.dark-mode .inbox-reply-box {
+            background: rgba(56, 189, 248, 0.1);
+            border-color: rgba(56, 189, 248, 0.22);
+            border-left-color: #38bdf8;
+        }
+
+        [data-theme="dark"] .inbox-reply-title,
+        body.dark-mode .inbox-reply-title {
+            color: #38bdf8;
         }
 
         .btn-sugerencia-kine {
@@ -160,7 +492,8 @@
         }
 
         body.dark-mode .btn-sugerencia-kine.seleccionada,
-        html.dark-mode .btn-sugerencia-kine.seleccionada {
+        html.dark-mode .btn-sugerencia-kine.seleccionada,
+        [data-theme="dark"] .btn-sugerencia-kine.seleccionada {
             background: rgba(56, 189, 248, 0.18) !important;
             border-color: #38bdf8 !important;
             color: #38bdf8 !important;
@@ -418,25 +751,37 @@
             let borgTexto = '';
             let borgValor = null;
 
-            const matchSeries = texto.match(/(?:\|\s*)?(Series:\s*[^|]+)\.?$/i);
+            // 1. Extraer Series al final
+            const matchSeries = texto.match(/(?:[|•]\s*)?(Series:\s*[^|•]+)\.?$/i);
             if (matchSeries) {
-                seriesInfo = matchSeries[1].trim();
+                seriesInfo = matchSeries[1].replace(/\.$/, '').trim();
                 texto = texto.slice(0, matchSeries.index).trim();
             }
 
-            const matchBorg = texto.match(/(?:^|\|\s*)(Esfuerzo\s*Borg\s*[:\-]?\s*([^|]+))(?:\s*\||$)/i);
+            // 2. Extraer TODOS los [tags] en cualquier posición (arregla el choque con Borg)
+            texto = texto.replace(/\[([^\]]+)\]/g, (_, contenido) => {
+                contenido.split(',').map(t => t.trim()).filter(Boolean).forEach(t => {
+                    if (!tags.includes(t)) tags.push(t);
+                });
+                return ' ';
+            });
+
+            // 3. Extraer Esfuerzo Borg deteniéndose antes de | o •
+            const matchBorg = texto.match(/(?:^|[|•]\s*)(Esfuerzo\s*Borg\s*[:\-]?\s*([^|•]+?))(?:\s*[|•]|$)/i);
             if (matchBorg) {
-                borgTexto = matchBorg[1].trim();
-                const numMatch = matchBorg[2].match(/(\d+(?:[.,]\d+)?)/);
+                const detalleBorg = matchBorg[2].trim();
+                borgTexto = `Borg ${detalleBorg}`;
+                const numMatch = detalleBorg.match(/(\d+(?:[.,]\d+)?)/);
                 if (numMatch) borgValor = Number(numMatch[1].replace(',', '.'));
-                texto = texto.replace(matchBorg[0], ' ').replace(/^\s*\|\s*|\s*\|\s*$/g, '').trim();
+                texto = texto.replace(matchBorg[0], ' ');
             }
 
-            const matchTags = texto.match(/^\[([^\]]+)\]\s*(.*)$/);
-            if (matchTags) {
-                tags = matchTags[1].split(',').map(t => t.trim()).filter(Boolean);
-                texto = matchTags[2].trim();
-            }
+            // 4. Limpiar separadores residuales
+            texto = texto
+                .replace(/^[\s|•\-]+|[\s|•\-]+$/g, '')
+                .replace(/\s*[|•]\s*[|•]\s*/g, ' • ')
+                .replace(/\s{2,}/g, ' ')
+                .trim();
 
             return { tags, seriesInfo, borgTexto, borgValor, textoLibre: texto };
         }
@@ -625,9 +970,10 @@
             document.getElementById('modal-resp-contexto').innerHTML = `
                 <div><strong>Comentario del paciente:</strong> ${escaparHtml(parsed.textoLibre || 'Sin comentario escrito')}</div>
                 <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
-                    <span class="badge ${dolor >= 6 ? 'badge-alerta' : 'badge-ok'}" style="font-size: 0.72rem;">EVA ${dolor}/10</span>
-                    ${parsed.borgTexto ? `<span class="badge" style="background: #fef3c7; color: #92400e; font-size: 0.72rem;">${escaparHtml(parsed.borgTexto)}</span>` : ''}
-                    ${parsed.seriesInfo ? `<span class="badge badge-neutro" style="font-size: 0.72rem;">${escaparHtml(parsed.seriesInfo)}</span>` : ''}
+                    <span class="kc-eva-pill ${dolor >= 6 ? 'eva-alta' : (dolor >= 4 ? 'eva-media' : 'eva-baja')}">EVA ${dolor}/10</span>
+                    ${parsed.borgTexto ? `<span class="kc-symptom-tag" style="background: #fef3c7; color: #92400e; border-color: #fde68a;">${escaparHtml(parsed.borgTexto)}</span>` : ''}
+                    ${parsed.tags.map(t => `<span class="kc-symptom-tag">${escaparHtml(t)}</span>`).join('')}
+                    ${parsed.seriesInfo ? `<span class="kc-status-chip st-revisado">${escaparHtml(parsed.seriesInfo)}</span>` : ''}
                 </div>
             `;
 
@@ -759,83 +1105,98 @@
                 const dolor = Number(f.nivel_dolor ?? f.escala_dolor ?? 0);
                 const evaAnterior = obtenerEvaAnteriorPaciente(f);
                 const sevClass = dolor >= 6 ? 'sev-alta' : (dolor >= 4 ? 'sev-media' : 'sev-baja');
-                const badgeColor = dolor >= 6 ? 'badge-alerta' : (dolor >= 4 ? 'badge-neutro' : 'badge-ok');
+                const evaPillClass = dolor >= 6 ? 'eva-alta' : (dolor >= 4 ? 'eva-media' : 'eva-baja');
                 const textoEva = describirNivelEva(dolor);
 
                 const pautaId = typeof f.pauta === 'object' && f.pauta !== null ? f.pauta.id : f.pauta;
                 const infoPauta = mapaPautas[pautaId] || {};
                 const nombrePaciente = capitalizarNombre(f.paciente_nombre || infoPauta.paciente_nombre || 'Paciente');
+                const tituloRutina = f.pauta_titulo || infoPauta.titulo || (pautaId ? `Pauta #${pautaId}` : 'Sesión registrada');
 
                 const parsed = parsearComentarioApp(f.comentario);
-                const borgBadgeHtml = parsed.borgTexto
-                    ? `<span class="badge" style="background: rgba(245, 158, 11, 0.16); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.35); font-weight: 700;">${escaparHtml(parsed.borgTexto)}</span>`
-                    : '';
+                const fecha = formatearFechaChile(f.fecha_ejecucion);
 
-                const evaAnteriorHtml = evaAnterior != null
-                    ? `<span class="badge badge-neutro" style="font-size: 0.72rem;">Antes: ${evaAnterior}/10</span>`
-                    : '';
+                // Tendencia EVA vs sesión anterior
+                let evaAnteriorHtml = '';
+                if (evaAnterior != null) {
+                    const diff = dolor - evaAnterior;
+                    const cls = diff > 0 ? 'subio' : (diff < 0 ? 'bajo' : '');
+                    const icono = diff > 0 ? '↑' : (diff < 0 ? '↓' : '=');
+                    evaAnteriorHtml = `<span class="kc-eva-prev ${cls}" title="EVA sesión anterior">${icono} Antes ${evaAnterior}/10</span>`;
+                }
 
-                const completadoBadge = f.completado
-                    ? '<span class="badge badge-ok">100% Completa</span>'
-                    : '<span class="badge badge-alerta">Sesión Incompleta</span>';
-
-                const tagsHtml = parsed.tags.length > 0
-                    ? `<div style="display: flex; flex-wrap: wrap; gap: 5px;">
-                        ${parsed.tags.map(t => `<span class="badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 0.73rem;">${escaparHtml(t)}</span>`).join('')}
+                // Métricas limpias y consistentes en la columna izquierda
+                const borgRowHtml = parsed.borgTexto
+                    ? `<div class="inbox-metric-item ${parsed.borgValor >= 8 ? 'metric-warn' : ''}">
+                           <i class='bx bx-tachometer'></i>
+                           <span>${escaparHtml(parsed.borgTexto)}</span>
                        </div>`
                     : '';
 
-                const textoHtml = parsed.textoLibre
-                    ? `<div style="color: var(--azul-900); font-size: 0.92rem; line-height: 1.45;">"${escaparHtml(parsed.textoLibre)}"</div>`
-                    : `<div style="color: var(--gris-500); font-style: italic; font-size: 0.84rem;">El paciente envió su escala sin comentario escrito adicional.</div>`;
+                const estadoSesionTexto = f.completado ? 'Sesión completa' : 'Sesión incompleta';
+                const estadoSesionDetalle = parsed.seriesInfo ? ` · ${escaparHtml(parsed.seriesInfo)}` : '';
+                const sesionRowHtml = `
+                    <div class="inbox-metric-item ${f.completado ? 'metric-ok' : 'metric-danger'}">
+                        <i class='bx ${f.completado ? 'bx-check-circle' : 'bx-error-circle'}'></i>
+                        <span>${estadoSesionTexto}${estadoSesionDetalle}</span>
+                    </div>
+                `;
 
+                // Estado de gestión
                 const tieneRespuesta = tieneRespuestaClinica(f);
                 const enVisto = !tieneRespuesta && estaEnVistoKine(f);
                 const fechaRespFormateada = formatearFechaChile(f.fecha_respuesta);
 
-                let hiloRespuestaHtml = '';
-                if (tieneRespuesta) {
-                    hiloRespuestaHtml = `
-                        <div style="padding: 9px 12px; border-radius: 9px; background: rgba(2, 132, 199, 0.09); border-left: 3px solid #0284c7;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 3px;">
-                                <span style="font-size: 0.75rem; font-weight: 800; color: #0284c7;">Tu indicación clínica</span>
-                                ${fechaRespFormateada !== 'N/A' ? `<span style="font-size: 0.71rem; color: var(--gris-500);">${escaparHtml(fechaRespFormateada)}</span>` : ''}
-                            </div>
-                            <div style="font-size: 0.85rem; line-height: 1.4; color: var(--azul-900);">${escaparHtml(f.respuesta_kinesiologo)}</div>
-                        </div>
-                    `;
-                } else if (enVisto) {
-                    hiloRespuestaHtml = `
-                        <div>
-                            <span class="badge badge-neutro" style="font-size: 0.74rem;">✓ Revisado por kinesiólogo</span>
-                        </div>
-                    `;
-                }
+                const statusChipHtml = tieneRespuesta
+                    ? `<span class="kc-status-chip st-respondido"><i class='bx bx-check-double'></i> Respondido</span>`
+                    : (enVisto
+                        ? `<span class="kc-status-chip st-revisado"><i class='bx bx-check'></i> Revisado</span>`
+                        : `<span class="kc-status-chip st-pendiente"><i class='bx bx-time-five'></i> Pendiente</span>`);
 
+                // Tags de síntomas separados del Borg
+                const tagsHtml = parsed.tags.length > 0
+                    ? `<div class="inbox-tags-row">
+                           ${parsed.tags.map(t => `<span class="kc-symptom-tag"><i class='bx bx-purchase-tag-alt'></i>${escaparHtml(t)}</span>`).join('')}
+                       </div>`
+                    : '';
+
+                // Comentario del paciente
+                const textoHtml = parsed.textoLibre
+                    ? `<p class="inbox-comment-text">"${escaparHtml(parsed.textoLibre)}"</p>`
+                    : `<p class="inbox-comment-empty">Sin comentario escrito del paciente.</p>`;
+
+                // Indicación clínica del kinesiólogo
+                const hiloRespuestaHtml = tieneRespuesta
+                    ? `<div class="inbox-reply-box">
+                           <div class="inbox-reply-header">
+                               <span class="inbox-reply-title"><i class='bx bx-message-rounded-check'></i> Tu indicación clínica</span>
+                               ${fechaRespFormateada !== 'N/A' ? `<span class="inbox-reply-date">${escaparHtml(fechaRespFormateada)}</span>` : ''}
+                           </div>
+                           <div class="inbox-reply-body">${escaparHtml(f.respuesta_kinesiologo)}</div>
+                       </div>`
+                    : '';
+
+                // Acciones alineadas a la derecha
                 const botonVistoHtml = !tieneRespuesta && f.id != null
                     ? (enVisto
                         ? `<button type="button" class="btn btn-secondary btn-sm"
-                            style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem;"
                             onclick="desmarcarReporteEnVisto('${escaparHtml(f.id)}')">
                             <i class='bx bx-undo'></i> Marcar pendiente
                            </button>`
                         : `<button type="button" class="btn btn-secondary btn-sm"
-                            style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem;"
                             onclick="marcarReporteEnVisto('${escaparHtml(f.id)}')">
-                            <i class='bx bx-check'></i> Marcar como revisado
+                            <i class='bx bx-check'></i> Marcar revisado
                            </button>`)
                     : '';
 
                 const botonAjustarHtml = (dolor >= 6 && pautaId)
-                    ? `<a href="crear_pauta.html?editar=${encodeURIComponent(pautaId)}" class="btn btn-secondary btn-sm"
-                        style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem;">
+                    ? `<a href="crear_pauta.html?editar=${encodeURIComponent(pautaId)}" class="btn btn-secondary btn-sm">
                         <i class='bx bx-slider-alt'></i> Ajustar pauta
                        </a>`
                     : '';
 
                 const accionesHtml = f.id != null
                     ? `<button type="button" class="btn ${tieneRespuesta || enVisto ? 'btn-secondary' : 'btn-primary'} btn-sm"
-                            style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem;"
                             onclick="abrirModalResponderFeedback('${escaparHtml(f.id)}')">
                             <i class='bx ${tieneRespuesta ? 'bx-edit' : 'bx-message-square-add'}'></i>
                             ${tieneRespuesta ? 'Editar respuesta' : 'Responder'}
@@ -844,34 +1205,40 @@
                         ${botonAjustarHtml}`
                     : '';
 
-                const fecha = formatearFechaChile(f.fecha_ejecucion);
-
                 const card = document.createElement('div');
                 card.className = `inbox-card ${sevClass}`;
                 card.innerHTML = `
                     <div class="inbox-meta">
-                        <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 10px;">
-                            <strong style="color: var(--azul-900); font-size: 0.96rem;">${escaparHtml(nombrePaciente)}</strong>
-                            <span style="font-size: 0.76rem; color: var(--gris-500); white-space: nowrap;">${fecha}</span>
+                        <div class="inbox-patient-head">
+                            <span class="inbox-patient-name" title="${escaparHtml(nombrePaciente)}">${escaparHtml(nombrePaciente)}</span>
+                            <span class="inbox-patient-date"><i class='bx bx-calendar'></i> ${fecha}</span>
                         </div>
-                        <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px;">
-                            <span class="badge ${badgeColor}" style="font-weight: 700;">EVA ${dolor}/10 • ${textoEva}</span>
+
+                        <div class="inbox-eva-row">
+                            <span class="kc-eva-pill ${evaPillClass}">EVA ${dolor}/10 · ${textoEva}</span>
                             ${evaAnteriorHtml}
-                            ${borgBadgeHtml}
-                            ${completadoBadge}
                         </div>
-                        ${parsed.seriesInfo ? `<span style="font-size: 0.77rem; color: var(--gris-600);">${escaparHtml(parsed.seriesInfo)}</span>` : ''}
+
+                        <div class="inbox-metrics-list">
+                            ${borgRowHtml}
+                            ${sesionRowHtml}
+                        </div>
                     </div>
 
-                    <div class="inbox-body">
-                        <div class="inbox-content-col">
-                            ${tagsHtml}
-                            ${textoHtml}
-                            ${hiloRespuestaHtml}
+                    <div class="inbox-content-col">
+                        <div class="inbox-content-top">
+                            <span class="inbox-routine-label">
+                                <i class='bx bx-dumbbell'></i> ${escaparHtml(tituloRutina)}
+                            </span>
+                            ${statusChipHtml}
                         </div>
-                        <div class="inbox-actions-col">
-                            ${accionesHtml}
-                        </div>
+                        ${tagsHtml}
+                        ${textoHtml}
+                        ${hiloRespuestaHtml}
+                    </div>
+
+                    <div class="inbox-actions-col">
+                        ${accionesHtml}
                     </div>
                 `;
                 listaInbox.appendChild(card);
