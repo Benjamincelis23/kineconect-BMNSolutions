@@ -18,7 +18,7 @@
                 <div class="page-header header-pacientes">
                     <div>
                         <h2>Gestión de Pacientes</h2>
-                        <p>Listado y registro de pacientes vinculados a tu cuenta de Kinesiólogo.</p>
+                        <p>Directorio clínico con seguimiento de actividad, dolor EVA y fichas PDF por paciente.</p>
                     </div>
                     <button type="button" class="btn btn-primary" id="btn-toggle-form" onclick="toggleFormulario()">
                         <i class='bx bx-user-plus'></i> Registrar Nuevo Paciente
@@ -96,7 +96,7 @@
                                     <th>Nombre Completo</th>
                                     <th>RUT</th>
                                     <th>Correo Electrónico</th>
-                                    <th>Estado</th>
+                                    <th>Seguimiento Clínico</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
@@ -195,12 +195,43 @@
 
     <script>
         let listaPacientesCache = [];
+        let seguimientoPorPaciente = {};
         let textoCredencialesCopiar = '';
 
         function escaparHtml(txt) {
             return String(txt ?? '').replace(/[&<>"']/g, c => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
             }[c]));
+        }
+
+        function capitalizarNombre(texto) {
+            return String(texto || '')
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean)
+                .map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+                .join(' ');
+        }
+
+        function formatearRutVisual(rut) {
+            const limpio = String(rut ?? '').replace(/[^0-9kK]/g, '').toUpperCase();
+            if (limpio.length < 2) return rut || 'N/A';
+            const cuerpo = limpio.slice(0, -1);
+            const dv = limpio.slice(-1);
+            return `${cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}-${dv}`;
+        }
+
+        function formatearFechaChile(isoStr) {
+            if (!isoStr) return '';
+            const d = new Date(isoStr);
+            if (Number.isNaN(d.getTime())) return '';
+            return d.toLocaleString('es-CL', {
+                timeZone: 'America/Santiago',
+                day: '2-digit',
+                month: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+            });
         }
 
         function describirNivelEva(dolor) {
@@ -275,16 +306,27 @@
             }
         }
 
+        function obtenerNombreKinesiologoReal() {
+            const userKine = (typeof api !== 'undefined' && api.getUser) ? api.getUser() : null;
+            if (!userKine) return 'Kinesiólogo Tratante';
+            const full = `${userKine.first_name || ''} ${userKine.last_name || ''}`.trim();
+            const candidato = (userKine.nombre_completo || full || userKine.username || '').trim();
+            if (!candidato || candidato.toLowerCase() === 'kineconnect') return 'Kinesiólogo Tratante';
+            return capitalizarNombre(candidato);
+        }
+
         async function abrirInformePaciente(userId) {
             const pac = listaPacientesCache.find(p => {
                 const uid = p.user_id || ((p.user && typeof p.user === 'object') ? p.user.id : (p.user || p.id));
                 return String(uid) === String(userId);
             });
 
-            const nombreMostrar = pac?.nombre_completo ||
+            const nombreMostrar = capitalizarNombre(
+                pac?.nombre_completo ||
                 (pac?.user && typeof pac.user === 'object' ? `${pac.user.first_name} ${pac.user.last_name}`.trim() : '') ||
-                'Paciente';
-            const rutMostrar = pac?.rut || 'N/A';
+                'Paciente'
+            );
+            const rutMostrar = formatearRutVisual(pac?.rut || 'N/A');
             const emailMostrar = pac?.email || (pac?.user && typeof pac.user === 'object' ? pac.user.email : '') || 'No registrado';
 
             const modal = document.getElementById('modal-informe-paciente');
@@ -323,9 +365,12 @@
                     ? (sesionesPaciente.reduce((acc, s) => acc + Number(s.nivel_dolor ?? s.escala_dolor ?? 0), 0) / totalSesiones).toFixed(1)
                     : '0.0';
 
-                const userKine = (typeof api !== 'undefined' && api.getUser) ? api.getUser() : null;
-                const nombreKine = userKine?.nombre_completo || userKine?.username || 'Kinesiólogo Tratante';
-                const fechaEmision = new Date().toLocaleString('es-CL', { dateStyle: 'long', timeStyle: 'short' });
+                const nombreKine = obtenerNombreKinesiologoReal();
+                const fechaEmision = new Date().toLocaleString('es-CL', {
+                    timeZone: 'America/Santiago',
+                    dateStyle: 'long',
+                    timeStyle: 'short'
+                });
 
                 const pautasHtml = pautasPaciente.length === 0
                     ? `<p style="color: #64748b; font-size: 0.86rem;">Sin pautas prescritas registradas.</p>`
@@ -358,9 +403,7 @@
                         const pid = typeof s.pauta === 'object' && s.pauta !== null ? s.pauta.id : s.pauta;
                         const tituloP = mapaPautas[pid]?.titulo || `Pauta #${pid}`;
                         const eva = Number(s.nivel_dolor ?? s.escala_dolor ?? 0);
-                        const fechaS = s.fecha_ejecucion
-                            ? new Date(s.fecha_ejecucion).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })
-                            : 'N/A';
+                        const fechaS = formatearFechaChile(s.fecha_ejecucion) || 'N/A';
                         return `
                             <tr>
                                 <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 0.82rem;">${fechaS}</td>
@@ -384,7 +427,7 @@
                             </div>
                             <div style="text-align: right; font-size: 0.78rem; color: #475569;">
                                 <div><strong>Emitido:</strong> ${escaparHtml(fechaEmision)}</div>
-                                <div><strong>Kinesiólogo:</strong> ${escaparHtml(nombreKine)}</div>
+                                <div><strong>Profesional:</strong> ${escaparHtml(nombreKine)}</div>
                             </div>
                         </div>
 
@@ -436,7 +479,7 @@
                         <div style="margin-top: 34px; display: flex; justify-content: flex-end;">
                             <div style="width: 240px; text-align: center; border-top: 1px solid #475569; padding-top: 6px; font-size: 0.8rem; color: #334155;">
                                 <strong>${escaparHtml(nombreKine)}</strong><br>
-                                Kinesiólogo/a • KineConnect
+                                Kinesiólogo/a • Plataforma KineConnect
                             </div>
                         </div>
                     </div>
@@ -502,15 +545,28 @@
 
             lista.forEach(p => {
                 const tr = document.createElement('tr');
-                const nombre = p.nombre_completo || (p.user && typeof p.user === 'object' ? `${p.user.first_name} ${p.user.last_name}`.trim() : '') || 'Paciente';
+                const nombre = capitalizarNombre(p.nombre_completo || (p.user && typeof p.user === 'object' ? `${p.user.first_name} ${p.user.last_name}`.trim() : '') || 'Paciente');
+                const rutFormateado = formatearRutVisual(p.rut || 'N/A');
                 const correo = p.email || (p.user && typeof p.user === 'object' ? p.user.email : '') || 'Sin correo';
                 const userId = p.user_id || ((p.user && typeof p.user === 'object') ? p.user.id : (p.user || p.id));
 
+                const seg = seguimientoPorPaciente[String(userId)];
+                let seguimientoHtml = `<span class="badge badge-neutro">Sin pautas activas</span>`;
+                if (seg) {
+                    const evaBadge = seg.ultimoEva != null
+                        ? `<span class="badge ${seg.ultimoEva >= 6 ? 'badge-alerta' : 'badge-ok'}">Último EVA ${seg.ultimoEva}/10</span>`
+                        : `<span class="badge badge-neutro">Sin sesiones aún</span>`;
+                    const fechaTxt = seg.ultimaFecha
+                        ? `<span style="display: block; font-size: 0.74rem; color: var(--gris-500); margin-top: 3px;">Última: ${seg.ultimaFecha} • ${seg.pautasActivas} ${seg.pautasActivas === 1 ? 'pauta' : 'pautas'}</span>`
+                        : `<span style="display: block; font-size: 0.74rem; color: var(--gris-500); margin-top: 3px;">${seg.pautasActivas} ${seg.pautasActivas === 1 ? 'pauta activa' : 'pautas activas'}</span>`;
+                    seguimientoHtml = `${evaBadge}${fechaTxt}`;
+                }
+
                 tr.innerHTML = `
                     <td><strong>${escaparHtml(nombre)}</strong></td>
-                    <td>${escaparHtml(p.rut || 'N/A')}</td>
+                    <td style="white-space: nowrap; font-variant-numeric: tabular-nums;">${escaparHtml(rutFormateado)}</td>
                     <td>${escaparHtml(correo)}</td>
-                    <td><span class="badge badge-ok">${escaparHtml(p.rol || 'PACIENTE')}</span></td>
+                    <td>${seguimientoHtml}</td>
                     <td>
                         <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                             <a href="crear_pauta.html?paciente=${encodeURIComponent(userId)}" class="btn btn-primary btn-sm" title="Prescribir Pauta">
@@ -538,8 +594,9 @@
             const filtrados = listaPacientesCache.filter(p => {
                 const nombre = (p.nombre_completo || '').toLowerCase();
                 const rut = (p.rut || '').toLowerCase();
+                const rutFmt = formatearRutVisual(p.rut || '').toLowerCase();
                 const correo = (p.email || '').toLowerCase();
-                return nombre.includes(q) || rut.includes(q) || correo.includes(q);
+                return nombre.includes(q) || rut.includes(q) || rutFmt.includes(q) || correo.includes(q);
             });
             renderizarTablaPacientes(filtrados);
         }
@@ -557,9 +614,13 @@
             errorDiv.style.display = 'none';
 
             try {
-                const respuesta = await api.getMisPacientes();
-                let pacientes = [];
+                const [respuesta, pautasResp, feedsResp] = await Promise.all([
+                    api.getMisPacientes(),
+                    api.getPautas().catch(() => []),
+                    api.getReportesDolor().catch(() => [])
+                ]);
 
+                let pacientes = [];
                 if (Array.isArray(respuesta)) {
                     pacientes = respuesta;
                 } else if (respuesta && Array.isArray(respuesta.results)) {
@@ -567,6 +628,35 @@
                 } else if (respuesta && typeof respuesta === 'object') {
                     pacientes = [respuesta];
                 }
+
+                const todasPautas = Array.isArray(pautasResp) ? pautasResp : (pautasResp?.results || []);
+                const todosFeeds = Array.isArray(feedsResp) ? feedsResp : (feedsResp?.results || []);
+
+                seguimientoPorPaciente = {};
+                pacientes.forEach(p => {
+                    const uid = String(p.user_id || ((p.user && typeof p.user === 'object') ? p.user.id : (p.user || p.id)));
+                    const pautasPac = todasPautas.filter(pt => {
+                        if (pt.es_plantilla || pt.activo === false) return false;
+                        const pidPac = typeof pt.paciente === 'object' && pt.paciente !== null ? pt.paciente.id : pt.paciente;
+                        return String(pidPac) === uid || String(pt.paciente_user_id) === uid;
+                    });
+
+                    const idsPautas = new Set(pautasPac.map(pt => String(pt.id)));
+                    const feedsPac = todosFeeds
+                        .filter(f => {
+                            const pid = typeof f.pauta === 'object' && f.pauta !== null ? f.pauta.id : f.pauta;
+                            return idsPautas.has(String(pid));
+                        })
+                        .sort((a, b) => new Date(b.fecha_ejecucion || 0).getTime() - new Date(a.fecha_ejecucion || 0).getTime());
+
+                    if (pautasPac.length > 0 || feedsPac.length > 0) {
+                        seguimientoPorPaciente[uid] = {
+                            pautasActivas: pautasPac.length,
+                            ultimoEva: feedsPac.length > 0 ? Number(feedsPac[0].nivel_dolor ?? feedsPac[0].escala_dolor ?? 0) : null,
+                            ultimaFecha: feedsPac.length > 0 ? formatearFechaChile(feedsPac[0].fecha_ejecucion) : ''
+                        };
+                    }
+                });
 
                 listaPacientesCache = pacientes;
                 loading.style.display = 'none';
@@ -597,8 +687,8 @@
                     e.preventDefault();
 
                     const rutLimpio = document.getElementById('rut').value.replace(/\./g, '').trim().toUpperCase();
-                    const firstName = document.getElementById('first_name').value.trim();
-                    const lastName = document.getElementById('last_name').value.trim();
+                    const firstName = capitalizarNombre(document.getElementById('first_name').value);
+                    const lastName = capitalizarNombre(document.getElementById('last_name').value);
                     const correo = document.getElementById('email').value.trim();
 
                     const payload = { first_name: firstName, last_name: lastName, rut: rutLimpio, email: correo };

@@ -41,18 +41,35 @@
             width: 100%;
         }
 
-       .inbox-card {
+        .inbox-card {
             display: grid;
-            grid-template-columns: minmax(280px, 350px) minmax(0, 1fr);
+            grid-template-columns: minmax(290px, 360px) minmax(0, 1fr);
             gap: 22px;
             padding: 18px 22px;
             width: 100%;
             box-sizing: border-box;
             border-radius: 12px;
             border: 1px solid var(--gris-200);
-            border-left-width: 4px;
+            border-left-width: 5px;
             background: var(--blanco, #ffffff);
             transition: box-shadow 0.16s ease;
+        }
+
+        .inbox-card:hover {
+            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+        }
+
+        .inbox-card.sev-alta {
+            border-left-color: #ef4444;
+            background: linear-gradient(90deg, rgba(239, 68, 68, 0.04) 0%, var(--blanco, #ffffff) 28%);
+        }
+
+        .inbox-card.sev-media {
+            border-left-color: #f59e0b;
+        }
+
+        .inbox-card.sev-baja {
+            border-left-color: #10b981;
         }
 
         .inbox-meta {
@@ -113,6 +130,10 @@
             border-color: #24344d;
         }
 
+        [data-theme="dark"] .inbox-card.sev-alta {
+            background: linear-gradient(90deg, rgba(239, 68, 68, 0.14) 0%, #162236 32%);
+        }
+
         [data-theme="dark"] .inbox-meta {
             border-color: #24344d;
         }
@@ -130,6 +151,12 @@
             border-color: #0284c7 !important;
             color: #0284c7 !important;
             font-weight: 700 !important;
+        }
+
+        .btn-sugerencia-kine.sug-preventiva {
+            border-color: rgba(239, 68, 68, 0.45) !important;
+            color: #dc2626 !important;
+            background: rgba(239, 68, 68, 0.06) !important;
         }
 
         body.dark-mode .btn-sugerencia-kine.seleccionada,
@@ -161,7 +188,7 @@
                 <div class="page-header" style="flex-wrap: wrap; gap: 12px;">
                     <div>
                         <h2>Bandeja de Reportes</h2>
-                        <p>Triage clínico de sesiones ejecutadas en la app móvil: prioriza dolores altos, responde o deja en visto.</p>
+                        <p>Triage clínico de sesiones ejecutadas en la app móvil: prioriza dolores altos, responde o marca como revisado.</p>
                     </div>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                         <select id="select-filtro-paciente" onchange="aplicarFiltroPacienteUI(this.value)"
@@ -197,7 +224,7 @@
                             <i class='bx bx-error-circle'></i>
                         </div>
                         <div>
-                            <span style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--gris-600);">Alertas EVA ≥ 6</span>
+                            <span style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--gris-600);">Alertas EVA ≥ 6 (Total)</span>
                             <strong id="kpi-alertas-eva" style="font-size: 1.45rem; color: var(--azul-900);">0</strong>
                         </div>
                     </div>
@@ -209,7 +236,7 @@
                             <i class='bx bx-check-double'></i>
                         </div>
                         <div>
-                            <span style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--gris-600);">Respondidos / Vistos</span>
+                            <span style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--gris-600);">Respondidos / Revisados</span>
                             <strong id="kpi-revisados" style="font-size: 1.45rem; color: var(--azul-900);">0</strong>
                         </div>
                     </div>
@@ -227,7 +254,7 @@
                     </div>
                 </div>
 
-                <!-- BARRA DE FILTROS + BANDEJA DE TARJETAS -->
+                <!-- BARRA DE FILTROS -->
                 <div class="card" style="margin-bottom: 16px; padding: 14px 18px;">
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
@@ -243,7 +270,7 @@
                             <button type="button" class="filtro-biomecanico-pill"
                                 onclick="filtrarFeedback('alertas', this)">Alertas EVA ≥ 6</button>
                             <button type="button" class="filtro-biomecanico-pill"
-                                onclick="filtrarFeedback('revisados', this)">Revisados / Vistos</button>
+                                onclick="filtrarFeedback('revisados', this)">Revisados</button>
                         </div>
                     </div>
                 </div>
@@ -290,25 +317,9 @@
             <div style="margin-bottom: 12px;">
                 <span
                     style="display: block; font-size: 0.78rem; font-weight: 700; color: var(--gris-600); margin-bottom: 6px;">
-                    Respuestas frecuentes:
+                    Respuestas frecuentes (haz clic para insertar):
                 </span>
-                <div id="lista-sugerencias-kine" style="display: flex; flex-direction: column; gap: 6px;">
-                    <button type="button" class="btn btn-secondary btn-sm btn-sugerencia-kine"
-                        data-texto="Excelente tolerancia, mantén la carga actual"
-                        onclick="aplicarSugerenciaRespuesta('Excelente tolerancia, mantén la carga actual')">
-                        • Excelente tolerancia, mantén la carga actual
-                    </button>
-                    <button type="button" class="btn btn-secondary btn-sm btn-sugerencia-kine"
-                        data-texto="Reducir a 2 series si persiste molestia"
-                        onclick="aplicarSugerenciaRespuesta('Reducir a 2 series si persiste molestia')">
-                        • Reducir a 2 series si persiste molestia
-                    </button>
-                    <button type="button" class="btn btn-secondary btn-sm btn-sugerencia-kine"
-                        data-texto="Suspender ejercicio con dolor y evaluar en próxima sesión"
-                        onclick="aplicarSugerenciaRespuesta('Suspender ejercicio con dolor y evaluar en próxima sesión')">
-                        • Suspender ejercicio con dolor y evaluar en próxima sesión
-                    </button>
-                </div>
+                <div id="lista-sugerencias-kine" style="display: flex; flex-direction: column; gap: 6px;"></div>
             </div>
 
             <div class="field" style="margin-bottom: 14px;">
@@ -369,15 +380,57 @@
             }[c]));
         }
 
+        function capitalizarNombre(texto) {
+            return String(texto || '')
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean)
+                .map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+                .join(' ');
+        }
+
+        function formatearRutVisual(rut) {
+            const limpio = String(rut ?? '').replace(/[^0-9kK]/g, '').toUpperCase();
+            if (limpio.length < 2) return rut || '';
+            const cuerpo = limpio.slice(0, -1);
+            const dv = limpio.slice(-1);
+            return `${cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}-${dv}`;
+        }
+
+        function formatearFechaChile(isoStr) {
+            if (!isoStr) return 'N/A';
+            const d = new Date(isoStr);
+            if (Number.isNaN(d.getTime())) return 'N/A';
+            return d.toLocaleString('es-CL', {
+                timeZone: 'America/Santiago',
+                day: '2-digit',
+                month: '2-digit',
+                year: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+            });
+        }
+
+        // Separa datos generados por la app móvil (Borg, tags, series) del texto real escrito por el paciente
         function parsearComentarioApp(raw) {
             let texto = String(raw || '').trim();
             let seriesInfo = '';
             let tags = [];
+            let borgTexto = '';
+            let borgValor = null;
 
             const matchSeries = texto.match(/(?:\|\s*)?(Series:\s*[^|]+)\.?$/i);
             if (matchSeries) {
                 seriesInfo = matchSeries[1].trim();
                 texto = texto.slice(0, matchSeries.index).trim();
+            }
+
+            const matchBorg = texto.match(/(?:^|\|\s*)(Esfuerzo\s*Borg\s*[:\-]?\s*([^|]+))(?:\s*\||$)/i);
+            if (matchBorg) {
+                borgTexto = matchBorg[1].trim();
+                const numMatch = matchBorg[2].match(/(\d+(?:[.,]\d+)?)/);
+                if (numMatch) borgValor = Number(numMatch[1].replace(',', '.'));
+                texto = texto.replace(matchBorg[0], ' ').replace(/^\s*\|\s*|\s*\|\s*$/g, '').trim();
             }
 
             const matchTags = texto.match(/^\[([^\]]+)\]\s*(.*)$/);
@@ -386,7 +439,7 @@
                 texto = matchTags[2].trim();
             }
 
-            return { tags, seriesInfo, textoLibre: texto };
+            return { tags, seriesInfo, borgTexto, borgValor, textoLibre: texto };
         }
 
         function describirNivelEva(dolor) {
@@ -395,14 +448,6 @@
             if (dolor <= 5) return 'Moderado';
             if (dolor <= 7) return 'Fuerte';
             return 'Severo';
-        }
-
-        function extraerEsfuerzoBorg(texto) {
-            const raw = String(texto || '');
-            const match = raw.match(/(?:esfuerzo\s*borg|borg\s*cr-?10|borg)\s*[:\-]?\s*(\d+(?:[.,]\d+)?(?:\s*\/\s*10)?)/i);
-            if (!match) return null;
-            const valor = match[1].replace(/\s+/g, '');
-            return valor.includes('/') ? `Borg: ${valor}` : `Borg: ${valor}/10`;
         }
 
         function tieneRespuestaClinica(item) {
@@ -435,6 +480,29 @@
             renderizarBandejaFeedback();
         }
 
+        function obtenerEvaAnteriorPaciente(itemActual) {
+            const pautaIdActual = typeof itemActual.pauta === 'object' && itemActual.pauta !== null
+                ? itemActual.pauta.id
+                : itemActual.pauta;
+            const nombreActual = (itemActual.paciente_nombre || mapaPautas[pautaIdActual]?.paciente_nombre || '').trim().toLowerCase();
+            const fechaActual = new Date(itemActual.fecha_ejecucion || 0).getTime();
+
+            const previos = reportesBaseTodos
+                .filter(r => {
+                    if (String(r.id) === String(itemActual.id)) return false;
+                    const pid = typeof r.pauta === 'object' && r.pauta !== null ? r.pauta.id : r.pauta;
+                    const nom = (r.paciente_nombre || mapaPautas[pid]?.paciente_nombre || '').trim().toLowerCase();
+                    const mismoPaciente = (nombreActual && nom === nombreActual) || (pautaIdActual && String(pid) === String(pautaIdActual));
+                    if (!mismoPaciente) return false;
+                    const t = new Date(r.fecha_ejecucion || 0).getTime();
+                    return t <= fechaActual;
+                })
+                .sort((a, b) => new Date(b.fecha_ejecucion || 0).getTime() - new Date(a.fecha_ejecucion || 0).getTime());
+
+            if (previos.length === 0) return null;
+            return Number(previos[0].nivel_dolor ?? previos[0].escala_dolor ?? 0);
+        }
+
         async function cargarPacientesFiltro() {
             try {
                 const res = await api.fetchConSesion('/api/v1/perfiles/mis-pacientes/');
@@ -444,12 +512,13 @@
 
                 pacientesRegistrados = lista.map(p => {
                     const u = p.user && typeof p.user === 'object' ? p.user : {};
-                    const nombre =
+                    const nombre = capitalizarNombre(
                         p.nombre_completo ||
                         `${p.nombre || u.first_name || ''} ${p.apellido || u.last_name || ''}`.trim() ||
                         u.username ||
-                        'Paciente';
-                    const rut = p.rut || u.username || '';
+                        'Paciente'
+                    );
+                    const rut = formatearRutVisual(p.rut || u.username || '');
                     const userId = p.usuario_id || p.user_id || u.id || (typeof p.user === 'number' ? p.user : null);
                     return { id: userId, nombre, rut };
                 });
@@ -496,6 +565,31 @@
             renderizarBandejaFeedback();
         }
 
+        function renderizarSugerenciasSeguras(esAlertaAlta) {
+            const cont = document.getElementById('lista-sugerencias-kine');
+            if (!cont) return;
+
+            const opciones = esAlertaAlta
+                ? [
+                    { texto: 'Suspender ejercicio con dolor y evaluar en próxima sesión', preventiva: true },
+                    { texto: 'Reducir a 2 series y bajar carga si persiste molestia', preventiva: true },
+                    { texto: 'Aplicar frío local 15 min y reportar evolución mañana', preventiva: false },
+                ]
+                : [
+                    { texto: 'Excelente tolerancia, mantén la carga actual', preventiva: false },
+                    { texto: 'Reducir a 2 series si persiste molestia', preventiva: false },
+                    { texto: 'Suspender ejercicio con dolor y evaluar en próxima sesión', preventiva: false },
+                ];
+
+            cont.innerHTML = opciones.map(op => `
+                <button type="button" class="btn btn-secondary btn-sm btn-sugerencia-kine ${op.preventiva ? 'sug-preventiva' : ''}"
+                    data-texto="${escaparHtml(op.texto)}"
+                    onclick="aplicarSugerenciaRespuesta('${escaparHtml(op.texto)}')">
+                    • ${escaparHtml(op.texto)}
+                </button>
+            `).join('');
+        }
+
         function sincronizarSeleccionSugerencia() {
             const textarea = document.getElementById('textarea-respuesta-kine');
             const val = (textarea?.value || '').trim();
@@ -514,11 +608,13 @@
 
             feedbackEnEdicionId = item.id;
             const dolor = Number(item.nivel_dolor ?? item.escala_dolor ?? 0);
+            const parsed = parsearComentarioApp(item.comentario);
+            const esAlertaAlta = dolor >= 6 || (parsed.borgValor != null && parsed.borgValor >= 8);
+
             const pautaId = typeof item.pauta === 'object' && item.pauta !== null ? item.pauta.id : item.pauta;
             const infoPauta = mapaPautas[pautaId] || {};
             const tituloRutina = item.pauta_titulo || infoPauta.titulo || `Pauta #${pautaId || 'N/A'}`;
-            const nombrePaciente = item.paciente_nombre || infoPauta.paciente_nombre || 'Paciente';
-            const borgLabel = extraerEsfuerzoBorg(item.comentario);
+            const nombrePaciente = capitalizarNombre(item.paciente_nombre || infoPauta.paciente_nombre || 'Paciente');
 
             document.getElementById('modal-resp-titulo').textContent = item.respuesta_kinesiologo
                 ? 'Editar Respuesta Clínica'
@@ -528,10 +624,17 @@
                 `${nombrePaciente} • ${tituloRutina} • EVA ${dolor}/10`;
 
             document.getElementById('modal-resp-contexto').innerHTML = `
-                <div><strong>Reporte:</strong> ${escaparHtml(item.comentario || 'Sin comentario adicional')}</div>
-                ${borgLabel ? `<div style="margin-top: 4px;"><span class="badge" style="background: #fef3c7; color: #92400e; font-size: 0.72rem;">${escaparHtml(borgLabel)}</span></div>` : ''}
+                <div><strong>Comentario del paciente:</strong> ${escaparHtml(parsed.textoLibre || 'Sin comentario escrito')}</div>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
+                    <span class="badge ${dolor >= 6 ? 'badge-alerta' : 'badge-ok'}" style="font-size: 0.72rem;">EVA ${dolor}/10</span>
+                    ${parsed.borgTexto ? `<span class="badge" style="background: #fef3c7; color: #92400e; font-size: 0.72rem;">${escaparHtml(parsed.borgTexto)}</span>` : ''}
+                    ${parsed.seriesInfo ? `<span class="badge badge-neutro" style="font-size: 0.72rem;">${escaparHtml(parsed.seriesInfo)}</span>` : ''}
+                </div>
             `;
 
+            renderizarSugerenciasSeguras(esAlertaAlta);
+
+            // Siempre inicia con la respuesta previa real del kinesiólogo o vacío (nunca prellenado con "mantén carga")
             const textarea = document.getElementById('textarea-respuesta-kine');
             textarea.value = item.respuesta_kinesiologo || '';
             sincronizarSeleccionSugerencia();
@@ -656,39 +759,43 @@
 
             listaFiltrada.forEach(f => {
                 const dolor = Number(f.nivel_dolor ?? f.escala_dolor ?? 0);
+                const evaAnterior = obtenerEvaAnteriorPaciente(f);
                 const sevClass = dolor >= 6 ? 'sev-alta' : (dolor >= 4 ? 'sev-media' : 'sev-baja');
                 const badgeColor = dolor >= 6 ? 'badge-alerta' : (dolor >= 4 ? 'badge-neutro' : 'badge-ok');
                 const textoEva = describirNivelEva(dolor);
-                const borgBadgeTexto = extraerEsfuerzoBorg(f.comentario);
-                const borgBadgeHtml = borgBadgeTexto
-                    ? `<span class="badge" style="background: rgba(245, 158, 11, 0.16); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.35); font-weight: 700;">${escaparHtml(borgBadgeTexto)}</span>`
-                    : '';
 
                 const pautaId = typeof f.pauta === 'object' && f.pauta !== null ? f.pauta.id : f.pauta;
                 const infoPauta = mapaPautas[pautaId] || {};
                 const tituloRutina = f.pauta_titulo || infoPauta.titulo || `Pauta #${pautaId || 'N/A'}`;
-                const nombrePaciente = f.paciente_nombre || infoPauta.paciente_nombre || 'Paciente';
+                const nombrePaciente = capitalizarNombre(f.paciente_nombre || infoPauta.paciente_nombre || 'Paciente');
 
                 const parsed = parsearComentarioApp(f.comentario);
+                const borgBadgeHtml = parsed.borgTexto
+                    ? `<span class="badge" style="background: rgba(245, 158, 11, 0.16); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.35); font-weight: 700;">${escaparHtml(parsed.borgTexto)}</span>`
+                    : '';
+
+                const evaAnteriorHtml = evaAnterior != null
+                    ? `<span class="badge badge-neutro" style="font-size: 0.72rem;">Antes: ${evaAnterior}/10</span>`
+                    : '';
+
                 const completadoBadge = f.completado
                     ? '<span class="badge badge-ok">100% Completa</span>'
-                    : '<span class="badge badge-alerta">Incompleta</span>';
+                    : '<span class="badge badge-alerta">Sesión Incompleta</span>';
 
                 const tagsHtml = parsed.tags.length > 0
-                    ? `<div style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px;">
-                        ${parsed.tags.map(t => `<span class="badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 0.72rem;">${escaparHtml(t)}</span>`).join('')}
+                    ? `<div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                        ${parsed.tags.map(t => `<span class="badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 0.73rem;">${escaparHtml(t)}</span>`).join('')}
                        </div>`
                     : '';
 
+                // Solo se muestra entre comillas si el paciente escribió texto libre real
                 const textoHtml = parsed.textoLibre
-                    ? `<div style="color: var(--azul-900); font-size: 0.9rem; line-height: 1.45;">"${escaparHtml(parsed.textoLibre)}"</div>`
-                    : (!tagsHtml ? `<div style="color: var(--gris-500); font-style: italic; font-size: 0.85rem;">Sin observaciones escritas por el paciente.</div>` : '');
+                    ? `<div style="color: var(--azul-900); font-size: 0.92rem; line-height: 1.45;">"${escaparHtml(parsed.textoLibre)}"</div>`
+                    : `<div style="color: var(--gris-500); font-style: italic; font-size: 0.84rem;">El paciente envió su escala sin comentario escrito adicional.</div>`;
 
                 const tieneRespuesta = tieneRespuestaClinica(f);
                 const enVisto = !tieneRespuesta && estaEnVistoKine(f);
-                const fechaRespFormateada = f.fecha_respuesta
-                    ? new Date(f.fecha_respuesta).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })
-                    : '';
+                const fechaRespFormateada = formatearFechaChile(f.fecha_respuesta);
 
                 let hiloRespuestaHtml = '';
                 if (tieneRespuesta) {
@@ -696,7 +803,7 @@
                         <div style="padding: 9px 12px; border-radius: 9px; background: rgba(2, 132, 199, 0.09); border-left: 3px solid #0284c7;">
                             <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 3px;">
                                 <span style="font-size: 0.75rem; font-weight: 800; color: #0284c7;">Tu indicación clínica</span>
-                                ${fechaRespFormateada ? `<span style="font-size: 0.71rem; color: var(--gris-500);">${escaparHtml(fechaRespFormateada)}</span>` : ''}
+                                ${fechaRespFormateada !== 'N/A' ? `<span style="font-size: 0.71rem; color: var(--gris-500);">${escaparHtml(fechaRespFormateada)}</span>` : ''}
                             </div>
                             <div style="font-size: 0.85rem; line-height: 1.4; color: var(--azul-900);">${escaparHtml(f.respuesta_kinesiologo)}</div>
                         </div>
@@ -704,7 +811,7 @@
                 } else if (enVisto) {
                     hiloRespuestaHtml = `
                         <div>
-                            <span class="badge badge-neutro" style="font-size: 0.74rem;">✓ Dejado en visto</span>
+                            <span class="badge badge-neutro" style="font-size: 0.74rem;">✓ Revisado por kinesiólogo</span>
                         </div>
                     `;
                 }
@@ -719,7 +826,7 @@
                         : `<button type="button" class="btn btn-secondary btn-sm"
                             style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem;"
                             onclick="marcarReporteEnVisto('${escaparHtml(f.id)}')">
-                            <i class='bx bx-check'></i> Dejar en visto
+                            <i class='bx bx-check'></i> Marcar como revisado
                            </button>`)
                     : '';
 
@@ -731,21 +838,17 @@
                     : '';
 
                 const accionesHtml = f.id != null
-                    ? `<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-                        <button type="button" class="btn ${tieneRespuesta || enVisto ? 'btn-secondary' : 'btn-primary'} btn-sm"
+                    ? `<button type="button" class="btn ${tieneRespuesta || enVisto ? 'btn-secondary' : 'btn-primary'} btn-sm"
                             style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem;"
                             onclick="abrirModalResponderFeedback('${escaparHtml(f.id)}')">
                             <i class='bx ${tieneRespuesta ? 'bx-edit' : 'bx-message-square-add'}'></i>
                             ${tieneRespuesta ? 'Editar respuesta' : 'Responder'}
                         </button>
                         ${botonVistoHtml}
-                        ${botonAjustarHtml}
-                       </div>`
+                        ${botonAjustarHtml}`
                     : '';
 
-                const fecha = f.fecha_ejecucion
-                    ? new Date(f.fecha_ejecucion).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })
-                    : 'N/A';
+                const fecha = formatearFechaChile(f.fecha_ejecucion);
 
                 const card = document.createElement('div');
                 card.className = `inbox-card ${sevClass}`;
@@ -760,6 +863,7 @@
                         </span>
                         <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px;">
                             <span class="badge ${badgeColor}" style="font-weight: 700;">EVA ${dolor}/10 • ${textoEva}</span>
+                            ${evaAnteriorHtml}
                             ${borgBadgeHtml}
                             ${completadoBadge}
                         </div>
