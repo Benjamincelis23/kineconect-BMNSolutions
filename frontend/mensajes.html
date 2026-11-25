@@ -3,6 +3,15 @@
 
 <head>
     <style>
+        /* Aprovechar todo el ancho disponible junto al menú lateral */
+        .main .content {
+            max-width: 100% !important;
+            width: 100% !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            box-sizing: border-box;
+        }
+
         body.dark-mode #select-filtro-paciente,
         html.dark-mode #select-filtro-paciente,
         [data-theme="dark"] #select-filtro-paciente,
@@ -43,7 +52,7 @@
 
         .inbox-card {
             display: grid;
-            grid-template-columns: minmax(290px, 360px) minmax(0, 1fr);
+            grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
             gap: 22px;
             padding: 18px 22px;
             width: 100%;
@@ -411,7 +420,6 @@
             });
         }
 
-        // Separa datos generados por la app móvil (Borg, tags, series) del texto real escrito por el paciente
         function parsearComentarioApp(raw) {
             let texto = String(raw || '').trim();
             let seriesInfo = '';
@@ -613,7 +621,6 @@
 
             const pautaId = typeof item.pauta === 'object' && item.pauta !== null ? item.pauta.id : item.pauta;
             const infoPauta = mapaPautas[pautaId] || {};
-            const tituloRutina = item.pauta_titulo || infoPauta.titulo || `Pauta #${pautaId || 'N/A'}`;
             const nombrePaciente = capitalizarNombre(item.paciente_nombre || infoPauta.paciente_nombre || 'Paciente');
 
             document.getElementById('modal-resp-titulo').textContent = item.respuesta_kinesiologo
@@ -621,7 +628,7 @@
                 : 'Responder al Paciente';
 
             document.getElementById('modal-resp-subtitulo').textContent =
-                `${nombrePaciente} • ${tituloRutina} • EVA ${dolor}/10`;
+                `${nombrePaciente} • EVA ${dolor}/10`;
 
             document.getElementById('modal-resp-contexto').innerHTML = `
                 <div><strong>Comentario del paciente:</strong> ${escaparHtml(parsed.textoLibre || 'Sin comentario escrito')}</div>
@@ -634,7 +641,6 @@
 
             renderizarSugerenciasSeguras(esAlertaAlta);
 
-            // Siempre inicia con la respuesta previa real del kinesiólogo o vacío (nunca prellenado con "mantén carga")
             const textarea = document.getElementById('textarea-respuesta-kine');
             textarea.value = item.respuesta_kinesiologo || '';
             sincronizarSeleccionSugerencia();
@@ -766,7 +772,6 @@
 
                 const pautaId = typeof f.pauta === 'object' && f.pauta !== null ? f.pauta.id : f.pauta;
                 const infoPauta = mapaPautas[pautaId] || {};
-                const tituloRutina = f.pauta_titulo || infoPauta.titulo || `Pauta #${pautaId || 'N/A'}`;
                 const nombrePaciente = capitalizarNombre(f.paciente_nombre || infoPauta.paciente_nombre || 'Paciente');
 
                 const parsed = parsearComentarioApp(f.comentario);
@@ -788,7 +793,6 @@
                        </div>`
                     : '';
 
-                // Solo se muestra entre comillas si el paciente escribió texto libre real
                 const textoHtml = parsed.textoLibre
                     ? `<div style="color: var(--azul-900); font-size: 0.92rem; line-height: 1.45;">"${escaparHtml(parsed.textoLibre)}"</div>`
                     : `<div style="color: var(--gris-500); font-style: italic; font-size: 0.84rem;">El paciente envió su escala sin comentario escrito adicional.</div>`;
@@ -858,9 +862,6 @@
                             <strong style="color: var(--azul-900); font-size: 0.96rem;">${escaparHtml(nombrePaciente)}</strong>
                             <span style="font-size: 0.76rem; color: var(--gris-500); white-space: nowrap;">${fecha}</span>
                         </div>
-                        <span style="font-size: 0.83rem; font-weight: 600; color: #0284c7;">
-                            ${escaparHtml(tituloRutina)}
-                        </span>
                         <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px;">
                             <span class="badge ${badgeColor}" style="font-weight: 700;">EVA ${dolor}/10 • ${textoEva}</span>
                             ${evaAnteriorHtml}
