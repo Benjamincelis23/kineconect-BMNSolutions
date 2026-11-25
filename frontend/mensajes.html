@@ -3,15 +3,6 @@
 
 <head>
     <style>
-        /* Aprovechar todo el ancho disponible junto al menú lateral */
-        .main .content {
-            max-width: 100% !important;
-            width: 100% !important;
-            margin-left: 0 !important;
-            margin-right: 0 !important;
-            box-sizing: border-box;
-        }
-
         body.dark-mode #select-filtro-paciente,
         html.dark-mode #select-filtro-paciente,
         [data-theme="dark"] #select-filtro-paciente,
@@ -52,7 +43,7 @@
 
         .inbox-card {
             display: grid;
-            grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+            grid-template-columns: minmax(380px, 470px) minmax(0, 1fr);
             gap: 22px;
             padding: 18px 22px;
             width: 100%;
@@ -87,7 +78,7 @@
             gap: 8px;
             min-width: 0;
             border-right: 1px solid var(--gris-200);
-            padding-right: 20px;
+            padding-right: 22px;
         }
 
         .inbox-body {
@@ -117,7 +108,7 @@
             flex-shrink: 0;
         }
 
-        @media (max-width: 860px) {
+        @media (max-width: 960px) {
             .inbox-card {
                 grid-template-columns: 1fr;
                 gap: 14px;
@@ -621,6 +612,7 @@
 
             const pautaId = typeof item.pauta === 'object' && item.pauta !== null ? item.pauta.id : item.pauta;
             const infoPauta = mapaPautas[pautaId] || {};
+            const tituloRutina = item.pauta_titulo || infoPauta.titulo || `Pauta #${pautaId || 'N/A'}`;
             const nombrePaciente = capitalizarNombre(item.paciente_nombre || infoPauta.paciente_nombre || 'Paciente');
 
             document.getElementById('modal-resp-titulo').textContent = item.respuesta_kinesiologo
@@ -628,7 +620,7 @@
                 : 'Responder al Paciente';
 
             document.getElementById('modal-resp-subtitulo').textContent =
-                `${nombrePaciente} • EVA ${dolor}/10`;
+                `${nombrePaciente} • ${tituloRutina} • EVA ${dolor}/10`;
 
             document.getElementById('modal-resp-contexto').innerHTML = `
                 <div><strong>Comentario del paciente:</strong> ${escaparHtml(parsed.textoLibre || 'Sin comentario escrito')}</div>
