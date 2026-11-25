@@ -76,6 +76,19 @@
             gap: 10px;
         }
 
+        .btn-sug-bandeja {
+            justify-content: flex-start !important;
+            text-align: left !important;
+            font-size: 0.78rem !important;
+            padding: 7px 10px !important;
+        }
+
+        .btn-sug-bandeja.preventiva {
+            border-color: rgba(239, 68, 68, 0.45) !important;
+            color: #dc2626 !important;
+            background: rgba(239, 68, 68, 0.06) !important;
+        }
+
         /* Soporte total para Modo Oscuro de KineConnect */
         body.dark-mode .modulo-card,
         html.dark-mode .modulo-card,
@@ -190,7 +203,7 @@
                         <div>
                             <span
                                 style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">Alertas
-                                Dolor (EVA ≥ 6)</span>
+                                EVA ≥ 6 Pendientes</span>
                             <strong id="kpi-alertas-dolor"
                                 style="font-size: 1.35rem; color: var(--azul-900);">—</strong>
                         </div>
@@ -237,7 +250,7 @@
                             </h3>
                             <a href="mensajes.html"
                                 style="font-size: 0.8rem; font-weight: 700; color: #b91c1c; text-decoration: none;">
-                                Ir a Consultas y Reportes →
+                                Ir a Bandeja de Reportes →
                             </a>
                         </div>
                         <div id="lista-bandeja-prioritaria" style="display: flex; flex-direction: column; gap: 8px;">
@@ -283,7 +296,7 @@
                             </span>
                         </a>
 
-                        <!-- Módulo 2: Pautas Prescritas -->
+                        <!-- Módulo 2: Pautas y Plantillas -->
                         <a href="pautas.html" class="modulo-card" style="border-top: 3px solid #0ea5e9;">
                             <div>
                                 <div class="modulo-card-top">
@@ -297,11 +310,11 @@
                                 </div>
                                 <strong
                                     style="display: block; color: var(--azul-900); font-size: 1rem; margin-bottom: 5px;">
-                                    Pautas Prescritas
+                                    Pautas y Plantillas
                                 </strong>
                                 <p
                                     style="margin: 0 0 14px 0; font-size: 0.83rem; color: var(--gris-600); line-height: 1.45;">
-                                    Administra rutinas activas, plantillas maestras y exporta fichas PDF por RUT.
+                                    Administra rutinas asignadas, plantillas maestras y protocolos archivados.
                                 </p>
                             </div>
                             <span style="font-size: 0.83rem; font-weight: 700; color: #0369a1;">
@@ -309,7 +322,7 @@
                             </span>
                         </a>
 
-                        <!-- Módulo 3: Consultas y Reportes -->
+                        <!-- Módulo 3: Bandeja de Reportes -->
                         <a href="mensajes.html" class="modulo-card" style="border-top: 3px solid #f59e0b;">
                             <div>
                                 <div class="modulo-card-top">
@@ -323,7 +336,7 @@
                                 </div>
                                 <strong
                                     style="display: block; color: var(--azul-900); font-size: 1rem; margin-bottom: 5px;">
-                                    Consultas y Reportes
+                                    Bandeja de Reportes
                                 </strong>
                                 <p
                                     style="margin: 0 0 14px 0; font-size: 0.83rem; color: var(--gris-600); line-height: 1.45;">
@@ -353,7 +366,7 @@
                                 </strong>
                                 <p
                                     style="margin: 0 0 14px 0; font-size: 0.83rem; color: var(--gris-600); line-height: 1.45;">
-                                    Registra pacientes, supervisa adherencia semanal y detecta inactividad.
+                                    Registra pacientes, supervisa seguimiento clínico y exporta fichas PDF.
                                 </p>
                             </div>
                             <span style="font-size: 0.83rem; font-weight: 700; color: #2563eb;">
@@ -465,25 +478,9 @@
             <div style="margin-bottom: 12px;">
                 <span
                     style="display: block; font-size: 0.78rem; font-weight: 700; color: var(--gris-600); margin-bottom: 6px;">
-                    Sugerencias rápidas (un clic):
+                    Sugerencias clínicas rápidas (un clic):
                 </span>
-                <div style="display: flex; flex-direction: column; gap: 6px;">
-                    <button type="button" class="btn btn-secondary btn-sm"
-                        style="justify-content: flex-start; text-align: left; font-size: 0.78rem; padding: 7px 10px;"
-                        onclick="aplicarSugerenciaBandeja('Excelente tolerancia, mantén la carga actual')">
-                        • Excelente tolerancia, mantén la carga actual
-                    </button>
-                    <button type="button" class="btn btn-secondary btn-sm"
-                        style="justify-content: flex-start; text-align: left; font-size: 0.78rem; padding: 7px 10px;"
-                        onclick="aplicarSugerenciaBandeja('Reducir a 2 series si persiste molestia')">
-                        • Reducir a 2 series si persiste molestia
-                    </button>
-                    <button type="button" class="btn btn-secondary btn-sm"
-                        style="justify-content: flex-start; text-align: left; font-size: 0.78rem; padding: 7px 10px;"
-                        onclick="aplicarSugerenciaBandeja('Suspender ejercicio con dolor y evaluar en próxima sesión')">
-                        • Suspender ejercicio con dolor y evaluar en próxima sesión
-                    </button>
-                </div>
+                <div id="lista-sugerencias-bandeja" style="display: flex; flex-direction: column; gap: 6px;"></div>
             </div>
 
             <div class="field" style="margin-bottom: 14px;">
@@ -539,6 +536,62 @@
             }[c]));
         }
 
+        function capitalizarNombre(texto) {
+            return String(texto || '')
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean)
+                .map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+                .join(' ');
+        }
+
+        function formatearRutVisual(rut) {
+            const limpio = String(rut ?? '').replace(/[^0-9kK]/g, '').toUpperCase();
+            if (limpio.length < 2) return rut || 'Sin RUT';
+            const cuerpo = limpio.slice(0, -1);
+            const dv = limpio.slice(-1);
+            return `${cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}-${dv}`;
+        }
+
+        function formatearFechaChile(isoStr) {
+            if (!isoStr) return '';
+            const d = new Date(isoStr);
+            if (Number.isNaN(d.getTime())) return '';
+            return d.toLocaleString('es-CL', {
+                timeZone: 'America/Santiago',
+                day: '2-digit',
+                month: '2-digit',
+                year: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+            });
+        }
+
+        function parsearComentarioApp(raw) {
+            let texto = String(raw || '').trim();
+            let seriesInfo = '';
+            let borgTexto = '';
+
+            const matchSeries = texto.match(/(?:\|\s*)?(Series:\s*[^|]+)\.?$/i);
+            if (matchSeries) {
+                seriesInfo = matchSeries[1].trim();
+                texto = texto.slice(0, matchSeries.index).trim();
+            }
+
+            const matchBorg = texto.match(/(?:^|\|\s*)(Esfuerzo\s*Borg\s*[:\-]?\s*[^|]+)(?:\s*\||$)/i);
+            if (matchBorg) {
+                borgTexto = matchBorg[1].trim();
+                texto = texto.replace(matchBorg[0], ' ').replace(/^\s*\|\s*|\s*\|\s*$/g, '').trim();
+            }
+
+            const matchTags = texto.match(/^\[([^\]]+)\]\s*(.*)$/);
+            if (matchTags) {
+                texto = matchTags[2].trim();
+            }
+
+            return { seriesInfo, borgTexto, textoLibre: texto };
+        }
+
         function extraerLista(resp) {
             if (Array.isArray(resp)) return resp;
             if (resp && Array.isArray(resp.results)) return resp.results;
@@ -577,27 +630,28 @@
                 const feedbackId = item.id ?? item.feedback_id;
                 const repCompleto = reportes.find(r => r.id === feedbackId) || item;
                 const dolor = Number(repCompleto.nivel_dolor ?? repCompleto.escala_dolor ?? item.nivel_dolor ?? 0);
-                const paciente = repCompleto.paciente_nombre || item.paciente_nombre || 'Paciente';
+                const paciente = capitalizarNombre(repCompleto.paciente_nombre || item.paciente_nombre || 'Paciente');
                 const pautaId = typeof repCompleto.pauta === 'object' && repCompleto.pauta !== null ? repCompleto.pauta.id : repCompleto.pauta;
                 const pautaTitulo = repCompleto.pauta_titulo || item.pauta_titulo || mapaPautas[pautaId]?.titulo || `Pauta #${pautaId || ''}`;
-                const comentario = repCompleto.comentario || item.comentario || 'Sin observaciones adicionales';
+                const parsed = parsearComentarioApp(repCompleto.comentario || item.comentario || '');
 
                 return `
                     <div class="bandeja-item">
                         <div style="min-width: 220px; flex: 1;">
-                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 3px;">
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;">
                                 <strong class="bandeja-paciente" style="font-size: 0.9rem; color: #0f172a;">${escaparHtml(paciente)}</strong>
                                 <span class="badge badge-alerta">EVA ${dolor}/10</span>
+                                ${parsed.borgTexto ? `<span class="badge" style="background: #fef3c7; color: #92400e; font-size: 0.72rem;">${escaparHtml(parsed.borgTexto)}</span>` : ''}
                                 <span style="font-size: 0.78rem; color: var(--gris-600);">${escaparHtml(pautaTitulo)}</span>
                             </div>
                             <p style="margin: 0; font-size: 0.81rem; color: var(--gris-600);">
-                                "${escaparHtml(comentario)}"
+                                ${parsed.textoLibre ? `"${escaparHtml(parsed.textoLibre)}"` : 'Sin comentario escrito adicional.'}
                             </p>
                         </div>
                         <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                             ${feedbackId ? `
-                                <button type="button" class="btn btn-secondary btn-sm" onclick="marcarReporteVistoDesdeInicio(${feedbackId})" title="Descartar alerta de esta bandeja">
-                                    <i class='bx bx-check'></i> Dejar en visto
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="marcarReporteVistoDesdeInicio(${feedbackId})" title="Marcar alerta como revisada">
+                                    <i class='bx bx-check'></i> Marcar como revisado
                                 </button>
                                 <button type="button" class="btn btn-secondary btn-sm" onclick="abrirModalBandeja(${feedbackId})">
                                     <i class='bx bx-message-square-edit'></i> Responder
@@ -618,10 +672,33 @@
 
             feedbackBandejaSeleccionado = rep;
             const dolor = Number(rep.nivel_dolor ?? rep.escala_dolor ?? 0);
+            const parsed = parsearComentarioApp(rep.comentario || '');
+            const paciente = capitalizarNombre(rep.paciente_nombre || 'Paciente');
+
             document.getElementById('bandeja-modal-subtitulo').textContent =
-                `${rep.paciente_nombre || 'Paciente'} • ${rep.pauta_titulo || 'Pauta'} (EVA ${dolor}/10)`;
+                `${paciente} • ${rep.pauta_titulo || 'Pauta'} (EVA ${dolor}/10)`;
             document.getElementById('bandeja-modal-contexto').innerHTML =
-                `<strong>Reporte del paciente:</strong> ${escaparHtml(rep.comentario || 'Sin comentario')}`;
+                `<strong>Comentario del paciente:</strong> ${escaparHtml(parsed.textoLibre || 'Sin comentario escrito')}`;
+
+            const opciones = dolor >= 6
+                ? [
+                    { texto: 'Suspender ejercicio con dolor y evaluar en próxima sesión', preventiva: true },
+                    { texto: 'Reducir a 2 series y bajar carga si persiste molestia', preventiva: true },
+                    { texto: 'Aplicar frío local 15 min y reportar evolución mañana', preventiva: false },
+                ]
+                : [
+                    { texto: 'Excelente tolerancia, mantén la carga actual', preventiva: false },
+                    { texto: 'Reducir a 2 series si persiste molestia', preventiva: false },
+                    { texto: 'Suspender ejercicio con dolor y evaluar en próxima sesión', preventiva: false },
+                ];
+
+            document.getElementById('lista-sugerencias-bandeja').innerHTML = opciones.map(op => `
+                <button type="button" class="btn btn-secondary btn-sm btn-sug-bandeja ${op.preventiva ? 'preventiva' : ''}"
+                    onclick="aplicarSugerenciaBandeja('${escaparHtml(op.texto)}')">
+                    • ${escaparHtml(op.texto)}
+                </button>
+            `).join('');
+
             document.getElementById('textarea-mensaje-bandeja').value = rep.respuesta_kinesiologo || '';
             document.getElementById('bandeja-modal-error').style.display = 'none';
             document.getElementById('modal-responder-bandeja').style.display = 'flex';
@@ -692,7 +769,7 @@
             todasPautas.forEach(p => { mapaPautas[p.id] = p; });
             mapaPautasDashboard = mapaPautas;
 
-            const pautasActivasCount = todasPautas.filter(p => p.activo !== false && !p.es_plantilla).length;
+            const pautasActivas = todasPautas.filter(p => p.activo !== false && !p.es_plantilla);
             const vistos = obtenerVistosKine();
             const pendientesCount = reportes.filter(r => {
                 const sinResp = !r.respuesta_kinesiologo || String(r.respuesta_kinesiologo).trim() === '';
@@ -700,17 +777,26 @@
                 return sinResp && noVisto;
             }).length;
 
+            // Adherencia real contando solo sesiones completadas (completado === true)
+            let adherenciaTexto = '0%';
+            if (pautasActivas.length > 0) {
+                const totalMeta = pautasActivas.reduce((acc, p) => acc + Math.max(1, Number(p.meta_semanal || 3)), 0);
+                const totalCompletadas = pautasActivas.reduce((acc, p) => acc + Math.min(Number(p.sesiones_semana || 0), Math.max(1, Number(p.meta_semanal || 3))), 0);
+                adherenciaTexto = `${Math.round((totalCompletadas / totalMeta) * 100)}%`;
+            } else if (reportes.length > 0) {
+                const completas = reportes.filter(r => Boolean(r.completado)).length;
+                adherenciaTexto = `${Math.round((completas / reportes.length) * 100)}%`;
+            }
+
             // KPIs
             document.getElementById('kpi-pacientes').textContent = resumen?.kpis?.pacientes_activos ?? pacientes.length;
-            document.getElementById('kpi-adherencia').textContent = resumen?.kpis?.adherencia_global_pct != null
-                ? `${resumen.kpis.adherencia_global_pct}%`
-                : 'Activo';
+            document.getElementById('kpi-adherencia').textContent = adherenciaTexto;
             document.getElementById('kpi-abandono').textContent = resumen?.kpis?.riesgo_abandono ?? 0;
 
             // Badges de Módulos
-            document.getElementById('badge-mod-pautas').textContent = `${pautasActivasCount} activas`;
-            document.getElementById('badge-mod-reportes').textContent = `${pendientesCount} pendientes`;
-            document.getElementById('badge-mod-pacientes').textContent = `${pacientes.length} activos`;
+            document.getElementById('badge-mod-pautas').textContent = `${pautasActivas.length} ${pautasActivas.length === 1 ? 'activa' : 'activas'}`;
+            document.getElementById('badge-mod-reportes').textContent = `${pendientesCount} ${pendientesCount === 1 ? 'pendiente' : 'pendientes'}`;
+            document.getElementById('badge-mod-pacientes').textContent = `${pacientes.length} ${pacientes.length === 1 ? 'activo' : 'activos'}`;
             document.getElementById('badge-mod-ejercicios').textContent = `${totalEjercicios} ejercicios`;
 
             // Bandeja de Atención Prioritaria
@@ -728,10 +814,8 @@
                     const pid = typeof r.pauta === 'object' && r.pauta !== null ? r.pauta.id : r.pauta;
                     const infoPauta = mapaPautas[pid] || {};
                     const titulo = r.pauta_titulo || infoPauta.titulo || `Pauta #${pid || 'N/A'}`;
-                    const paciente = r.paciente_nombre || infoPauta.paciente_nombre || 'Paciente';
-                    const fecha = r.fecha_ejecucion
-                        ? new Date(r.fecha_ejecucion).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })
-                        : '';
+                    const paciente = capitalizarNombre(r.paciente_nombre || infoPauta.paciente_nombre || 'Paciente');
+                    const fecha = formatearFechaChile(r.fecha_ejecucion);
 
                     return `
                         <div class="actividad-row">
@@ -756,10 +840,10 @@
             } else {
                 contPacientes.innerHTML = pacientes.slice(0, 4).map(p => {
                     const userId = p.user_id || ((p.user && typeof p.user === 'object') ? p.user.id : (p.user || p.id));
-                    const nombre = p.nombre_completo ||
+                    const nombre = capitalizarNombre(p.nombre_completo ||
                         (p.user && typeof p.user === 'object' ? `${p.user.first_name} ${p.user.last_name}`.trim() : '') ||
-                        'Paciente';
-                    const rut = p.rut || 'Sin RUT';
+                        'Paciente');
+                    const rut = formatearRutVisual(p.rut || 'Sin RUT');
 
                     return `
                         <div class="actividad-row">
