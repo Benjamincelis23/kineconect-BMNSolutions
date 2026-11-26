@@ -150,9 +150,7 @@
 </head>
 
 <body>
-    <div class="app-shell">
-        <main class="main">
-            <div class="content">
+    <div class="content">
 
                 <!-- ENCABEZADO -->
                 <div class="page-header" style="flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
@@ -251,7 +249,7 @@
                     </div>
                 </div>
 
-               <!-- 3. ACCESOS RÁPIDOS A MÓDULOS (COMPACTO ARRIBA) -->
+                <!-- 3. ACCESOS DIRECTOS (ÚNICA FILA COMPACTA ARRIBA) -->
                 <div style="margin-bottom: 22px;">
                     <div
                         style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
@@ -334,80 +332,48 @@
                 <!-- 4. ACTIVIDAD RECIENTE (2 COLUMNAS NIVELADAS ABAJO) -->
                 <div
                     style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; align-items: stretch;">
-                        <h3
-                            style="margin: 0; font-size: 0.92rem; color: var(--gris-600); display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
-                            <i class='bx bx-grid-alt' style="color: #0284c7;"></i> Accesos Directos
-                        </h3>
+
+                    <!-- Últimos Reportes de Dolor -->
+                    <div class="card" style="padding: 18px 20px; display: flex; flex-direction: column;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                            <h3
+                                style="margin: 0; font-size: 1rem; color: var(--azul-900); display: flex; align-items: center; gap: 8px;">
+                                <i class='bx bx-pulse' style="color: #ef4444;"></i> Últimos Reportes EVA (App Móvil)
+                            </h3>
+                            <a href="mensajes.html"
+                                style="font-size: 0.82rem; font-weight: 700; color: #0284c7; text-decoration: none;">
+                                Ver bandeja →
+                            </a>
+                        </div>
+
+                        <div id="lista-ultimos-reportes"
+                            style="display: flex; flex-direction: column; gap: 9px; flex: 1;">
+                            <p style="margin: 0; font-size: 0.85rem; color: var(--gris-500);">Cargando reportes
+                                recientes...</p>
+                        </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 12px;">
+                    <!-- Pacientes Recientes -->
+                    <div class="card" style="padding: 18px 20px; display: flex; flex-direction: column;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                            <h3
+                                style="margin: 0; font-size: 1rem; color: var(--azul-900); display: flex; align-items: center; gap: 8px;">
+                                <i class='bx bx-user-check' style="color: #2563eb;"></i> Pacientes Asignados
+                            </h3>
+                            <a href="pacientes.html"
+                                style="font-size: 0.82rem; font-weight: 700; color: #2563eb; text-decoration: none;">
+                                Gestionar →
+                            </a>
+                        </div>
 
-                        <a href="crear_pauta.html" class="acceso-rapido-card" style="border-left: 3px solid #0284c7;">
-                            <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-                                <span class="acceso-icon" style="background: #e0f2fe; color: #0284c7;">
-                                    <i class='bx bx-body'></i>
-                                </span>
-                                <div style="min-width: 0;">
-                                    <strong style="display: block; color: var(--azul-900); font-size: 0.9rem;">Mapa Anatómico</strong>
-                                    <span style="font-size: 0.76rem; color: var(--gris-600);">Prescribir rutina</span>
-                                </div>
-                            </div>
-                            <i class='bx bx-chevron-right' style="color: var(--gris-400); font-size: 1.2rem;"></i>
-                        </a>
-
-                        <a href="mensajes.html" class="acceso-rapido-card" style="border-left: 3px solid #f59e0b;">
-                            <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-                                <span class="acceso-icon" style="background: #fef3c7; color: #d97706;">
-                                    <i class='bx bx-message-square-detail'></i>
-                                </span>
-                                <div style="min-width: 0;">
-                                    <strong style="display: block; color: var(--azul-900); font-size: 0.9rem;">Bandeja de Reportes</strong>
-                                    <span id="badge-mod-reportes" style="font-size: 0.76rem; color: var(--gris-600);">0 pendientes</span>
-                                </div>
-                            </div>
-                            <i class='bx bx-chevron-right' style="color: var(--gris-400); font-size: 1.2rem;"></i>
-                        </a>
-
-                        <a href="pautas.html" class="acceso-rapido-card" style="border-left: 3px solid #0ea5e9;">
-                            <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-                                <span class="acceso-icon" style="background: #e0f2fe; color: #0369a1;">
-                                    <i class='bx bx-clipboard'></i>
-                                </span>
-                                <div style="min-width: 0;">
-                                    <strong style="display: block; color: var(--azul-900); font-size: 0.9rem;">Pautas y Plantillas</strong>
-                                    <span id="badge-mod-pautas" style="font-size: 0.76rem; color: var(--gris-600);">0 activas</span>
-                                </div>
-                            </div>
-                            <i class='bx bx-chevron-right' style="color: var(--gris-400); font-size: 1.2rem;"></i>
-                        </a>
-
-                        <a href="pacientes.html" class="acceso-rapido-card" style="border-left: 3px solid #2563eb;">
-                            <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-                                <span class="acceso-icon" style="background: #dbeafe; color: #2563eb;">
-                                    <i class='bx bx-group'></i>
-                                </span>
-                                <div style="min-width: 0;">
-                                    <strong style="display: block; color: var(--azul-900); font-size: 0.9rem;">Gestión Pacientes</strong>
-                                    <span id="badge-mod-pacientes" style="font-size: 0.76rem; color: var(--gris-600);">0 activos</span>
-                                </div>
-                            </div>
-                            <i class='bx bx-chevron-right' style="color: var(--gris-400); font-size: 1.2rem;"></i>
-                        </a>
-
-                        <a href="ejercicios.html" class="acceso-rapido-card" style="border-left: 3px solid #10b981;">
-                            <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-                                <span class="acceso-icon" style="background: #d1fae5; color: #059669;">
-                                    <i class='bx bx-dumbbell'></i>
-                                </span>
-                                <div style="min-width: 0;">
-                                    <strong style="display: block; color: var(--azul-900); font-size: 0.9rem;">Catálogo Ejercicios</strong>
-                                    <span id="badge-mod-ejercicios" style="font-size: 0.76rem; color: var(--gris-600);">39 ejercicios</span>
-                                </div>
-                            </div>
-                            <i class='bx bx-chevron-right' style="color: var(--gris-400); font-size: 1.2rem;"></i>
-                        </a>
-
+                        <div id="lista-pacientes-recientes"
+                            style="display: flex; flex-direction: column; gap: 9px; flex: 1;">
+                            <p style="margin: 0; font-size: 0.85rem; color: var(--gris-500);">Cargando pacientes...</p>
+                        </div>
                     </div>
+
                 </div>
 
             </div>
