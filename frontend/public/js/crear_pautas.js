@@ -441,6 +441,7 @@ function crearItemTarjetaCatalogo(ej, areaClave) {
     const nombre = ej.nombre || ej.titulo || 'Ejercicio';
     const zona = ej.zona_corporal || ej.zona_cuerpo || ej.grupo_muscular || 'General';
     const tieneMedia = !!resolverUrlMedia(ej);
+    const yaEnCarrito = carrito.some(c => c.ejercicio.id === ej.id);
 
     let areas = [...obtenerAreasEjercicio(ej)].sort((a, b) => a.localeCompare(b, 'es'));
     if (areaClinicaActual !== 'todos') {
@@ -484,8 +485,9 @@ function crearItemTarjetaCatalogo(ej, areaClave) {
                         <i class='bx bx-video'></i>
                     </button>
                 ` : ''}
-                <button type="button" class="btn btn-primary btn-sm" data-accion="agregar" data-id="${ej.id}" title="Añadir a la pauta" style="white-space: nowrap;">
-                    <i class='bx bx-plus'></i> Añadir
+                <button type="button" class="btn ${yaEnCarrito ? 'btn-secondary' : 'btn-primary'} btn-sm" data-accion="agregar" data-id="${ej.id}"
+                    title="${yaEnCarrito ? 'Ya está en el carrito' : 'Añadir a la pauta'}" style="white-space: nowrap;">
+                    <i class='bx ${yaEnCarrito ? 'bx-check' : 'bx-plus'}'></i> ${yaEnCarrito ? 'Añadido' : 'Añadir'}
                 </button>
             </div>
         </div>
@@ -668,8 +670,8 @@ window.cerrarModalMultimedia = function () {
     if (modal) modal.style.display = 'none';
 };
 
-// ---------- 6. Carrito de prescripción (Diseño aireado + Reps vs Seg) ----------
-window.agregarAlCarrito = function (idEjercicio, dosificacion = null) {
+// ---------- 6. Paso 1: Carrito Lateral Limpio + Paso 2: Modal Amplio de Dosificación ----------
+window.agregarAlCarrito = function (idEjercicio, dosificacion = null, silencioso = false) {
     const ejercicio = todosLosEjercicios.find(e => e.id === idEjercicio);
     if (!ejercicio) return;
 
@@ -682,8 +684,8 @@ window.agregarAlCarrito = function (idEjercicio, dosificacion = null) {
             existente.repeticiones = dosificacion.repeticiones ?? existente.repeticiones;
             existente.unidad_medida = unidadInferida;
             existente.descanso = dosificacion.descanso ?? existente.descanso;
-        } else {
-            existente.series += 1;
+        } else if (!silencioso) {
+            mostrarToast('Este ejercicio ya está en tu lista. Podrás ajustar sus series al continuar.', 'info', 2200);
         }
     } else {
         carrito.push({
@@ -693,24 +695,39 @@ window.agregarAlCarrito = function (idEjercicio, dosificacion = null) {
             unidad_medida: unidadInferida,
             descanso: dosificacion?.descanso ?? 60
         });
+        if (!silencioso) {
+            mostrarToast(`"${ejercicio.nombre || ejercicio.titulo}" añadido al carrito.`, 'success', 1800);
+        }
     }
+
     renderizarCarrito();
+    filtrarYRenderizarEjercicios();
 };
 
 window.eliminarDelCarrito = function (index) {
     carrito.splice(index, 1);
     renderizarCarrito();
+    filtrarYRenderizarEjercicios();
+    if (document.getElementById('modal-dosificacion-pauta')?.style.display === 'flex') {
+        if (carrito.length === 0) {
+            cerrarModalDosificacion();
+        } else {
+            renderizarListaModalDosificacion();
+        }
+    }
 };
 
 window.actualizarDosificacion = function (index, campo, valor) {
     if (!carrito[index]) return;
     if (campo === 'unidad_medida') {
         carrito[index].unidad_medida = valor === 'SEG' ? 'SEG' : 'REPS';
+        renderizarListaModalDosificacion();
         renderizarCarrito();
         return;
     }
     const minimo = campo === 'descanso' ? 0 : 1;
     carrito[index][campo] = aEntero(valor, minimo, minimo);
+    renderizarCarrito();
 };
 
 function renderizarCarrito() {
@@ -721,74 +738,298 @@ function renderizarCarrito() {
     if (badgeTotal) {
         badgeTotal.textContent = `${carrito.length} ${carrito.length === 1 ? 'Ejercicio' : 'Ejercicios'}`;
     }
-    if (btnSubmit) btnSubmit.disabled = (carrito.length === 0);
+    if (btnSubmit) {
+        btnSubmit.disabled = (carrito.length === 0);
+        btnSubmit.innerHTML = `<i class='bx bx-sliders-alt'></i> Continuar y Configurar (${carrito.length})`;
+    }
     if (!contenedor) return;
 
     if (carrito.length === 0) {
         contenedor.innerHTML = `
             <div class="empty-state" id="carrito-vacio-msg" style="padding: 16px;">
-                <p style="margin: 0; font-size: 0.85rem;">El carrito está vacío. Haz clic en "Añadir" en los ejercicios que desees prescribir.</p>
+                <p style="margin: 0; font-size: 0.85rem;">El carrito está vacío. Selecciona ejercicios de la lista central.</p>
             </div>
         `;
         return;
     }
 
-    contenedor.innerHTML = '';
-    carrito.forEach((item, index) => {
-        const div = document.createElement('div');
-        div.className = 'carrito-item-card';
-        div.style.cssText = 'padding: 12px; border-radius: 10px; border: 1px solid var(--gris-200); display: flex; flex-direction: column; gap: 10px;';
-
+    contenedor.innerHTML = carrito.map((item, index) => {
         const nombre = item.ejercicio.nombre || item.ejercicio.titulo || 'Ejercicio';
-        const esTiempo = item.unidad_medida === 'SEG';
-        const etiquetaCantidad = esTiempo ? 'Duración (seg)' : 'Repeticiones';
+        const zona = item.ejercicio.zona_corporal || item.ejercicio.zona_cuerpo || 'General';
+        const sufijo = item.unidad_medida === 'SEG' ? 'seg' : 'reps';
 
-        div.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
-                <strong style="font-size: 0.86rem; color: var(--azul-900); line-height: 1.3; flex: 1;">
-                    ${index + 1}. ${esc(nombre)}
-                </strong>
+        return `
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 11px; border-radius: 10px; border: 1px solid var(--gris-200); background: var(--gris-50, #f8fafc);">
+                <div style="min-width: 0; flex: 1;">
+                    <strong style="display: block; font-size: 0.84rem; color: var(--azul-900); line-height: 1.25;">
+                        ${index + 1}. ${esc(nombre)}
+                    </strong>
+                    <span style="font-size: 0.73rem; color: var(--gris-600);">
+                        ${esc(zona)} • ${item.series}×${item.repeticiones} ${sufijo} • Desc. ${item.descanso}s
+                    </span>
+                </div>
                 <button type="button" onclick="eliminarDelCarrito(${index})"
-                    style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 2px 4px; flex-shrink: 0;" title="Quitar ejercicio">
+                    style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 4px; flex-shrink: 0;" title="Quitar">
                     <i class='bx bx-trash' style="font-size: 1rem;"></i>
                 </button>
             </div>
+        `;
+    }).join('');
+}
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <div class="field" style="margin: 0;">
-                    <label style="font-size: 0.72rem; margin-bottom: 3px; display: block;">Series</label>
-                    <input type="number" min="1" max="20" value="${item.series}"
-                        onchange="actualizarDosificacion(${index}, 'series', this.value)"
-                        style="width: 100%; padding: 6px 8px; font-size: 0.83rem;">
+function asegurarModalDosificacion() {
+    let modal = document.getElementById('modal-dosificacion-pauta');
+    if (modal) return modal;
+
+    modal = document.createElement('div');
+    modal.id = 'modal-dosificacion-pauta';
+    modal.className = 'modal-overlay';
+    modal.style.cssText = 'display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.72); z-index: 9998; align-items: center; justify-content: center; padding: 16px;';
+    modal.innerHTML = `
+        <div class="card" style="width: 100%; max-width: 860px; max-height: 90vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 16px;">
+            <div style="padding: 18px 22px; border-bottom: 1px solid var(--gris-200); display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+                <div>
+                    <h3 style="margin: 0; font-size: 1.15rem; color: var(--azul-900); display: flex; align-items: center; gap: 8px;">
+                        <i class='bx bx-sliders-alt' style="color: #0284c7;"></i> Configurar Dosificación y Confirmar Pauta
+                    </h3>
+                    <p id="modal-dosif-subtitulo" style="margin: 4px 0 0; font-size: 0.83rem; color: var(--gris-600);"></p>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="cerrarModalDosificacion()">
+                    <i class='bx bx-arrow-back'></i> Volver a elegir
+                </button>
+            </div>
+
+            <div style="padding: 18px 22px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 16px;">
+                <!-- Resumen editable de cabecera -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; padding: 14px; border-radius: 12px; border: 1px solid var(--gris-200); background: var(--gris-50, #f8fafc);">
+                    <div class="field" style="margin: 0;">
+                        <label style="font-size: 0.76rem; font-weight: 700;">Nombre de la Pauta *</label>
+                        <input type="text" id="modal-dosif-titulo" style="width: 100%; padding: 7px 10px; font-size: 0.86rem;">
+                    </div>
+                    <div class="field" style="margin: 0;">
+                        <label style="font-size: 0.76rem; font-weight: 700;">Frecuencia Semanal *</label>
+                        <select id="modal-dosif-frecuencia" style="width: 100%; padding: 7px 10px; font-size: 0.86rem; border-radius: 8px;">
+                            <option value="1">1 vez por semana (cada 7 días)</option>
+                            <option value="2">2 veces por semana (cada 3–4 días)</option>
+                            <option value="3">3 veces por semana (Estándar - día por medio)</option>
+                            <option value="4">4 veces por semana</option>
+                            <option value="5">5 veces por semana (Lunes a Viernes)</option>
+                            <option value="6">6 veces por semana</option>
+                            <option value="7">7 veces por semana (Todos los días)</option>
+                        </select>
+                    </div>
+                    <div class="field" style="margin: 0; grid-column: 1 / -1;">
+                        <label style="font-size: 0.76rem; font-weight: 700;">Objetivo / Instrucciones para el Paciente</label>
+                        <input type="text" id="modal-dosif-notas" placeholder="Indicaciones clínicas..." style="width: 100%; padding: 7px 10px; font-size: 0.86rem;">
+                    </div>
                 </div>
 
-                <div class="field" style="margin: 0;">
-                    <label style="font-size: 0.72rem; margin-bottom: 3px; display: block;">Modalidad</label>
-                    <select onchange="actualizarDosificacion(${index}, 'unidad_medida', this.value)"
-                        style="width: 100%; padding: 6px 8px; font-size: 0.82rem; border-radius: 8px;">
-                        <option value="REPS" ${!esTiempo ? 'selected' : ''}>Repeticiones</option>
-                        <option value="SEG" ${esTiempo ? 'selected' : ''}>Tiempo (seg)</option>
-                    </select>
+                <!-- Lista amplia de ejercicios con sus 4 parámetros cómodos -->
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <strong style="font-size: 0.9rem; color: var(--azul-900);">Detalle de Ejercicios Seleccionados</strong>
+                        <span id="modal-dosif-contador" class="badge badge-ok">0 Ejercicios</span>
+                    </div>
+                    <div id="modal-dosif-lista" style="display: flex; flex-direction: column; gap: 10px;"></div>
+                </div>
+            </div>
+
+            <div style="padding: 14px 22px; border-top: 1px solid var(--gris-200); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <button type="button" class="btn btn-secondary" onclick="cerrarModalDosificacion()">
+                    <i class='bx bx-plus'></i> Seguir añadiendo ejercicios
+                </button>
+                <button type="button" id="btn-finalizar-prescripcion" class="btn btn-primary" onclick="confirmarGuardadoFinal()">
+                    <i class='bx bx-check-circle'></i> Confirmar y Asignar Pauta
+                </button>
+            </div>
+        </div>
+    `;
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) cerrarModalDosificacion();
+    });
+    document.body.appendChild(modal);
+    return modal;
+}
+
+function renderizarListaModalDosificacion() {
+    const lista = document.getElementById('modal-dosif-lista');
+    const contador = document.getElementById('modal-dosif-contador');
+    if (contador) {
+        contador.textContent = `${carrito.length} ${carrito.length === 1 ? 'Ejercicio' : 'Ejercicios'}`;
+    }
+    if (!lista) return;
+
+    lista.innerHTML = carrito.map((item, idx) => {
+        const nombre = item.ejercicio.nombre || item.ejercicio.titulo || 'Ejercicio';
+        const zona = item.ejercicio.zona_corporal || item.ejercicio.zona_cuerpo || 'General';
+        const esTiempo = item.unidad_medida === 'SEG';
+
+        return `
+            <div style="padding: 14px 16px; border-radius: 12px; border: 1px solid var(--gris-200); background: var(--blanco, #fff); display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <strong style="font-size: 0.95rem; color: var(--azul-900);">${idx + 1}. ${esc(nombre)}</strong>
+                        <span class="badge badge-neutro" style="font-size: 0.7rem;">${esc(zona)}</span>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" style="color: #ef4444;" onclick="eliminarDelCarrito(${idx})" title="Quitar ejercicio">
+                        <i class='bx bx-trash'></i> Quitar
+                    </button>
                 </div>
 
-                <div class="field" style="margin: 0;">
-                    <label style="font-size: 0.72rem; margin-bottom: 3px; display: block;">${etiquetaCantidad}</label>
-                    <input type="number" min="1" max="300" value="${item.repeticiones}"
-                        onchange="actualizarDosificacion(${index}, 'repeticiones', this.value)"
-                        style="width: 100%; padding: 6px 8px; font-size: 0.83rem;">
-                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
+                    <div class="field" style="margin: 0;">
+                        <label style="font-size: 0.75rem; font-weight: 700; display: block; margin-bottom: 4px;">Series</label>
+                        <input type="number" min="1" max="20" value="${item.series}"
+                            onchange="actualizarDosificacion(${idx}, 'series', this.value)"
+                            style="width: 100%; padding: 7px 10px; font-size: 0.88rem;">
+                    </div>
 
-                <div class="field" style="margin: 0;">
-                    <label style="font-size: 0.72rem; margin-bottom: 3px; display: block;">Descanso (seg)</label>
-                    <input type="number" min="0" max="300" step="5" value="${item.descanso}"
-                        onchange="actualizarDosificacion(${index}, 'descanso', this.value)"
-                        style="width: 100%; padding: 6px 8px; font-size: 0.83rem;">
+                    <div class="field" style="margin: 0;">
+                        <label style="font-size: 0.75rem; font-weight: 700; display: block; margin-bottom: 4px;">Modalidad</label>
+                        <select onchange="actualizarDosificacion(${idx}, 'unidad_medida', this.value)"
+                            style="width: 100%; padding: 7px 10px; font-size: 0.86rem; border-radius: 8px;">
+                            <option value="REPS" ${!esTiempo ? 'selected' : ''}>Repeticiones</option>
+                            <option value="SEG" ${esTiempo ? 'selected' : ''}>Tiempo (segundos)</option>
+                        </select>
+                    </div>
+
+                    <div class="field" style="margin: 0;">
+                        <label style="font-size: 0.75rem; font-weight: 700; display: block; margin-bottom: 4px;">
+                            ${esTiempo ? 'Duración (seg)' : 'Repeticiones'}
+                        </label>
+                        <input type="number" min="1" max="300" value="${item.repeticiones}"
+                            onchange="actualizarDosificacion(${idx}, 'repeticiones', this.value)"
+                            style="width: 100%; padding: 7px 10px; font-size: 0.88rem;">
+                    </div>
+
+                    <div class="field" style="margin: 0;">
+                        <label style="font-size: 0.75rem; font-weight: 700; display: block; margin-bottom: 4px;">Descanso (seg)</label>
+                        <input type="number" min="0" max="300" step="5" value="${item.descanso}"
+                            onchange="actualizarDosificacion(${idx}, 'descanso', this.value)"
+                            style="width: 100%; padding: 7px 10px; font-size: 0.88rem;">
+                    </div>
                 </div>
             </div>
         `;
-        contenedor.appendChild(div);
-    });
+    }).join('');
 }
+
+window.abrirModalDosificacion = function () {
+    const checkSoloPlantilla = document.getElementById('check-solo-plantilla');
+    const selectPaciente = document.getElementById('select-paciente-pauta');
+    const inputNombre = document.getElementById('pauta-nombre');
+    const inputDescripcion = document.getElementById('pauta-descripcion');
+    const selectFrecuencia = document.getElementById('pauta-frecuencia');
+
+    const esSoloPlantilla = checkSoloPlantilla ? checkSoloPlantilla.checked : false;
+    const pacienteId = selectPaciente ? selectPaciente.value : '';
+    const titulo = inputNombre ? inputNombre.value.trim() : '';
+
+    if (!esSoloPlantilla && !pacienteId) {
+        mostrarToast('Selecciona un paciente en el menú superior o marca "Guardar como Plantilla Maestra".', 'warning');
+        if (selectPaciente) selectPaciente.focus();
+        return;
+    }
+
+    if (!titulo) {
+        mostrarToast('Ingresa un nombre para la pauta antes de continuar.', 'warning');
+        if (inputNombre) inputNombre.focus();
+        return;
+    }
+
+    if (carrito.length === 0) {
+        mostrarToast('Selecciona al menos un ejercicio en el catálogo.', 'warning');
+        return;
+    }
+
+    const modal = asegurarModalDosificacion();
+    const pacTexto = esSoloPlantilla
+        ? 'Plantilla Maestra Reutilizable'
+        : (selectPaciente?.options[selectPaciente.selectedIndex]?.text || 'Paciente seleccionado');
+
+    document.getElementById('modal-dosif-subtitulo').textContent = `Destinatario: ${pacTexto}`;
+    document.getElementById('modal-dosif-titulo').value = titulo;
+    document.getElementById('modal-dosif-notas').value = inputDescripcion ? inputDescripcion.value.trim() : '';
+    document.getElementById('modal-dosif-frecuencia').value = selectFrecuencia ? selectFrecuencia.value : '3';
+
+    const btnFinal = document.getElementById('btn-finalizar-prescripcion');
+    if (btnFinal) {
+        btnFinal.disabled = false;
+        btnFinal.innerHTML = esSoloPlantilla
+            ? "<i class='bx bx-bookmark-alt'></i> Confirmar y Guardar Plantilla"
+            : "<i class='bx bx-check-circle'></i> Confirmar y Asignar Pauta";
+    }
+
+    renderizarListaModalDosificacion();
+    modal.style.display = 'flex';
+};
+
+window.cerrarModalDosificacion = function () {
+    const modal = document.getElementById('modal-dosificacion-pauta');
+    if (modal) modal.style.display = 'none';
+};
+
+window.confirmarGuardadoFinal = async function () {
+    const checkSoloPlantilla = document.getElementById('check-solo-plantilla');
+    const selectPaciente = document.getElementById('select-paciente-pauta');
+    const esSoloPlantilla = checkSoloPlantilla ? checkSoloPlantilla.checked : false;
+    const pacienteId = selectPaciente ? selectPaciente.value : '';
+
+    const titulo = (document.getElementById('modal-dosif-titulo')?.value || '').trim();
+    const textoNotas = (document.getElementById('modal-dosif-notas')?.value || '').trim();
+    const frecuenciaSemanal = aEntero(document.getElementById('modal-dosif-frecuencia')?.value, 3, 1);
+
+    if (!titulo) {
+        mostrarToast('El nombre de la pauta no puede quedar vacío.', 'warning');
+        return;
+    }
+
+    const btnFinal = document.getElementById('btn-finalizar-prescripcion');
+    if (btnFinal) {
+        btnFinal.disabled = true;
+        btnFinal.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
+    }
+
+    const payload = {
+        paciente: esSoloPlantilla ? null : parseInt(pacienteId, 10),
+        titulo: esSoloPlantilla && !titulo.toLowerCase().includes('protocolo') ? `[Protocolo] ${titulo}` : titulo,
+        notas: textoNotas,
+        frecuencia_semanal: frecuenciaSemanal,
+        es_plantilla: esSoloPlantilla,
+        guardar_como_plantilla: false,
+        ejercicios_detalle: carrito.map(item => ({
+            ejercicio: item.ejercicio.id,
+            series: parseInt(item.series, 10) || 3,
+            repeticiones: parseInt(item.repeticiones, 10) || 10,
+            unidad_medida: item.unidad_medida || 'REPS',
+            tiempo_descanso_segundos: parseInt(item.descanso, 10) || 60
+        }))
+    };
+
+    try {
+        await api.crearPauta(payload);
+        cerrarModalDosificacion();
+        mostrarToast(
+            esSoloPlantilla
+                ? '¡Protocolo maestro guardado con éxito!'
+                : '¡Pauta clínica creada y asignada con éxito!',
+            'success',
+            1600
+        );
+        setTimeout(() => {
+            window.location.href = 'pautas.html';
+        }, 900);
+    } catch (error) {
+        console.error('Error al guardar pauta:', error);
+        mostrarToast(`Error al guardar: ${error.message || 'Comprueba los datos ingresados.'}`, 'error', 4500);
+        if (btnFinal) {
+            btnFinal.disabled = false;
+            btnFinal.innerHTML = esSoloPlantilla
+                ? "<i class='bx bx-bookmark-alt'></i> Confirmar y Guardar Plantilla"
+                : "<i class='bx bx-check-circle'></i> Confirmar y Asignar Pauta";
+        }
+    }
+};
 
 // ---------- 7. Plantillas / protocolos rápidos ----------
 function aplicarPautaAlFormulario(pauta) {
@@ -816,9 +1057,10 @@ function aplicarPautaAlFormulario(pauta) {
             repeticiones: aEntero(d.repeticiones, 12, 1),
             unidad_medida: d.unidad_medida || 'REPS',
             descanso: aEntero(d.tiempo_descanso_segundos ?? d.descanso_seg, 60, 0)
-        });
+        }, true);
     });
     renderizarCarrito();
+    filtrarYRenderizarEjercicios();
 }
 
 async function cargarSelectorPlantillas() {
@@ -891,12 +1133,11 @@ async function cargarSelectorPacientes() {
     }
 }
 
-// ---------- 9. Envío y Creación de la Pauta / Plantilla Maestra ----------
+// ---------- 9. Inicialización del formulario (abre Paso 2: Modal de Dosificación) ----------
 function inicializarFormularioPauta() {
     const form = document.getElementById('form-guardar-pauta');
     const checkSoloPlantilla = document.getElementById('check-solo-plantilla');
     const selectPaciente = document.getElementById('select-paciente-pauta');
-    const btnSubmit = document.getElementById('btn-confirmar-pauta');
 
     if (!form) return;
 
@@ -906,85 +1147,16 @@ function inicializarFormularioPauta() {
                 selectPaciente.value = '';
                 selectPaciente.disabled = true;
                 selectPaciente.style.opacity = '0.5';
-                if (btnSubmit) {
-                    btnSubmit.innerHTML = "<i class='bx bx-bookmark-alt'></i> Guardar Plantilla Maestra";
-                }
             } else {
                 selectPaciente.disabled = false;
                 selectPaciente.style.opacity = '1';
-                if (btnSubmit) {
-                    btnSubmit.innerHTML = "<i class='bx bx-save'></i> Guardar y Asignar Pauta";
-                }
             }
         });
     }
 
-    form.addEventListener('submit', async (e) => {
+    form.addEventListener('submit', (e) => {
         e.preventDefault();
-
-        const inputNombre = document.getElementById('pauta-nombre');
-        const inputDescripcion = document.getElementById('pauta-descripcion') || document.querySelector('textarea');
-        const selectFrecuencia = document.getElementById('pauta-frecuencia');
-        const esSoloPlantilla = checkSoloPlantilla ? checkSoloPlantilla.checked : false;
-        const pacienteId = selectPaciente ? selectPaciente.value : '';
-        const titulo = inputNombre ? inputNombre.value.trim() : '';
-        const textoNotas = inputDescripcion ? inputDescripcion.value.trim() : '';
-        const frecuenciaSemanal = selectFrecuencia ? aEntero(selectFrecuencia.value, 3, 1) : 3;
-
-        if (!esSoloPlantilla && !pacienteId) {
-            mostrarToast('Por favor, selecciona un paciente en el menú superior o marca la casilla para guardar como Plantilla.', 'warning');
-            if (selectPaciente) selectPaciente.focus();
-            return;
-        }
-
-        if (!titulo) {
-            mostrarToast('Por favor, ingresa un nombre o título para el protocolo.', 'warning');
-            if (inputNombre) inputNombre.focus();
-            return;
-        }
-
-        if (carrito.length === 0) {
-            mostrarToast('Debes añadir al menos un ejercicio a la pauta.', 'warning');
-            return;
-        }
-
-        const payload = {
-            paciente: esSoloPlantilla ? null : parseInt(pacienteId, 10),
-            titulo: esSoloPlantilla && !titulo.toLowerCase().includes('protocolo') ? `[Protocolo] ${titulo}` : titulo,
-            notas: textoNotas,
-            frecuencia_semanal: frecuenciaSemanal,
-            es_plantilla: esSoloPlantilla,
-            guardar_como_plantilla: false,
-            ejercicios_detalle: carrito.map(item => ({
-                ejercicio: item.ejercicio.id,
-                series: parseInt(item.series, 10) || 3,
-                repeticiones: parseInt(item.repeticiones, 10) || 10,
-                unidad_medida: item.unidad_medida || 'REPS',
-                tiempo_descanso_segundos: parseInt(item.descanso, 10) || 60
-            }))
-        };
-
-        btnSubmit.disabled = true;
-        btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
-
-        try {
-            await api.crearPauta(payload);
-            if (esSoloPlantilla) {
-                mostrarToast('¡Protocolo maestro guardado con éxito! Ya puedes reutilizarlo en cualquier paciente.', 'success', 1600);
-            } else {
-                mostrarToast('¡Pauta clínica creada y asignada con éxito!', 'success', 1600);
-            }
-            setTimeout(() => {
-                window.location.href = 'pautas.html';
-            }, 900);
-        } catch (error) {
-            console.error('Error al guardar pauta:', error);
-            mostrarToast(`Error al guardar: ${error.message || 'Comprueba los datos ingresados.'}`, 'error', 4500);
-            btnSubmit.disabled = false;
-            btnSubmit.innerHTML = esSoloPlantilla
-                ? "<i class='bx bx-bookmark-alt'></i> Guardar Plantilla Maestra"
-                : "<i class='bx bx-save'></i> Guardar y Asignar Pauta";
-        }
+        abrirModalDosificacion();
     });
 }
 
