@@ -42,6 +42,65 @@ function normalizarTexto(txt) {
         .trim();
 }
 
+function asegurarContenedorToast() {
+    let cont = document.getElementById('kc-toast-container');
+    if (!cont && document.body) {
+        cont = document.createElement('div');
+        cont.id = 'kc-toast-container';
+        cont.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; max-width: 380px; pointer-events: none;';
+        document.body.appendChild(cont);
+    }
+    return cont;
+}
+
+function mostrarToast(mensaje, tipo = 'info', duracion = 3500) {
+    const cont = asegurarContenedorToast();
+    if (!cont) return;
+
+    const estilos = {
+        success: { bg: '#065f46', border: '#10b981', icon: 'bx-check-circle' },
+        error: { bg: '#7f1d1d', border: '#ef4444', icon: 'bx-error-circle' },
+        warning: { bg: '#78350f', border: '#f59e0b', icon: 'bx-error' },
+        info: { bg: '#0c4a6e', border: '#0ea5e9', icon: 'bx-info-circle' }
+    };
+    const cfg = estilos[tipo] || estilos.info;
+
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        pointer-events: auto;
+        background: ${cfg.bg};
+        color: #ffffff;
+        border-left: 4px solid ${cfg.border};
+        border-radius: 10px;
+        padding: 12px 14px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.88rem;
+        font-weight: 500;
+        opacity: 0;
+        transform: translateY(-8px);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+    `;
+    toast.innerHTML = `
+        <i class='bx ${cfg.icon}' style="font-size: 1.25rem; flex-shrink: 0;"></i>
+        <span style="flex: 1; line-height: 1.35;">${esc(mensaje)}</span>
+    `;
+
+    cont.appendChild(toast);
+    requestAnimationFrame(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateY(0)';
+    });
+
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-8px)';
+        setTimeout(() => toast.remove(), 220);
+    }, duracion);
+}
+
 function obtenerGrupoZona(item) {
     const z = normalizarTexto(item.zona_corporal || item.zona_cuerpo || item.grupo_muscular);
     if (z.includes('cuello') || z.includes('cervical')) return 'Cuello';
@@ -810,19 +869,19 @@ function inicializarFormularioPauta() {
         const textoNotas = inputDescripcion ? inputDescripcion.value.trim() : '';
 
         if (!esSoloPlantilla && !pacienteId) {
-            alert('Por favor, selecciona un paciente en el menú superior o marca la casilla para guardar como Plantilla.');
+            mostrarToast('Por favor, selecciona un paciente en el menú superior o marca la casilla para guardar como Plantilla.', 'warning');
             if (selectPaciente) selectPaciente.focus();
             return;
         }
 
         if (!titulo) {
-            alert('Por favor, ingresa un nombre o título para el protocolo.');
+            mostrarToast('Por favor, ingresa un nombre o título para el protocolo.', 'warning');
             if (inputNombre) inputNombre.focus();
             return;
         }
 
         if (carrito.length === 0) {
-            alert('Debes añadir al menos un ejercicio a la pauta.');
+            mostrarToast('Debes añadir al menos un ejercicio a la pauta.', 'warning');
             return;
         }
 
@@ -846,15 +905,16 @@ function inicializarFormularioPauta() {
         try {
             await api.crearPauta(payload);
             if (esSoloPlantilla) {
-                alert('¡Protocolo maestro guardado con éxito! Ya puedes reutilizarlo en cualquier paciente.');
+                mostrarToast('¡Protocolo maestro guardado con éxito! Ya puedes reutilizarlo en cualquier paciente.', 'success', 1600);
             } else {
-                alert('¡Pauta clínica creada y asignada con éxito!');
+                mostrarToast('¡Pauta clínica creada y asignada con éxito!', 'success', 1600);
             }
-            window.location.href = 'pautas.html';
+            setTimeout(() => {
+                window.location.href = 'pautas.html';
+            }, 900);
         } catch (error) {
             console.error('Error al guardar pauta:', error);
-            alert(`Error al guardar: ${error.message || 'Comprueba los datos ingresados.'}`);
-        } finally {
+            mostrarToast(`Error al guardar: ${error.message || 'Comprueba los datos ingresados.'}`, 'error', 4500);
             btnSubmit.disabled = false;
             btnSubmit.innerHTML = esSoloPlantilla
                 ? "<i class='bx bx-bookmark-alt'></i> Guardar Plantilla Maestra"
@@ -870,6 +930,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
+    asegurarContenedorToast();
     inicializarEventosMapa();
     inicializarFiltrosBiomecanicos();
     inicializarAccionesCatalogo();

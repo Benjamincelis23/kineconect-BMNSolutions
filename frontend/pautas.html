@@ -91,6 +91,18 @@
         [data-theme="dark"] .pauta-tab-count {
             background: rgba(255, 255, 255, 0.1);
         }
+
+        #kc-toast-pautas {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 380px;
+            pointer-events: none;
+        }
     </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -100,6 +112,8 @@
 </head>
 
 <body>
+    <div id="kc-toast-pautas"></div>
+
     <div class="app-shell">
         <main class="main">
             <div class="content">
@@ -108,7 +122,8 @@
                 <div class="page-header" style="flex-wrap: wrap; gap: 12px;">
                     <div>
                         <h2>Pautas y Plantillas</h2>
-                        <p>Configura las rutinas prescritas a tus pacientes y administra tus protocolos reutilizables.</p>
+                        <p>Configura las rutinas prescritas a tus pacientes y administra tus protocolos reutilizables.
+                        </p>
                     </div>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                         <select id="select-filtro-paciente" onchange="aplicarFiltroPacienteUI(this.value)"
@@ -166,12 +181,36 @@
                     <div id="no-pautas" class="empty-state is-hidden">
                         <i class='bx bx-folder-open'
                             style="font-size: 2.2rem; color: var(--gris-400); margin-bottom: 8px;"></i>
-                        <p id="no-pautas-texto" class="empty-text" style="margin: 0; font-size: 0.9rem;">No hay pautas en esta categoría.</p>
+                        <p id="no-pautas-texto" class="empty-text" style="margin: 0; font-size: 0.9rem;">No hay pautas
+                            en esta categoría.</p>
                     </div>
                 </div>
 
             </div>
         </main>
+    </div>
+
+    <!-- Modal de Confirmación para Archivar / Eliminar / Desarchivar -->
+    <div id="modal-confirmar-pauta" class="modal-overlay" style="display: none;"
+        onclick="if(event.target === this) cerrarModalConfirmarPauta()">
+        <div class="modal-card" style="max-width: 460px; width: 92%; padding: 22px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <i id="confirmar-pauta-icono" class='bx bx-error-circle' style="font-size: 1.6rem; color: #ef4444;"></i>
+                <h3 id="confirmar-pauta-titulo" style="margin: 0; color: var(--azul-900); font-size: 1.1rem;">Confirmar
+                    acción</h3>
+            </div>
+            <div id="confirmar-pauta-mensaje"
+                style="font-size: 0.9rem; color: var(--gris-700); line-height: 1.5; margin-bottom: 18px;">
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="cerrarModalConfirmarPauta()">
+                    Cancelar
+                </button>
+                <button type="button" id="btn-confirmar-accion-pauta" class="btn btn-sm">
+                    Confirmar
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Modal de Detalle de Pauta / Plantilla -->
@@ -225,11 +264,91 @@
         let pacientesRegistrados = [];
         let alertasPorPauta = {};
         let tabPautasActual = 'asignadas';
+        let accionConfirmacionPendiente = null;
 
         function escaparHtml(txt) {
             return String(txt ?? '').replace(/[&<>"']/g, c => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
             }[c]));
+        }
+
+        function mostrarToastPauta(mensaje, tipo = 'info', duracion = 3200) {
+            const cont = document.getElementById('kc-toast-pautas');
+            if (!cont) return;
+
+            const estilos = {
+                success: { bg: '#065f46', border: '#10b981', icon: 'bx-check-circle' },
+                error: { bg: '#7f1d1d', border: '#ef4444', icon: 'bx-error-circle' },
+                warning: { bg: '#78350f', border: '#f59e0b', icon: 'bx-error' },
+                info: { bg: '#0c4a6e', border: '#0ea5e9', icon: 'bx-info-circle' }
+            };
+            const cfg = estilos[tipo] || estilos.info;
+
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                pointer-events: auto;
+                background: ${cfg.bg};
+                color: #ffffff;
+                border-left: 4px solid ${cfg.border};
+                border-radius: 10px;
+                padding: 12px 14px;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-size: 0.88rem;
+                font-weight: 500;
+                opacity: 0;
+                transform: translateY(-8px);
+                transition: opacity 0.2s ease, transform 0.2s ease;
+            `;
+            toast.innerHTML = `
+                <i class='bx ${cfg.icon}' style="font-size: 1.25rem; flex-shrink: 0;"></i>
+                <span style="flex: 1; line-height: 1.35;">${escaparHtml(mensaje)}</span>
+            `;
+
+            cont.appendChild(toast);
+            requestAnimationFrame(() => {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateY(0)';
+            });
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-8px)';
+                setTimeout(() => toast.remove(), 220);
+            }, duracion);
+        }
+
+        function abrirModalConfirmarPauta({ titulo, mensajeHtml, textoBoton, variante = 'danger', onConfirm }) {
+            accionConfirmacionPendiente = onConfirm;
+            const modal = document.getElementById('modal-confirmar-pauta');
+            const tituloEl = document.getElementById('confirmar-pauta-titulo');
+            const msgEl = document.getElementById('confirmar-pauta-mensaje');
+            const btnEl = document.getElementById('btn-confirmar-accion-pauta');
+            const iconoEl = document.getElementById('confirmar-pauta-icono');
+
+            if (tituloEl) tituloEl.textContent = titulo;
+            if (msgEl) msgEl.innerHTML = mensajeHtml;
+            if (btnEl) {
+                btnEl.textContent = textoBoton;
+                btnEl.className = variante === 'success' ? 'btn btn-primary btn-sm' : 'btn btn-sm';
+                btnEl.style.cssText = variante === 'success'
+                    ? 'background: #10b981; color: #fff; border: 1px solid #059669;'
+                    : 'background: #ef4444; color: #fff; border: 1px solid #dc2626;';
+            }
+            if (iconoEl) {
+                iconoEl.className = variante === 'success' ? 'bx bx-revision' : 'bx bx-error-circle';
+                iconoEl.style.color = variante === 'success' ? '#10b981' : '#ef4444';
+            }
+
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function cerrarModalConfirmarPauta() {
+            accionConfirmacionPendiente = null;
+            const modal = document.getElementById('modal-confirmar-pauta');
+            if (modal) modal.style.display = 'none';
         }
 
         function capitalizarNombre(texto) {
@@ -344,54 +463,69 @@
             return todasPautasBase.find(p => Number(p.id) === Number(pautaId)) || null;
         }
 
-        async function desarchivarPauta(pautaId) {
+        function desarchivarPauta(pautaId) {
             const titulo = buscarPautaCargada(pautaId)?.titulo || 'Sin Título';
-            if (!window.confirm(`¿Deseas reactivar y desarchivar la pauta "${titulo}"?`)) return;
-
-            try {
-                const res = await api.fetchConSesion(`/api/v1/pautas/${pautaId}/`, {
-                    method: 'PATCH',
-                    body: JSON.stringify({ activo: true })
-                });
-
-                if (!res.ok) {
-                    const errData = await res.json().catch(() => ({}));
-                    throw new Error(errData.detail || `Error ${res.status}`);
+            abrirModalConfirmarPauta({
+                titulo: 'Desarchivar pauta',
+                mensajeHtml: `¿Deseas reactivar y mover a activas la pauta <strong>"${escaparHtml(titulo)}"</strong>?`,
+                textoBoton: 'Desarchivar',
+                variante: 'success',
+                onConfirm: async () => {
+                    try {
+                        const res = await api.fetchConSesion(`/api/v1/pautas/${pautaId}/`, {
+                            method: 'PATCH',
+                            body: JSON.stringify({ activo: true })
+                        });
+                        if (!res.ok) {
+                            const errData = await res.json().catch(() => ({}));
+                            throw new Error(errData.detail || `Error ${res.status}`);
+                        }
+                        mostrarToastPauta('Pauta reactivada correctamente.', 'success');
+                        await cargarTodo();
+                    } catch (err) {
+                        mostrarToastPauta(`No se pudo desarchivar la pauta: ${err.message}`, 'error', 4200);
+                    }
                 }
-
-                await cargarTodo();
-            } catch (err) {
-                alert(`No se pudo desarchivar la pauta: ${err.message}`);
-            }
+            });
         }
 
-        async function eliminarPauta(pautaId) {
+        function eliminarPauta(pautaId) {
             const pauta = buscarPautaCargada(pautaId);
             const titulo = pauta?.titulo || 'Sin Título';
             const esActiva = pauta ? pauta.activo !== false : true;
-            const mensaje = esActiva
-                ? `¿Qué deseas hacer con "${titulo}"?\n\n` +
-                `• Si no tiene sesiones registradas, se eliminará de inmediato.\n` +
-                `• Si ya tiene reportes clínicos, pasará a ARCHIVADA.`
-                : `ELIMINACIÓN DEFINITIVA\n\n` +
-                `"${titulo}" ya está archivada. Si confirmas, se borrará PERMANENTEMENTE junto con todos sus reportes asociados.\n\n` +
-                `¿Continuar?`;
 
-            if (!window.confirm(mensaje)) return;
+            const mensajeHtml = esActiva
+                ? `<p style="margin: 0 0 8px;">¿Qué deseas hacer con <strong>"${escaparHtml(titulo)}"</strong>?</p>
+                   <ul style="margin: 0; padding-left: 18px; font-size: 0.85rem;">
+                     <li>Si no tiene sesiones registradas, se eliminará de inmediato.</li>
+                     <li>Si ya tiene reportes clínicos, pasará a <strong>Archivada</strong>.</li>
+                   </ul>`
+                : `<p style="margin: 0 0 8px; color: #ef4444; font-weight: 700;">Eliminación definitiva</p>
+                   <p style="margin: 0; font-size: 0.85rem;"><strong>"${escaparHtml(titulo)}"</strong> ya está archivada. Si confirmas, se borrará permanentemente junto con sus reportes asociados.</p>`;
 
-            try {
-                const query = esActiva ? '' : '?forzar=true';
-                const res = await api.fetchConSesion(`/api/v1/pautas/${pautaId}/${query}`, { method: 'DELETE' });
-
-                if (!res.ok && res.status !== 204) {
-                    const errData = await res.json().catch(() => ({}));
-                    throw new Error(errData.detail || `Error ${res.status}`);
+            abrirModalConfirmarPauta({
+                titulo: esActiva ? 'Archivar o eliminar pauta' : 'Eliminar pauta definitivamente',
+                mensajeHtml,
+                textoBoton: esActiva ? 'Continuar' : 'Borrar definitivamente',
+                variante: 'danger',
+                onConfirm: async () => {
+                    try {
+                        const query = esActiva ? '' : '?forzar=true';
+                        const res = await api.fetchConSesion(`/api/v1/pautas/${pautaId}/${query}`, { method: 'DELETE' });
+                        if (!res.ok && res.status !== 204) {
+                            const errData = await res.json().catch(() => ({}));
+                            throw new Error(errData.detail || `Error ${res.status}`);
+                        }
+                        mostrarToastPauta(
+                            esActiva ? 'Acción aplicada sobre la pauta.' : 'Pauta eliminada permanentemente.',
+                            'success'
+                        );
+                        await cargarTodo();
+                    } catch (err) {
+                        mostrarToastPauta(`No se pudo procesar la acción: ${err.message}`, 'error', 4200);
+                    }
                 }
-
-                await cargarTodo();
-            } catch (err) {
-                alert(`No se pudo eliminar la pauta: ${err.message}`);
-            }
+            });
         }
 
         function renderizarTablaPautas() {
@@ -664,6 +798,7 @@
             } catch (e) {
                 if (loadingPautas) loadingPautas.classList.add('is-hidden');
                 if (noPautas) noPautas.classList.remove('is-hidden');
+                mostrarToastPauta('Error al cargar las pautas.', 'error', 3500);
                 console.error("Error al cargar pautas:", e);
             }
         }
@@ -673,6 +808,16 @@
                 window.location.href = 'index.html';
                 return;
             }
+
+            const btnConfirmar = document.getElementById('btn-confirmar-accion-pauta');
+            if (btnConfirmar) {
+                btnConfirmar.addEventListener('click', async () => {
+                    const fn = accionConfirmacionPendiente;
+                    cerrarModalConfirmarPauta();
+                    if (typeof fn === 'function') await fn();
+                });
+            }
+
             cargarTodo();
         });
     </script>

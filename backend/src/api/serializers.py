@@ -1,3 +1,4 @@
+import re
 import secrets
 import string
 from datetime import timedelta
@@ -11,16 +12,48 @@ from .models import Perfil, Ejercicio, Pauta, PautaEjercicio, RegistroFeedback
 from .emails import enviar_credenciales_en_segundo_plano
 
 
+def _calcular_dv_modulo11(cuerpo_numerico: str) -> str:
+    """Calcula el dígito verificador de un RUT chileno usando Módulo 11."""
+    multiplicadores = [2, 3, 4, 5, 6, 7]
+    suma = 0
+    idx_mult = 0
+    for digito in reversed(cuerpo_numerico):
+        suma += int(digito) * multiplicadores[idx_mult]
+        idx_mult = (idx_mult + 1) % len(multiplicadores)
+
+    resto = 11 - (suma % 11)
+    if resto == 11:
+        return '0'
+    if resto == 10:
+        return 'K'
+    return str(resto)
+
+
 def validar_rut_chileno(rut: str) -> str:
-    """Normaliza el RUT chileno sin bloquear entornos de prueba."""
-    rut_limpio = rut.replace('.', '').replace(' ', '').strip().upper()
-    if not rut_limpio:
+    """Valida y normaliza un RUT chileno con formato XX.XXX.XXX-Y usando Módulo 11."""
+    if not isinstance(rut, str):
+        raise serializers.ValidationError("El RUT debe ser un texto válido.")
+
+    limpio = re.sub(r'[.\s-]', '', rut).strip().upper()
+    if not limpio:
         raise serializers.ValidationError("El RUT no puede estar vacío.")
 
-    if '-' not in rut_limpio and len(rut_limpio) >= 2:
-        rut_limpio = f"{rut_limpio[:-1]}-{rut_limpio[-1]}"
+    if len(limpio) < 2 or len(limpio) > 9:
+        raise serializers.ValidationError("El RUT ingresado no tiene un largo válido.")
 
-    return rut_limpio[:12]
+    cuerpo, dv = limpio[:-1], limpio[-1]
+    if not cuerpo.isdigit() or not re.match(r'^[0-9K]$', dv):
+        raise serializers.ValidationError("El RUT debe contener solo dígitos y un dígito verificador válido (0-9 o K).")
+
+    numero = int(cuerpo)
+    if numero < 1000000:
+        raise serializers.ValidationError("El número de RUT debe ser mayor o igual a 1.000.000.")
+
+    dv_esperado = _calcular_dv_modulo11(cuerpo)
+    if dv != dv_esperado:
+        raise serializers.ValidationError("El dígito verificador del RUT no es válido (Módulo 11).")
+
+    return f"{numero}-{dv}"
 
 
 class PacienteRegistroSerializer(serializers.ModelSerializer):
@@ -144,14 +177,15 @@ def _nombre_o_username(u):
 
 def _contar_sesiones_pauta(obj):
     desde = timezone.now() - timedelta(days=7)
-    marca = getattr(obj, 'actualizado_en', None) or getattr(obj, 'creado_en', None)
-    if marca and marca > desde:
-        desde = marca
+    creado = getattr(obj, 'creado_en', None)
+    if creado and creado > desde:
+        desde = creado
     return RegistroFeedback.objects.filter(
         pauta=obj,
         completado=True,
         fecha_ejecucion__gte=desde,
     ).count()
+
 
 def _obtener_ultima_respuesta_kine(obj):
     fb = (

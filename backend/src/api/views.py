@@ -65,11 +65,12 @@ def _pacientes_visibles(user):
 
 
 def _inicio_ciclo_pauta(pauta):
-    """Determina desde qué fecha se cuentan las sesiones semanales de una pauta."""
+    """Determina desde qué fecha se cuentan las sesiones semanales de una pauta
+    sin reiniciar el progreso al editar una indicación o dosificación."""
     desde = timezone.now() - timedelta(days=7)
-    marca = getattr(pauta, 'actualizado_en', None) or getattr(pauta, 'creado_en', None)
-    if marca and marca > desde:
-        desde = marca
+    creado = getattr(pauta, 'creado_en', None)
+    if creado and creado > desde:
+        desde = creado
     return desde
 
 
@@ -273,7 +274,6 @@ class MeView(APIView):
         semana = 0
         meta_total = 0
 
-        # 1. En MeView (reemplaza el bucle for p in pautas_activas:)
         for p in pautas_activas:
             meta_pauta = getattr(p, 'frecuencia_semanal', None) or 3
             meta_total += meta_pauta
@@ -320,7 +320,6 @@ class PautaDetailView(generics.RetrieveAPIView):
         )
 
 
-# 2. En _validar_limite_sesiones(pauta):
 def _validar_limite_sesiones(pauta):
     """Impide registrar más sesiones completadas si el paciente ya cumplió su meta semanal vigente."""
     desde_fecha = _inicio_ciclo_pauta(pauta)
@@ -505,7 +504,6 @@ def _construir_resumen_clinico(user, pautas_qs):
     total_sesiones_ciclo = 0
     total_meta_ciclo = 0
 
-    # 3. En _construir_resumen_clinico(user, pautas_qs) (dentro del bucle for pauta in pautas_activas:)
     for pauta in pautas_activas:
         meta = getattr(pauta, 'frecuencia_semanal', None) or 3
         hechas = RegistroFeedback.objects.filter(
@@ -518,7 +516,6 @@ def _construir_resumen_clinico(user, pautas_qs):
 
         ultimo_fb = RegistroFeedback.objects.filter(pauta=pauta).order_by('-fecha_ejecucion').first()
         if ultimo_fb and (ultimo_fb.nivel_dolor or 0) >= 6:
-            # Si el kinesiólogo ya respondió o ajustó la pauta después del reporte, la alerta queda atendida
             if (ultimo_fb.respuesta_kinesiologo or '').strip():
                 continue
             actualizada = getattr(pauta, 'actualizado_en', None)
@@ -638,7 +635,7 @@ class PautaViewSet(viewsets.ModelViewSet):
                     | Q(es_plantilla=True)
                 ).distinct()
             else:
-                qs = base_qs.none()  # H-29: usuario sin perfil/rol no ve nada, también con DEBUG
+                qs = base_qs.none()
 
         es_plantilla_param = self.request.query_params.get('es_plantilla')
         if es_plantilla_param is not None:
@@ -668,27 +665,10 @@ class PautaViewSet(viewsets.ModelViewSet):
             serializer.is_valid(raise_exception=True)
             instance = serializer.save()
 
-            # Solo reinicia el contador si la pauta ya había cumplido su meta semanal;
-            # si estaba en desarrollo (ej. 1/3 o 2/3), conserva las sesiones ya realizadas.
-            meta_pauta = getattr(instance, 'frecuencia_semanal', None) or 3
-            # 4. En PautaViewSet.update (cálculo de hechas_ciclo):
-            hechas_ciclo = RegistroFeedback.objects.filter(
-                pauta=instance,
-                completado=True,
-                fecha_ejecucion__gte=_inicio_ciclo_pauta(instance),
-            ).count()
-
-            # H-27: 'ahora' se definía solo dentro del if y se usaba fuera → UnboundLocalError (500).
-            # Nota: hechas_ciclo se calcula después de serializer.save() (auto_now en actualizado_en),
-            # así que hoy siempre vale 0; la lógica de "conservar el ciclo" queda pendiente (ver REVISION.md).
             ahora = timezone.now()
             if hasattr(instance, 'actualizado_en'):
                 instance.actualizado_en = ahora
                 instance.save(update_fields=['actualizado_en'])
-
-            if hechas_ciclo >= meta_pauta and hasattr(instance, 'creado_en'):
-                instance.creado_en = ahora
-                instance.save(update_fields=['creado_en'])
 
             if isinstance(ejercicios_data, list) and hasattr(instance, 'ejercicios_detalle'):
                 DetalleModel = instance.ejercicios_detalle.model
@@ -804,7 +784,7 @@ class RegistroFeedbackViewSet(viewsets.ModelViewSet):
                 Q(pauta__kinesiologo=user) | Q(pauta__paciente__perfil__kinesiologo_asignado=user)
             ).distinct()
 
-        return base.none()  # H-29: usuario sin perfil/rol no ve nada, también con DEBUG
+        return base.none()
 
     def perform_create(self, serializer):
         user = self.request.user

@@ -15,13 +15,20 @@
             animation: kcShimmer 1.35s infinite ease-in-out;
             border-radius: 10px;
         }
+
         [data-theme="dark"] .skeleton-box {
             background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
             background-size: 200% 100%;
         }
+
         @keyframes kcShimmer {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
         }
     </style>
 </head>
@@ -35,10 +42,12 @@
 
             <div class="content">
                 <!-- Encabezado de la página -->
-                <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <div class="page-header"
+                    style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                     <div>
                         <h2 id="titulo-pagina-pauta">Prescripción y Carrito de Ejercicios</h2>
-                        <p id="subtitulo-pagina-pauta">Selección clínica por mapa anatómico interactivo, condición patológica y protocolos maestros.</p>
+                        <p id="subtitulo-pagina-pauta">Selección clínica por mapa anatómico interactivo, condición
+                            patológica y protocolos maestros.</p>
                     </div>
                     <a id="btn-volver-pautas" href="pautas.html" class="btn btn-secondary is-hidden">
                         <i class='bx bx-arrow-back'></i> Volver a Pautas
@@ -147,74 +156,65 @@
                                 <!-- ==================== VISTA FRONTAL ==================== -->
                                 <g id="grupo-frontal">
                                     <!-- Cabeza y Cuello -->
-                                    <circle id="zona-cabeza-f" cx="100" cy="24" r="15"
-                                        data-zona="cuello" data-titulo="Cabeza y Cuello"
+                                    <circle id="zona-cabeza-f" cx="100" cy="24" r="15" data-zona="cuello"
+                                        data-titulo="Cabeza y Cuello"
                                         data-detalle="Región cervical, ECM y musculatura suboccipital"
                                         data-patron="core" class="anatomia-zona grupo-core" />
                                     <rect id="zona-cuello-f" x="92" y="40" width="16" height="13" rx="3"
                                         data-zona="cuello" data-titulo="Cabeza y Cuello"
-                                        data-detalle="Columna cervical anterior y flexores profundos"
-                                        data-patron="core" class="anatomia-zona grupo-core" />
+                                        data-detalle="Columna cervical anterior y flexores profundos" data-patron="core"
+                                        class="anatomia-zona grupo-core" />
 
                                     <!-- Hombros -->
-                                    <path id="zona-hombros"
-                                        data-zona="hombros" data-titulo="Hombros (Deltoides)"
-                                        data-detalle="Deltoides anterior/medio y manguito rotador"
-                                        data-patron="empuje" class="anatomia-zona grupo-empuje"
+                                    <path id="zona-hombros" data-zona="hombros" data-titulo="Hombros (Deltoides)"
+                                        data-detalle="Deltoides anterior/medio y manguito rotador" data-patron="empuje"
+                                        class="anatomia-zona grupo-empuje"
                                         d="M72,54 C61,56 56,64 56,74 L68,74 C70,66 76,62 78,58 Z M128,54 C139,56 144,64 144,74 L132,74 C130,66 124,62 122,58 Z" />
 
                                     <!-- Pecho -->
-                                    <path id="zona-pecho"
-                                        data-zona="pecho" data-titulo="Pectoral y Tórax"
-                                        data-detalle="Pectoral mayor, menor y serrato anterior"
-                                        data-patron="empuje" class="anatomia-zona grupo-empuje"
+                                    <path id="zona-pecho" data-zona="pecho" data-titulo="Pectoral y Tórax"
+                                        data-detalle="Pectoral mayor, menor y serrato anterior" data-patron="empuje"
+                                        class="anatomia-zona grupo-empuje"
                                         d="M74,60 L126,60 L120,94 L100,97 L80,94 Z" />
 
                                     <!-- Brazos y Antebrazos -->
-                                    <path id="zona-brazos"
-                                        data-zona="brazos" data-titulo="Brazos y Antebrazos"
+                                    <path id="zona-brazos" data-zona="brazos" data-titulo="Brazos y Antebrazos"
                                         data-detalle="Bíceps braquial, braquial y flexores de antebrazo"
                                         data-patron="traccion" class="anatomia-zona grupo-traccion"
                                         d="M56,76 L51,123 L64,123 L68,76 Z M132,76 L136,123 L149,123 L144,76 Z" />
 
                                     <!-- Muñecas y Manos -->
-                                    <path id="zona-manos-f"
-                                        data-zona="manos" data-titulo="Muñecas y Manos"
+                                    <path id="zona-manos-f" data-zona="manos" data-titulo="Muñecas y Manos"
                                         data-detalle="Articulación radiocarpiana, túnel carpiano y dedos"
                                         data-patron="traccion" class="anatomia-zona grupo-traccion"
                                         d="M50,125 L64,125 L65,141 C65,144 50,144 49,141 Z M136,125 L150,125 L151,141 C150,144 135,144 135,141 Z" />
 
                                     <!-- Core / Abdomen -->
-                                    <path id="zona-core"
-                                        data-zona="core" data-titulo="Core y Abdomen"
-                                        data-detalle="Recto abdominal, oblicuos y transverso"
-                                        data-patron="core" class="anatomia-zona grupo-core"
-                                        d="M82,99 L118,99 L114,141 L86,141 Z" />
+                                    <path id="zona-core" data-zona="core" data-titulo="Core y Abdomen"
+                                        data-detalle="Recto abdominal, oblicuos y transverso" data-patron="core"
+                                        class="anatomia-zona grupo-core" d="M82,99 L118,99 L114,141 L86,141 Z" />
 
                                     <!-- Cadera / Pelvis -->
-                                    <path id="zona-cadera"
-                                        data-zona="cadera" data-titulo="Cadera y Pelvis"
+                                    <path id="zona-cadera" data-zona="cadera" data-titulo="Cadera y Pelvis"
                                         data-detalle="Flexores de cadera, psoas ilíaco y abductores"
                                         data-patron="piernas" class="anatomia-zona grupo-piernas"
                                         d="M80,143 L120,143 L124,167 L76,167 Z" />
 
                                     <!-- Cuádriceps / Muslo -->
-                                    <path id="zona-cuadriceps"
-                                        data-zona="cuadriceps" data-titulo="Muslo (Cuádriceps)"
+                                    <path id="zona-cuadriceps" data-zona="cuadriceps" data-titulo="Muslo (Cuádriceps)"
                                         data-detalle="Cuádriceps femoral, sartorio, aductores y rodilla"
                                         data-patron="piernas" class="anatomia-zona grupo-piernas"
                                         d="M76,170 L97,170 L95,244 L74,244 Z M103,170 L124,170 L126,244 L105,244 Z" />
 
                                     <!-- Pierna / Tibial -->
-                                    <path id="zona-pantorrillas"
-                                        data-zona="pantorrillas" data-titulo="Pierna y Tibial Anterior"
+                                    <path id="zona-pantorrillas" data-zona="pantorrillas"
+                                        data-titulo="Pierna y Tibial Anterior"
                                         data-detalle="Tibial anterior, peroneos y complejo de rodilla"
                                         data-patron="piernas" class="anatomia-zona grupo-piernas"
                                         d="M75,248 L94,248 L91,322 L78,322 Z M106,248 L125,248 L122,322 L109,322 Z" />
 
                                     <!-- Tobillos y Pies -->
-                                    <path id="zona-pies-f"
-                                        data-zona="tobillo" data-titulo="Tobillos y Pies"
+                                    <path id="zona-pies-f" data-zona="tobillo" data-titulo="Tobillos y Pies"
                                         data-detalle="Articulación tibiotarsiana, empeine y dedos del pie"
                                         data-patron="piernas" class="anatomia-zona grupo-piernas"
                                         d="M77,325 L91,325 L93,344 L71,344 C71,338 75,332 77,325 Z M109,325 L123,325 C125,332 129,338 129,344 L107,344 Z" />
@@ -223,74 +223,67 @@
                                 <!-- ==================== VISTA POSTERIOR (DORSAL) ==================== -->
                                 <g id="grupo-dorsal" style="display: none;">
                                     <!-- Cabeza / Nuca y Cervical -->
-                                    <circle id="zona-cabeza-d" cx="100" cy="24" r="15"
-                                        data-zona="cuello" data-titulo="Nuca y Columna Cervical"
-                                        data-detalle="Occipital, esplenio y trapecio superior"
-                                        data-patron="core" class="anatomia-zona grupo-core" />
+                                    <circle id="zona-cabeza-d" cx="100" cy="24" r="15" data-zona="cuello"
+                                        data-titulo="Nuca y Columna Cervical"
+                                        data-detalle="Occipital, esplenio y trapecio superior" data-patron="core"
+                                        class="anatomia-zona grupo-core" />
                                     <rect id="zona-cuello-d" x="92" y="40" width="16" height="13" rx="3"
                                         data-zona="cuello" data-titulo="Nuca y Columna Cervical"
                                         data-detalle="Columna cervical posterior y extensores de cuello"
                                         data-patron="core" class="anatomia-zona grupo-core" />
 
                                     <!-- Hombro Posterior -->
-                                    <path id="zona-hombros-d"
-                                        data-zona="hombros" data-titulo="Deltoides Posterior"
+                                    <path id="zona-hombros-d" data-zona="hombros" data-titulo="Deltoides Posterior"
                                         data-detalle="Deltoides posterior, infraespinoso y redondo menor"
                                         data-patron="traccion" class="anatomia-zona grupo-traccion"
                                         d="M72,54 C61,56 56,64 56,74 L68,74 C70,66 76,62 78,58 Z M128,54 C139,56 144,64 144,74 L132,74 C130,66 124,62 122,58 Z" />
 
                                     <!-- Espalda Alta y Dorsal -->
-                                    <path id="zona-espalda"
-                                        data-zona="espalda" data-titulo="Espalda Alta y Dorsal"
+                                    <path id="zona-espalda" data-zona="espalda" data-titulo="Espalda Alta y Dorsal"
                                         data-detalle="Dorsal ancho, romboides y trapecio medio/inferior"
                                         data-patron="traccion" class="anatomia-zona grupo-traccion"
                                         d="M74,58 L126,58 L120,108 L100,114 L80,108 Z" />
 
                                     <!-- Tríceps y Brazo Posterior -->
-                                    <path id="zona-triceps"
-                                        data-zona="triceps" data-titulo="Tríceps y Brazo Posterior"
+                                    <path id="zona-triceps" data-zona="triceps" data-titulo="Tríceps y Brazo Posterior"
                                         data-detalle="Tríceps braquial (cabeza larga, lateral y medial) y extensores"
                                         data-patron="empuje" class="anatomia-zona grupo-empuje"
                                         d="M56,76 L51,123 L64,123 L68,76 Z M132,76 L136,123 L149,123 L144,76 Z" />
 
                                     <!-- Muñecas y Dorso de Mano -->
-                                    <path id="zona-manos-d"
-                                        data-zona="manos" data-titulo="Muñecas y Dorso de Mano"
+                                    <path id="zona-manos-d" data-zona="manos" data-titulo="Muñecas y Dorso de Mano"
                                         data-detalle="Extensores de muñeca y articulación radiocarpiana"
                                         data-patron="empuje" class="anatomia-zona grupo-empuje"
                                         d="M50,125 L64,125 L65,141 C65,144 50,144 49,141 Z M136,125 L150,125 L151,141 C150,144 135,144 135,141 Z" />
 
                                     <!-- Zona Lumbar -->
-                                    <path id="zona-lumbar"
-                                        data-zona="lumbar" data-titulo="Zona Lumbar"
+                                    <path id="zona-lumbar" data-zona="lumbar" data-titulo="Zona Lumbar"
                                         data-detalle="Erectores espinales, cuadrado lumbar y multífidos"
                                         data-patron="core" class="anatomia-zona grupo-core"
                                         d="M82,116 L118,116 L114,144 L86,144 Z" />
 
                                     <!-- Glúteos -->
-                                    <path id="zona-gluteos"
-                                        data-zona="gluteos" data-titulo="Glúteos"
+                                    <path id="zona-gluteos" data-zona="gluteos" data-titulo="Glúteos"
                                         data-detalle="Glúteo mayor, glúteo medio y pelvitrocantéreos"
                                         data-patron="piernas" class="anatomia-zona grupo-piernas"
                                         d="M78,146 L122,146 L126,174 L74,174 Z" />
 
                                     <!-- Isquiotibiales -->
-                                    <path id="zona-isquiotibiales"
-                                        data-zona="isquiotibiales" data-titulo="Isquiotibiales"
+                                    <path id="zona-isquiotibiales" data-zona="isquiotibiales"
+                                        data-titulo="Isquiotibiales"
                                         data-detalle="Bíceps femoral, semitendinoso y semimembranoso"
                                         data-patron="piernas" class="anatomia-zona grupo-piernas"
                                         d="M76,178 L97,178 L94,246 L73,246 Z M103,178 L124,178 L127,246 L106,246 Z" />
 
                                     <!-- Gemelos / Pantorrilla Posterior -->
-                                    <path id="zona-gemelos"
-                                        data-zona="gemelos" data-titulo="Pantorrillas (Gemelos y Sóleo)"
-                                        data-detalle="Gastrocnemio, sóleo y tendón de Aquiles"
-                                        data-patron="piernas" class="anatomia-zona grupo-piernas"
+                                    <path id="zona-gemelos" data-zona="gemelos"
+                                        data-titulo="Pantorrillas (Gemelos y Sóleo)"
+                                        data-detalle="Gastrocnemio, sóleo y tendón de Aquiles" data-patron="piernas"
+                                        class="anatomia-zona grupo-piernas"
                                         d="M74,250 L94,250 L90,322 L77,322 Z M106,250 L126,250 L123,322 L110,322 Z" />
 
                                     <!-- Talones y Tobillos -->
-                                    <path id="zona-pies-d"
-                                        data-zona="tobillo" data-titulo="Talones y Tobillos"
+                                    <path id="zona-pies-d" data-zona="tobillo" data-titulo="Talones y Tobillos"
                                         data-detalle="Tendón calcáneo (Aquiles), retropié y planta"
                                         data-patron="piernas" class="anatomia-zona grupo-piernas"
                                         d="M77,325 L91,325 L92,343 L76,343 Z M109,325 L123,325 L124,343 L108,343 Z" />
@@ -304,8 +297,10 @@
                     <div class="card">
                         <div class="page-header" style="margin-bottom: 16px;">
                             <div>
-                                <h3 style="margin: 0; color: var(--azul-900); font-size: 1.15rem;">Ejercicios Disponibles</h3>
-                                <p style="margin: 0; font-size: 0.84rem; color: var(--gris-600);">Haz clic en "+ Añadir" para sumarlo a la prescripción.</p>
+                                <h3 style="margin: 0; color: var(--azul-900); font-size: 1.15rem;">Ejercicios
+                                    Disponibles</h3>
+                                <p style="margin: 0; font-size: 0.84rem; color: var(--gris-600);">Haz clic en "+ Añadir"
+                                    para sumarlo a la prescripción.</p>
                             </div>
                         </div>
 
@@ -316,7 +311,8 @@
                         </div>
 
                         <!-- Estado de Carga con Skeletons -->
-                        <div id="loading-ejercicios" style="display: flex; flex-direction: column; gap: 10px; padding: 6px 0;">
+                        <div id="loading-ejercicios"
+                            style="display: flex; flex-direction: column; gap: 10px; padding: 6px 0;">
                             <div class="skeleton-box" style="height: 68px; width: 100%;"></div>
                             <div class="skeleton-box" style="height: 68px; width: 100%;"></div>
                             <div class="skeleton-box" style="height: 68px; width: 100%;"></div>
@@ -417,41 +413,92 @@
     <!-- Script principal con la lógica interactiva del mapa, prescripción y plantillas -->
     <script src="js/crear_pautas.js"></script>
 
-    <!-- Soporte para Edición de Pautas Existentes (?editar=<id>) -->
+    <!-- Soporte para Edición de Pautas Existentes (?editar=<id>) con Toasts -->
+    <div id="kc-toast-container"
+        style="position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; max-width: 380px; pointer-events: none;">
+    </div>
     <script>
-    (function habilitarModoEdicionPauta() {
-        const params = new URLSearchParams(window.location.search);
-        const editId = params.get('editar');
-        if (!editId) return;
+        (function habilitarModoEdicionPauta() {
+            const params = new URLSearchParams(window.location.search);
+            const editId = params.get('editar');
+            if (!editId) return;
 
-        let itemsEdicion = [];
-        let catalogoCache = {};
+            let itemsEdicion = [];
+            let catalogoCache = {};
 
-        function escapar(txt) {
-            return String(txt ?? '').replace(/[&<>"']/g, c => ({
-                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-            }[c]));
-        }
+            function escapar(txt) {
+                return String(txt ?? '').replace(/[&<>"']/g, c => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+                }[c]));
+            }
 
-        function renderizarCarritoEdicion() {
-            const cont = document.getElementById('carrito-items-container');
-            const badge = document.getElementById('badge-total-items');
-            const btnGuardar = document.getElementById('btn-confirmar-pauta');
-            if (!cont) return;
+            function mostrarToast(mensaje, tipo = 'info', duracion = 3500) {
+                const cont = document.getElementById('kc-toast-container');
+                if (!cont) return;
 
-            if (badge) badge.textContent = `${itemsEdicion.length} ${itemsEdicion.length === 1 ? 'Ejercicio' : 'Ejercicios'}`;
-            if (btnGuardar) btnGuardar.disabled = itemsEdicion.length === 0;
+                const estilos = {
+                    success: { bg: '#065f46', border: '#10b981', icon: 'bx-check-circle' },
+                    error: { bg: '#7f1d1d', border: '#ef4444', icon: 'bx-error-circle' },
+                    warning: { bg: '#78350f', border: '#f59e0b', icon: 'bx-error' },
+                    info: { bg: '#0c4a6e', border: '#0ea5e9', icon: 'bx-info-circle' }
+                };
+                const cfg = estilos[tipo] || estilos.info;
 
-            if (itemsEdicion.length === 0) {
-                cont.innerHTML = `
+                const toast = document.createElement('div');
+                toast.style.cssText = `
+                pointer-events: auto;
+                background: ${cfg.bg};
+                color: #ffffff;
+                border-left: 4px solid ${cfg.border};
+                border-radius: 10px;
+                padding: 12px 14px;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-size: 0.88rem;
+                font-weight: 500;
+                opacity: 0;
+                transform: translateY(-8px);
+                transition: opacity 0.2s ease, transform 0.2s ease;
+            `;
+                toast.innerHTML = `
+                <i class='bx ${cfg.icon}' style="font-size: 1.25rem; flex-shrink: 0;"></i>
+                <span style="flex: 1; line-height: 1.35;">${escapar(mensaje)}</span>
+            `;
+
+                cont.appendChild(toast);
+                requestAnimationFrame(() => {
+                    toast.style.opacity = '1';
+                    toast.style.transform = 'translateY(0)';
+                });
+
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateY(-8px)';
+                    setTimeout(() => toast.remove(), 220);
+                }, duracion);
+            }
+
+            function renderizarCarritoEdicion() {
+                const cont = document.getElementById('carrito-items-container');
+                const badge = document.getElementById('badge-total-items');
+                const btnGuardar = document.getElementById('btn-confirmar-pauta');
+                if (!cont) return;
+
+                if (badge) badge.textContent = `${itemsEdicion.length} ${itemsEdicion.length === 1 ? 'Ejercicio' : 'Ejercicios'}`;
+                if (btnGuardar) btnGuardar.disabled = itemsEdicion.length === 0;
+
+                if (itemsEdicion.length === 0) {
+                    cont.innerHTML = `
                     <div class="empty-state" style="padding: 16px;">
                         <p style="margin: 0; font-size: 0.85rem;">El carrito está vacío. Selecciona ejercicios de la lista central.</p>
                     </div>
                 `;
-                return;
-            }
+                    return;
+                }
 
-            cont.innerHTML = itemsEdicion.map((it, idx) => `
+                cont.innerHTML = itemsEdicion.map((it, idx) => `
                 <div style="border: 1px solid var(--gris-200); border-radius: 10px; padding: 10px; background: var(--blanco, #fff);">
                     <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px;">
                         <strong style="font-size: 0.86rem; color: var(--azul-900);">${idx + 1}. ${escapar(it.nombre)}</strong>
@@ -481,191 +528,198 @@
                     </div>
                 </div>
             `).join('');
-        }
+            }
 
-        window._eliminarItemEdicion = function (idx) {
-            itemsEdicion.splice(idx, 1);
-            renderizarCarritoEdicion();
-        };
-
-        window._actualizarItemEdicion = function (idx, campo, valor) {
-            if (!itemsEdicion[idx]) return;
-            itemsEdicion[idx][campo] = Math.max(0, Number(valor) || 1);
-        };
-
-        async function iniciarEdicion() {
-            const tituloEl = document.getElementById('titulo-pagina-pauta');
-            const subtituloEl = document.getElementById('subtitulo-pagina-pauta');
-            const btnVolver = document.getElementById('btn-volver-pautas');
-            const btnGuardar = document.getElementById('btn-confirmar-pauta');
-
-            if (tituloEl) tituloEl.innerHTML = `<i class='bx bx-edit' style="color: #0284c7;"></i> Editar Pauta Prescrita #${escapar(editId)}`;
-            if (subtituloEl) subtituloEl.textContent = 'Modifica el paciente asignado, los ejercicios, series o indicaciones de esta pauta.';
-            if (btnVolver) btnVolver.classList.remove('is-hidden');
-            if (btnGuardar) btnGuardar.innerHTML = `<i class='bx bx-save'></i> Guardar Cambios de Pauta`;
-
-            try {
-                const [resPauta, resEjs] = await Promise.all([
-                    api.fetchConSesion(`/api/v1/pautas/${editId}/`),
-                    api.fetchConSesion('/api/v1/ejercicios/')
-                ]);
-
-                if (!resPauta.ok) throw new Error(`Error ${resPauta.status} al cargar la pauta.`);
-                const pauta = await resPauta.json();
-
-                if (resEjs.ok) {
-                    const dataEjs = await resEjs.json();
-                    const listaEjs = Array.isArray(dataEjs) ? dataEjs : (dataEjs?.results || []);
-                    listaEjs.forEach(e => { catalogoCache[e.id] = e.nombre || e.titulo || `Ejercicio #${e.id}`; });
-                }
-
-                const inputNombre = document.getElementById('pauta-nombre');
-                const inputDesc = document.getElementById('pauta-descripcion');
-                const checkPlantilla = document.getElementById('check-solo-plantilla');
-                const selectPac = document.getElementById('select-paciente-pauta');
-
-                if (inputNombre) inputNombre.value = pauta.titulo || '';
-                if (inputDesc) inputDesc.value = pauta.notas || pauta.descripcion || '';
-                if (checkPlantilla) checkPlantilla.checked = Boolean(pauta.es_plantilla);
-
-                const pacienteObjetivo = typeof pauta.paciente === 'object' && pauta.paciente !== null ? pauta.paciente.id : pauta.paciente;
-                if (selectPac && pacienteObjetivo) {
-                    const aplicarPaciente = () => {
-                        const opt = Array.from(selectPac.options).find(o => String(o.value) === String(pacienteObjetivo));
-                        if (opt) {
-                            selectPac.value = String(pacienteObjetivo);
-                            return true;
-                        }
-                        return false;
-                    };
-                    if (!aplicarPaciente()) {
-                        let intentos = 0;
-                        const interval = setInterval(() => {
-                            intentos++;
-                            if (aplicarPaciente() || intentos > 25) clearInterval(interval);
-                        }, 200);
-                    }
-                }
-
-                const detalles = Array.isArray(pauta.ejercicios_detalle) ? pauta.ejercicios_detalle : [];
-                itemsEdicion = detalles.map(d => {
-                    const ejId = d.ejercicio_id || (typeof d.ejercicio === 'object' ? d.ejercicio.id : d.ejercicio);
-                    const nombre = d.ejercicio_nombre || d.nombre || (typeof d.ejercicio === 'object' ? d.ejercicio.nombre : '') || catalogoCache[ejId] || `Ejercicio #${ejId}`;
-                    return {
-                        ejercicio_id: ejId,
-                        nombre,
-                        series: Number(d.series || 3),
-                        repeticiones: Number(d.repeticiones || 12),
-                        tiempo_descanso_segundos: Number(d.tiempo_descanso_segundos || 60),
-                    };
-                });
-
+            window._eliminarItemEdicion = function (idx) {
+                itemsEdicion.splice(idx, 1);
                 renderizarCarritoEdicion();
+                mostrarToast('Ejercicio quitado de la pauta.', 'info', 2200);
+            };
 
-                const listaCentral = document.getElementById('lista-ejercicios-disponibles');
-                if (listaCentral) {
-                    listaCentral.addEventListener('click', (ev) => {
-                        const btn = ev.target.closest('button');
-                        if (!btn) return;
-                        const onclickAttr = btn.getAttribute('onclick') || '';
-                        const matchOnclick = onclickAttr.match(/\((\d+)\)/);
-                        const ejId = Number(
-                            btn.dataset.id ||
-                            btn.getAttribute('data-ejercicio-id') ||
-                            (matchOnclick ? matchOnclick[1] : 0)
-                        );
-                        if (!ejId) return;
+            window._actualizarItemEdicion = function (idx, campo, valor) {
+                if (!itemsEdicion[idx]) return;
+                itemsEdicion[idx][campo] = Math.max(0, Number(valor) || 1);
+            };
 
-                        if (onclickAttr.toLowerCase().includes('multimedia') || onclickAttr.toLowerCase().includes('video')) return;
+            async function iniciarEdicion() {
+                const tituloEl = document.getElementById('titulo-pagina-pauta');
+                const subtituloEl = document.getElementById('subtitulo-pagina-pauta');
+                const btnVolver = document.getElementById('btn-volver-pautas');
+                const btnGuardar = document.getElementById('btn-confirmar-pauta');
 
-                        ev.stopImmediatePropagation();
-                        ev.preventDefault();
+                if (tituloEl) tituloEl.innerHTML = `<i class='bx bx-edit' style="color: #0284c7;"></i> Editar Pauta Prescrita #${escapar(editId)}`;
+                if (subtituloEl) subtituloEl.textContent = 'Modifica el paciente asignado, los ejercicios, series o indicaciones de esta pauta.';
+                if (btnVolver) btnVolver.classList.remove('is-hidden');
+                if (btnGuardar) btnGuardar.innerHTML = `<i class='bx bx-save'></i> Guardar Cambios de Pauta`;
 
-                        const yaExiste = itemsEdicion.some(x => Number(x.ejercicio_id) === ejId);
-                        if (!yaExiste) {
-                            const cardDom = btn.closest('div');
-                            const nombreDom = cardDom?.parentElement?.querySelector('strong, h4, h5')?.textContent?.trim();
-                            itemsEdicion.push({
-                                ejercicio_id: ejId,
-                                nombre: catalogoCache[ejId] || nombreDom || `Ejercicio #${ejId}`,
-                                series: 3,
-                                repeticiones: 12,
-                                tiempo_descanso_segundos: 60,
-                            });
-                            renderizarCarritoEdicion();
+                try {
+                    const [resPauta, resEjs] = await Promise.all([
+                        api.fetchConSesion(`/api/v1/pautas/${editId}/`),
+                        api.fetchConSesion('/api/v1/ejercicios/')
+                    ]);
+
+                    if (!resPauta.ok) throw new Error(`Error ${resPauta.status} al cargar la pauta.`);
+                    const pauta = await resPauta.json();
+
+                    if (resEjs.ok) {
+                        const dataEjs = await resEjs.json();
+                        const listaEjs = Array.isArray(dataEjs) ? dataEjs : (dataEjs?.results || []);
+                        listaEjs.forEach(e => { catalogoCache[e.id] = e.nombre || e.titulo || `Ejercicio #${e.id}`; });
+                    }
+
+                    const inputNombre = document.getElementById('pauta-nombre');
+                    const inputDesc = document.getElementById('pauta-descripcion');
+                    const checkPlantilla = document.getElementById('check-solo-plantilla');
+                    const selectPac = document.getElementById('select-paciente-pauta');
+
+                    if (inputNombre) inputNombre.value = pauta.titulo || '';
+                    if (inputDesc) inputDesc.value = pauta.notas || pauta.descripcion || '';
+                    if (checkPlantilla) checkPlantilla.checked = Boolean(pauta.es_plantilla);
+
+                    const pacienteObjetivo = typeof pauta.paciente === 'object' && pauta.paciente !== null ? pauta.paciente.id : pauta.paciente;
+                    if (selectPac && pacienteObjetivo) {
+                        const aplicarPaciente = () => {
+                            const opt = Array.from(selectPac.options).find(o => String(o.value) === String(pacienteObjetivo));
+                            if (opt) {
+                                selectPac.value = String(pacienteObjetivo);
+                                return true;
+                            }
+                            return false;
+                        };
+                        if (!aplicarPaciente()) {
+                            let intentos = 0;
+                            const interval = setInterval(() => {
+                                intentos++;
+                                if (aplicarPaciente() || intentos > 25) clearInterval(interval);
+                            }, 200);
                         }
-                    }, true);
-                }
+                    }
 
-                const form = document.getElementById('form-guardar-pauta');
-                if (form) {
-                    form.addEventListener('submit', async (ev) => {
-                        ev.preventDefault();
-                        ev.stopImmediatePropagation();
+                    const detalles = Array.isArray(pauta.ejercicios_detalle) ? pauta.ejercicios_detalle : [];
+                    itemsEdicion = detalles.map(d => {
+                        const ejId = d.ejercicio_id || (typeof d.ejercicio === 'object' ? d.ejercicio.id : d.ejercicio);
+                        const nombre = d.ejercicio_nombre || d.nombre || (typeof d.ejercicio === 'object' ? d.ejercicio.nombre : '') || catalogoCache[ejId] || `Ejercicio #${ejId}`;
+                        return {
+                            ejercicio_id: ejId,
+                            nombre,
+                            series: Number(d.series || 3),
+                            repeticiones: Number(d.repeticiones || 12),
+                            tiempo_descanso_segundos: Number(d.tiempo_descanso_segundos || 60),
+                        };
+                    });
 
-                        const titulo = (inputNombre?.value || '').trim();
-                        const notas = (inputDesc?.value || '').trim();
-                        const esPlantilla = Boolean(checkPlantilla?.checked);
-                        const pacienteVal = selectPac?.value ? Number(selectPac.value) : null;
+                    renderizarCarritoEdicion();
 
-                        if (!titulo) {
-                            alert('Debes ingresar un nombre para la pauta.');
-                            return;
-                        }
-                        if (!esPlantilla && !pacienteVal) {
-                            alert('Selecciona un paciente destinatario o marca la opción de Plantilla Maestra.');
-                            return;
-                        }
-                        if (itemsEdicion.length === 0) {
-                            alert('Debes mantener al menos un ejercicio en la pauta.');
-                            return;
-                        }
+                    const listaCentral = document.getElementById('lista-ejercicios-disponibles');
+                    if (listaCentral) {
+                        listaCentral.addEventListener('click', (ev) => {
+                            const btn = ev.target.closest('button');
+                            if (!btn) return;
+                            const onclickAttr = btn.getAttribute('onclick') || '';
+                            const matchOnclick = onclickAttr.match(/\((\d+)\)/);
+                            const ejId = Number(
+                                btn.dataset.id ||
+                                btn.getAttribute('data-ejercicio-id') ||
+                                (matchOnclick ? matchOnclick[1] : 0)
+                            );
+                            if (!ejId) return;
 
-                        btnGuardar.disabled = true;
-                        btnGuardar.innerHTML = `<i class='bx bx-loader-alt bx-spin'></i> Guardando cambios...`;
+                            if (onclickAttr.toLowerCase().includes('multimedia') || onclickAttr.toLowerCase().includes('video')) return;
 
-                        try {
-                            const payload = {
-                                titulo,
-                                notas,
-                                paciente: esPlantilla ? null : pacienteVal,
-                                es_plantilla: esPlantilla,
-                                activo: true,
-                                ejercicios: itemsEdicion.map((it, ordenIdx) => ({
-                                    ejercicio: Number(it.ejercicio_id),
-                                    series: Number(it.series),
-                                    repeticiones: Number(it.repeticiones),
-                                    tiempo_descanso_segundos: Number(it.tiempo_descanso_segundos),
-                                    orden: ordenIdx + 1,
-                                })),
-                            };
+                            ev.stopImmediatePropagation();
+                            ev.preventDefault();
 
-                            const respPatch = await api.fetchConSesion(`/api/v1/pautas/${editId}/`, {
-                                method: 'PATCH',
-                                body: JSON.stringify(payload),
-                            });
+                            const yaExiste = itemsEdicion.some(x => Number(x.ejercicio_id) === ejId);
+                            if (!yaExiste) {
+                                const cardDom = btn.closest('div');
+                                const nombreDom = cardDom?.parentElement?.querySelector('strong, h4, h5')?.textContent?.trim();
+                                const nombreEj = catalogoCache[ejId] || nombreDom || `Ejercicio #${ejId}`;
+                                itemsEdicion.push({
+                                    ejercicio_id: ejId,
+                                    nombre: nombreEj,
+                                    series: 3,
+                                    repeticiones: 12,
+                                    tiempo_descanso_segundos: 60,
+                                });
+                                renderizarCarritoEdicion();
+                                mostrarToast(`"${nombreEj}" añadido a la pauta.`, 'success', 2200);
+                            } else {
+                                mostrarToast('Ese ejercicio ya está en la pauta.', 'warning', 2200);
+                            }
+                        }, true);
+                    }
 
-                            if (!respPatch.ok) {
-                                const errBody = await respPatch.json().catch(() => ({}));
-                                throw new Error(errBody.detail || JSON.stringify(errBody));
+                    const form = document.getElementById('form-guardar-pauta');
+                    if (form) {
+                        form.addEventListener('submit', async (ev) => {
+                            ev.preventDefault();
+                            ev.stopImmediatePropagation();
+
+                            const titulo = (inputNombre?.value || '').trim();
+                            const notas = (inputDesc?.value || '').trim();
+                            const esPlantilla = Boolean(checkPlantilla?.checked);
+                            const pacienteVal = selectPac?.value ? Number(selectPac.value) : null;
+
+                            if (!titulo) {
+                                mostrarToast('Debes ingresar un nombre para la pauta.', 'warning');
+                                return;
+                            }
+                            if (!esPlantilla && !pacienteVal) {
+                                mostrarToast('Selecciona un paciente destinatario o marca la opción de Plantilla Maestra.', 'warning');
+                                return;
+                            }
+                            if (itemsEdicion.length === 0) {
+                                mostrarToast('Debes mantener al menos un ejercicio en la pauta.', 'warning');
+                                return;
                             }
 
-                            alert('¡Pauta actualizada correctamente!');
-                            window.location.href = 'pautas.html';
-                        } catch (err) {
-                            alert(`Error al actualizar la pauta: ${err.message}`);
-                            btnGuardar.disabled = false;
-                            btnGuardar.innerHTML = `<i class='bx bx-save'></i> Guardar Cambios de Pauta`;
-                        }
-                    }, true);
-                }
-            } catch (e) {
-                alert(e.message || 'Error al cargar la edición de la pauta.');
-            }
-        }
+                            btnGuardar.disabled = true;
+                            btnGuardar.innerHTML = `<i class='bx bx-loader-alt bx-spin'></i> Guardando cambios...`;
 
-        document.addEventListener('DOMContentLoaded', iniciarEdicion);
-    })();
+                            try {
+                                const payload = {
+                                    titulo,
+                                    notas,
+                                    paciente: esPlantilla ? null : pacienteVal,
+                                    es_plantilla: esPlantilla,
+                                    activo: true,
+                                    ejercicios: itemsEdicion.map((it, ordenIdx) => ({
+                                        ejercicio: Number(it.ejercicio_id),
+                                        series: Number(it.series),
+                                        repeticiones: Number(it.repeticiones),
+                                        tiempo_descanso_segundos: Number(it.tiempo_descanso_segundos),
+                                        orden: ordenIdx + 1,
+                                    })),
+                                };
+
+                                const respPatch = await api.fetchConSesion(`/api/v1/pautas/${editId}/`, {
+                                    method: 'PATCH',
+                                    body: JSON.stringify(payload),
+                                });
+
+                                if (!respPatch.ok) {
+                                    const errBody = await respPatch.json().catch(() => ({}));
+                                    throw new Error(errBody.detail || JSON.stringify(errBody));
+                                }
+
+                                mostrarToast('¡Pauta actualizada correctamente!', 'success', 1500);
+                                setTimeout(() => {
+                                    window.location.href = 'pautas.html';
+                                }, 900);
+                            } catch (err) {
+                                mostrarToast(`Error al actualizar la pauta: ${err.message}`, 'error', 4500);
+                                btnGuardar.disabled = false;
+                                btnGuardar.innerHTML = `<i class='bx bx-save'></i> Guardar Cambios de Pauta`;
+                            }
+                        }, true);
+                    }
+                } catch (e) {
+                    mostrarToast(e.message || 'Error al cargar la edición de la pauta.', 'error', 4500);
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', iniciarEdicion);
+        })();
     </script>
 
     <!-- Modal de Previsualización Multimedia -->

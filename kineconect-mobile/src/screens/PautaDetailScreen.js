@@ -97,7 +97,7 @@ function obtenerDescansoPorIntensidad(item, extra = {}) {
   else if (dif.includes('intermedi')) recomendado = 45;
 
   const prescrito = Number(item?.tiempo_descanso_segundos ?? item?.descanso_seg ?? 0);
-  const segundos = prescrito > 0 && prescrito !== 60 ? prescrito : recomendado;
+  const segundos = Number.isFinite(prescrito) && prescrito > 0 ? prescrito : recomendado;
 
   return { segundos, dificultad: dificultadRaw };
 }
@@ -218,13 +218,13 @@ export default function PautaDetailScreen({ route, navigation }) {
       const rawFb = resFb?.data?.results ?? resFb?.data ?? [];
       const filtradas = Array.isArray(rawFb)
         ? ordenarRespuestasRecientes(
-            rawFb.filter(
-              (item) =>
-                Number(item?.pauta) === Number(id) &&
-                item?.respuesta_kinesiologo &&
-                String(item.respuesta_kinesiologo).trim().length > 0
-            )
+          rawFb.filter(
+            (item) =>
+              Number(item?.pauta) === Number(id) &&
+              item?.respuesta_kinesiologo &&
+              String(item.respuesta_kinesiologo).trim().length > 0
           )
+        )
         : [];
       setRespuestasPauta(filtradas);
       cacheSet(`pauta_feedback_${id}`, filtradas);
@@ -789,8 +789,8 @@ export default function PautaDetailScreen({ route, navigation }) {
             {esSoloConsulta
               ? 'Repasar Videos y Técnica'
               : seriesCompletadas > 0
-              ? 'Continuar Sesión'
-              : 'Comenzar Sesión Guiada'}
+                ? 'Continuar Sesión'
+                : 'Comenzar Sesión Guiada'}
           </Button>
         </View>
 

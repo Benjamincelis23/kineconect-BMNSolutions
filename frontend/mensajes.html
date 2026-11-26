@@ -381,7 +381,8 @@
                 grid-template-columns: 1fr;
             }
         }
-/* Mejora de contraste y definición en Modo Claro (sin alterar Modo Oscuro) */
+
+        /* Mejora de contraste y definición en Modo Claro (sin alterar Modo Oscuro) */
         :root:not([data-theme="dark"]) .inbox-card {
             background: #ffffff;
             border-color: #cbd5e1;
@@ -422,6 +423,7 @@
             background: #e2e8f0;
             border-color: #94a3b8;
         }
+
         /* Dark Mode */
         [data-theme="dark"] .inbox-card,
         body.dark-mode .inbox-card,
@@ -562,7 +564,8 @@
                 <div class="page-header" style="flex-wrap: wrap; gap: 12px;">
                     <div>
                         <h2>Bandeja de Reportes</h2>
-                        <p>Triage clínico de sesiones ejecutadas en la app móvil: prioriza dolores altos, responde o marca como revisado.</p>
+                        <p>Triage clínico de sesiones ejecutadas en la app móvil: prioriza dolores altos, responde o
+                            marca como revisado.</p>
                     </div>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                         <select id="select-filtro-paciente" onchange="aplicarFiltroPacienteUI(this.value)"
@@ -586,7 +589,9 @@
                             <i class='bx bx-envelope'></i>
                         </div>
                         <div>
-                            <span style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--gris-600);">Pendientes de Revisión</span>
+                            <span
+                                style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--gris-600);">Pendientes
+                                de Revisión</span>
                             <strong id="kpi-pendientes" style="font-size: 1.45rem; color: var(--azul-900);">0</strong>
                         </div>
                     </div>
@@ -598,7 +603,9 @@
                             <i class='bx bx-error-circle'></i>
                         </div>
                         <div>
-                            <span style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--gris-600);">Alertas EVA ≥ 6 (Total)</span>
+                            <span
+                                style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--gris-600);">Alertas
+                                EVA ≥ 6 (Total)</span>
                             <strong id="kpi-alertas-eva" style="font-size: 1.45rem; color: var(--azul-900);">0</strong>
                         </div>
                     </div>
@@ -610,7 +617,9 @@
                             <i class='bx bx-check-double'></i>
                         </div>
                         <div>
-                            <span style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--gris-600);">Respondidos / Revisados</span>
+                            <span
+                                style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--gris-600);">Respondidos
+                                / Revisados</span>
                             <strong id="kpi-revisados" style="font-size: 1.45rem; color: var(--azul-900);">0</strong>
                         </div>
                     </div>
@@ -622,8 +631,11 @@
                             <i class='bx bx-pulse'></i>
                         </div>
                         <div>
-                            <span style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--gris-600);">Promedio Dolor EVA</span>
-                            <strong id="kpi-promedio-eva" style="font-size: 1.45rem; color: var(--azul-900);">0.0 / 10</strong>
+                            <span
+                                style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--gris-600);">Promedio
+                                Dolor EVA</span>
+                            <strong id="kpi-promedio-eva" style="font-size: 1.45rem; color: var(--azul-900);">0.0 /
+                                10</strong>
                         </div>
                     </div>
                 </div>
@@ -659,7 +671,8 @@
                 <div id="no-feedback" class="card empty-state is-hidden">
                     <i class='bx bx-check-circle'
                         style="font-size: 2.2rem; color: var(--verde-500); margin-bottom: 8px;"></i>
-                    <p class="empty-text" style="margin: 0; font-size: 0.9rem;">No hay reportes pendientes en esta vista.</p>
+                    <p class="empty-text" style="margin: 0; font-size: 0.9rem;">No hay reportes pendientes en esta
+                        vista.</p>
                 </div>
 
             </div>
@@ -700,12 +713,12 @@
                 <label for="textarea-respuesta-kine"
                     style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-weight: 700; margin-bottom: 6px;">
                     <span>Mensaje para el paciente</span>
-                    <span id="estado-sugerencia-aplicada" style="display: none; color: #0284c7; font-size: 0.74rem; font-weight: 700;">
+                    <span id="estado-sugerencia-aplicada"
+                        style="display: none; color: #0284c7; font-size: 0.74rem; font-weight: 700;">
                         ✓ Aplicado
                     </span>
                 </label>
-                <textarea id="textarea-respuesta-kine" rows="3"
-                    oninput="sincronizarSeleccionSugerencia()"
+                <textarea id="textarea-respuesta-kine" rows="3" oninput="sincronizarSeleccionSugerencia()"
                     placeholder="Escribe tu indicación clínica..."
                     style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #cbd5e1; font-family: inherit; font-size: 0.86rem; resize: vertical;"></textarea>
                 <div id="modal-resp-error"
@@ -727,6 +740,7 @@
     <script src="js/layout.js"></script>
     <script>
         const STORAGE_VISTOS_KINE = 'kc_reportes_vistos_kine_v1';
+        const vistosEnMemoria = {};
 
         let todasPautasBase = [];
         let mapaPautas = {};
@@ -737,15 +751,21 @@
         let feedbackEnEdicionId = null;
 
         function obtenerVistosKine() {
+            let almacenados = {};
             try {
-                return JSON.parse(localStorage.getItem(STORAGE_VISTOS_KINE) || '{}');
+                almacenados = JSON.parse(localStorage.getItem(STORAGE_VISTOS_KINE) || '{}');
             } catch {
-                return {};
+                almacenados = {};
             }
+            return { ...almacenados, ...vistosEnMemoria };
         }
 
         function guardarVistosKine(mapa) {
-            localStorage.setItem(STORAGE_VISTOS_KINE, JSON.stringify(mapa));
+            try {
+                localStorage.setItem(STORAGE_VISTOS_KINE, JSON.stringify(mapa));
+            } catch {
+                // Ignora si el almacenamiento local está bloqueado
+            }
         }
 
         function escaparHtml(txt) {
@@ -792,14 +812,12 @@
             let borgDetalle = '';
             let borgValor = null;
 
-            // 1. Extraer Series al final
             const matchSeries = texto.match(/(?:[|•]\s*)?(Series:\s*[^|•]+)\.?$/i);
             if (matchSeries) {
                 seriesInfo = matchSeries[1].replace(/^Series:\s*/i, '').replace(/\.$/, '').trim();
                 texto = texto.slice(0, matchSeries.index).trim();
             }
 
-            // 2. Extraer TODOS los [tags] antes de parsear Borg (evita que se peguen)
             texto = texto.replace(/\[([^\]]+)\]/g, (_, contenido) => {
                 contenido.split(',').map(t => t.trim()).filter(Boolean).forEach(t => {
                     if (!tags.includes(t)) tags.push(t);
@@ -807,7 +825,6 @@
                 return ' ';
             });
 
-            // 3. Extraer Esfuerzo Borg limpio
             const matchBorg = texto.match(/(?:^|[|•]\s*)(Esfuerzo\s*Borg\s*[:\-]?\s*([^|•]+?))(?:\s*[|•]|$)/i);
             if (matchBorg) {
                 borgDetalle = matchBorg[2].trim();
@@ -816,7 +833,6 @@
                 texto = texto.replace(matchBorg[0], ' ');
             }
 
-            // 4. Limpiar separadores sobrantes
             texto = texto
                 .replace(/^[\s|•\-]+|[\s|•\-]+$/g, '')
                 .replace(/\s*[|•]\s*[|•]\s*/g, ' • ')
@@ -855,18 +871,46 @@
             return tieneRespuestaClinica(item) || estaEnVistoKine(item);
         }
 
-        function marcarReporteEnVisto(feedbackId) {
+        async function marcarReporteEnVisto(feedbackId) {
+            const key = String(feedbackId);
+            vistosEnMemoria[key] = new Date().toISOString();
             const vistos = obtenerVistosKine();
-            vistos[String(feedbackId)] = new Date().toISOString();
+            vistos[key] = vistosEnMemoria[key];
             guardarVistosKine(vistos);
+
+            try {
+                if (typeof api !== 'undefined' && typeof api.fetchConSesion === 'function') {
+                    await api.fetchConSesion(`/api/v1/feedback/${feedbackId}/`, {
+                        method: 'PATCH',
+                        body: JSON.stringify({ revisado_kine: true })
+                    }).catch(() => null);
+                }
+            } catch {
+                // Mantiene el marcado local si el endpoint no exige campo extra
+            }
+
             actualizarKpis(reportesCargados);
             renderizarBandejaFeedback();
         }
 
-        function desmarcarReporteEnVisto(feedbackId) {
+        async function desmarcarReporteEnVisto(feedbackId) {
+            const key = String(feedbackId);
+            delete vistosEnMemoria[key];
             const vistos = obtenerVistosKine();
-            delete vistos[String(feedbackId)];
+            delete vistos[key];
             guardarVistosKine(vistos);
+
+            try {
+                if (typeof api !== 'undefined' && typeof api.fetchConSesion === 'function') {
+                    await api.fetchConSesion(`/api/v1/feedback/${feedbackId}/`, {
+                        method: 'PATCH',
+                        body: JSON.stringify({ revisado_kine: false })
+                    }).catch(() => null);
+                }
+            } catch {
+                // Ignora si el endpoint no exige campo extra
+            }
+
             actualizarKpis(reportesCargados);
             renderizarBandejaFeedback();
         }
@@ -976,7 +1020,7 @@
                 <button type="button" class="btn btn-secondary btn-sm btn-sugerencia-kine ${op.preventiva ? 'sug-preventiva' : ''}"
                     data-texto="${escaparHtml(op.texto)}"
                     onclick="aplicarSugerenciaRespuesta('${escaparHtml(op.texto)}')">
-                    • ${escaparHtml(op.texto)}
+- ${escaparHtml(op.texto)}
                 </button>
             `).join('');
         }
@@ -1163,7 +1207,6 @@
                 const parsed = parsearComentarioApp(f.comentario);
                 const fecha = formatearFechaChile(f.fecha_ejecucion);
 
-                // Cuadro 1: Dolor EVA + comparación anterior
                 let prevPillHtml = '';
                 if (evaAnterior != null) {
                     const flecha = dolor > evaAnterior ? '↑ ' : (dolor < evaAnterior ? '↓ ' : '');
@@ -1180,7 +1223,6 @@
                     </div>
                 `;
 
-                // Cuadro 2: Esfuerzo Borg (si viene reportado)
                 const borgTone = parsed.borgValor != null
                     ? (parsed.borgValor >= 7 ? 'tone-warn' : 'tone-neutral')
                     : 'tone-neutral';
@@ -1191,7 +1233,6 @@
                        </div>`
                     : '';
 
-                // Cuadro 3: Cumplimiento + Series
                 const sesionTone = f.completado ? 'tone-ok' : 'tone-danger';
                 const cuadroSesionHtml = `
                     <div class="kc-metric-box ${sesionTone}">
@@ -1201,7 +1242,6 @@
                     </div>
                 `;
 
-                // Extras del paciente: tags de síntomas y comentario escrito (solo si existen)
                 const tieneExtrasPaciente = parsed.tags.length > 0 || Boolean(parsed.textoLibre);
                 const extrasPacienteHtml = tieneExtrasPaciente
                     ? `<div class="inbox-patient-extra">
@@ -1210,7 +1250,6 @@
                        </div>`
                     : '';
 
-                // Bloque derecho (acotado): Respuesta del kinesiólogo o estado
                 const tieneRespuesta = tieneRespuestaClinica(f);
                 const enVisto = !tieneRespuesta && estaEnVistoKine(f);
                 const fechaRespFormateada = formatearFechaChile(f.fecha_respuesta);
@@ -1242,7 +1281,6 @@
                     `;
                 }
 
-                // Botones de acción
                 const botonVistoHtml = !tieneRespuesta && f.id != null
                     ? (enVisto
                         ? `<button type="button" class="btn btn-secondary btn-sm"

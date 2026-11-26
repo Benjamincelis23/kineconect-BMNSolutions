@@ -303,8 +303,7 @@
                                     <span class="modulo-icon" style="background: #e0f2fe; color: #0369a1;">
                                         <i class='bx bx-clipboard'></i>
                                     </span>
-                                    <span id="badge-mod-pautas" class="badge badge-neutro"
-                                        style="font-size: 0.72rem;">
+                                    <span id="badge-mod-pautas" class="badge badge-neutro" style="font-size: 0.72rem;">
                                         Rutinas
                                     </span>
                                 </div>
@@ -509,24 +508,46 @@
     <script src="js/layout.js"></script>
     <script>
         const STORAGE_VISTOS_KINE = 'kc_reportes_vistos_kine_v1';
+        const vistosEnMemoria = {};
 
         let reportesActualesDashboard = [];
         let mapaPautasDashboard = {};
         let feedbackBandejaSeleccionado = null;
 
         function obtenerVistosKine() {
+            let almacenados = {};
             try {
-                return JSON.parse(localStorage.getItem(STORAGE_VISTOS_KINE) || '{}');
+                almacenados = JSON.parse(localStorage.getItem(STORAGE_VISTOS_KINE) || '{}');
             } catch {
-                return {};
+                almacenados = {};
             }
+            return { ...almacenados, ...vistosEnMemoria };
         }
 
-        function marcarReporteVistoDesdeInicio(feedbackId) {
+        async function marcarReporteVistoDesdeInicio(feedbackId) {
             if (feedbackId == null) return;
-            const vistos = obtenerVistosKine();
-            vistos[String(feedbackId)] = new Date().toISOString();
-            localStorage.setItem(STORAGE_VISTOS_KINE, JSON.stringify(vistos));
+            const marca = new Date().toISOString();
+            vistosEnMemoria[String(feedbackId)] = marca;
+
+            try {
+                const actuales = JSON.parse(localStorage.getItem(STORAGE_VISTOS_KINE) || '{}');
+                actuales[String(feedbackId)] = marca;
+                localStorage.setItem(STORAGE_VISTOS_KINE, JSON.stringify(actuales));
+            } catch {
+                // Ignora si el almacenamiento local está bloqueado
+            }
+
+            try {
+                if (typeof api !== 'undefined' && typeof api.fetchConSesion === 'function') {
+                    await api.fetchConSesion(`/api/v1/feedback/${feedbackId}/`, {
+                        method: 'PATCH',
+                        body: JSON.stringify({ revisado_kine: true })
+                    }).catch(() => null);
+                }
+            } catch {
+                // Mantiene el marcado local si el endpoint no exige campo extra
+            }
+
             renderizarBandejaPrioritaria([], reportesActualesDashboard, mapaPautasDashboard);
         }
 
@@ -695,7 +716,7 @@
             document.getElementById('lista-sugerencias-bandeja').innerHTML = opciones.map(op => `
                 <button type="button" class="btn btn-secondary btn-sm btn-sug-bandeja ${op.preventiva ? 'preventiva' : ''}"
                     onclick="aplicarSugerenciaBandeja('${escaparHtml(op.texto)}')">
-                    • ${escaparHtml(op.texto)}
+- ${escaparHtml(op.texto)}
                 </button>
             `).join('');
 
@@ -777,7 +798,6 @@
                 return sinResp && noVisto;
             }).length;
 
-            // Adherencia real contando solo sesiones completadas (completado === true)
             let adherenciaTexto = '0%';
             if (pautasActivas.length > 0) {
                 const totalMeta = pautasActivas.reduce((acc, p) => acc + Math.max(1, Number(p.meta_semanal || 3)), 0);
@@ -788,22 +808,18 @@
                 adherenciaTexto = `${Math.round((completas / reportes.length) * 100)}%`;
             }
 
-            // KPIs
             document.getElementById('kpi-pacientes').textContent = resumen?.kpis?.pacientes_activos ?? pacientes.length;
             document.getElementById('kpi-adherencia').textContent = adherenciaTexto;
             document.getElementById('kpi-abandono').textContent = resumen?.kpis?.riesgo_abandono ?? 0;
 
-            // Badges de Módulos
             document.getElementById('badge-mod-pautas').textContent = `${pautasActivas.length} ${pautasActivas.length === 1 ? 'activa' : 'activas'}`;
             document.getElementById('badge-mod-reportes').textContent = `${pendientesCount} ${pendientesCount === 1 ? 'pendiente' : 'pendientes'}`;
             document.getElementById('badge-mod-pacientes').textContent = `${pacientes.length} ${pacientes.length === 1 ? 'activo' : 'activos'}`;
             document.getElementById('badge-mod-ejercicios').textContent = `${totalEjercicios} ejercicios`;
 
-            // Bandeja de Atención Prioritaria
             reportesActualesDashboard = reportes;
             renderizarBandejaPrioritaria(resumen?.bandeja_prioritaria || [], reportes, mapaPautas);
 
-            // Últimos 4 reportes EVA
             const contReportes = document.getElementById('lista-ultimos-reportes');
             if (reportes.length === 0) {
                 contReportes.innerHTML = `<p style="margin: 0; font-size: 0.85rem; color: var(--gris-500);">Aún no hay reportes recibidos desde la app móvil.</p>`;
@@ -833,7 +849,6 @@
                 }).join('');
             }
 
-            // Pacientes asignados
             const contPacientes = document.getElementById('lista-pacientes-recientes');
             if (pacientes.length === 0) {
                 contPacientes.innerHTML = `<p style="margin: 0; font-size: 0.85rem; color: var(--gris-500);">No tienes pacientes registrados todavía.</p>`;
