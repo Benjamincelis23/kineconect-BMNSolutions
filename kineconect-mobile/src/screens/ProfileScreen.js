@@ -39,6 +39,25 @@ Notifications.setNotificationHandler({
 const REMINDER_KEY = '@kineconnect_recordatorio';
 const HORARIOS_SUGERIDOS = ['09:00', '12:30', '18:30', '20:30'];
 
+function formatearRutChileno(rutRaw) {
+  if (!rutRaw) return '';
+  const limpio = String(rutRaw).replace(/[^0-9kK]/g, '').toUpperCase();
+  if (limpio.length < 2) return limpio;
+  const cuerpo = limpio.slice(0, -1);
+  const dv = limpio.slice(-1);
+  const cuerpoConPuntos = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return `${cuerpoConPuntos}-${dv}`;
+}
+
+function capitalizarTexto(texto) {
+  if (!texto || typeof texto !== 'string') return '';
+  return texto
+    .trim()
+    .split(/\s+/)
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+    .join(' ');
+}
+
 function resolverKinesiologo(me) {
   const k = me?.kinesiologo;
   if (!k && !me?.kinesiologo_nombre) return { asignado: false, nombre: '' };
@@ -54,23 +73,8 @@ function resolverKinesiologo(me) {
 
   return {
     asignado: true,
-    nombre: nombre || 'Kinesiólogo Asignado',
+    nombre: capitalizarTexto(nombre) || 'Asignado',
   };
-}
-
-async function fetchHistorialPaciente() {
-  const rutas = ['/api/v1/feedback/', '/api/feedback/'];
-  for (const ruta of rutas) {
-    try {
-      const res = await api.get(ruta);
-      const data = res?.data;
-      if (Array.isArray(data)) return data;
-      if (data && Array.isArray(data.results)) return data.results;
-    } catch {
-      // Intenta la siguiente ruta
-    }
-  }
-  return null;
 }
 
 export default function ProfileScreen() {
@@ -81,14 +85,10 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
 
   const [me, setMe] = useState(null);
-  const [historial, setHistorial] = useState([]);
   const [recordatorioActivo, setRecordatorioActivo] = useState(true);
   const [horaRecordatorio, setHoraRecordatorio] = useState('18:30');
-
-  // Controla qué tarjeta está desplegada: 'evolucion' | 'alarma' | 'apariencia' | 'seguridad' | null
   const [seccionAbierta, setSeccionAbierta] = useState(null);
 
-  // Estado del selector de hora personalizada
   const [modalHoraVisible, setModalHoraVisible] = useState(false);
   const [horaTemp, setHoraTemp] = useState(18);
   const [minutoTemp, setMinutoTemp] = useState(30);
@@ -118,25 +118,12 @@ export default function ProfileScreen() {
         }
 
         try {
-          const [resMe, listaHist] = await Promise.all([
-            api.get('/api/me/'),
-            fetchHistorialPaciente(),
-          ]);
+          const resMe = await api.get('/api/me/');
           setMe(resMe.data);
           await cacheSet('me', resMe.data);
-
-          if (Array.isArray(listaHist)) {
-            setHistorial(listaHist);
-            await cacheSet('perfil_historial_eva', listaHist);
-          } else {
-            const cachedHist = await cacheGet('perfil_historial_eva');
-            if (Array.isArray(cachedHist)) setHistorial(cachedHist);
-          }
         } catch {
           const cached = await cacheGet('me');
           if (cached) setMe(cached);
-          const cachedHist = await cacheGet('perfil_historial_eva');
-          if (Array.isArray(cachedHist)) setHistorial(cachedHist);
         }
       })();
     }, [])
@@ -165,8 +152,8 @@ export default function ProfileScreen() {
       const [hour, minute] = horaStr.split(':').map(Number);
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: '⏰ Hora de tu rutina KineConnect',
-          body: 'Realiza tus ejercicios asignados y registra tu nivel de dolor EVA.',
+          title: 'Hora de tu rutina KineConnect',
+          body: 'Realiza tus ejercicios asignados y registra cómo te sentiste.',
           sound: true,
         },
         trigger: {
@@ -176,7 +163,7 @@ export default function ProfileScreen() {
         },
       });
     } catch {
-      // Si el entorno no soporta programación nativa, conserva el guardado local
+      // Ignora si el entorno no soporta programación nativa
     }
   };
 
@@ -240,16 +227,15 @@ export default function ProfileScreen() {
     accentBg: isDark ? '#082F49' : '#E0F2FE',
     accentText: isDark ? '#38BDF8' : '#0369A1',
     primary: isDark ? '#38BDF8' : '#0284C7',
-    success: '#10B981',
-    successBg: isDark ? '#064E3B' : '#D1FAE5',
-    warn: '#F59E0B',
-    danger: '#EF4444',
     logoutBg: isDark ? '#450A0A' : '#FEF2F2',
     logoutBorder: isDark ? '#7F1D1D' : '#FECACA',
     logoutText: isDark ? '#F87171' : '#DC2626',
   };
 
-  const nombreCompleto = me ? `${me.nombre || ''} ${me.apellido || ''}`.trim() || 'Paciente' : 'Cargando...';
+  const nombreCompleto = me
+    ? capitalizarTexto(`${me.nombre || ''} ${me.apellido || ''}`) || 'Paciente'
+    : 'Cargando...';
+  const rutFormateado = formatearRutChileno(me?.rut);
   const iniciales = nombreCompleto
     .split(' ')
     .slice(0, 2)
@@ -257,22 +243,17 @@ export default function ProfileScreen() {
     .join('');
 
   const infoKine = resolverKinesiologo(me);
-
-  const totalSesiones = historial.length;
-  const sesionesCompletas = historial.filter((h) => Boolean(h.completado)).length;
-  const promedioEva =
-    totalSesiones > 0
-      ? (
-          historial.reduce((acc, h) => acc + Number(h.nivel_dolor ?? h.escala_dolor ?? 0), 0) /
-          totalSesiones
-        ).toFixed(1)
-      : '—';
-
   const labelTemaActual = mode === 'light' ? 'Claro' : mode === 'dark' ? 'Oscuro' : 'Auto';
 
   return (
     <View style={[styles.mainWrapper, { paddingTop: insets.top, backgroundColor: c.bg }]}>
-      <ScrollView contentContainerStyle={styles.scrollPadding} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollPadding,
+          { paddingBottom: Math.max(96, insets.bottom + 72) },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Tarjeta Hero del Paciente */}
         <View style={[styles.heroProfileCard, { backgroundColor: c.surface, borderColor: c.border }]}>
           <View style={[styles.avatarCircle, { backgroundColor: c.accentBg, borderColor: c.primary }]}>
@@ -282,10 +263,10 @@ export default function ProfileScreen() {
           <Text style={[styles.name, { color: c.textMain }]}>{nombreCompleto}</Text>
 
           <View style={styles.metaPillsRow}>
-            {!!me?.rut && (
+            {!!rutFormateado && (
               <View style={[styles.metaPill, { backgroundColor: c.surfaceSoft }]}>
                 <MaterialCommunityIcons name="card-account-details-outline" size={14} color={c.textSub} />
-                <Text style={{ color: c.textSub, fontSize: 12, fontWeight: '600' }}>{me.rut}</Text>
+                <Text style={{ color: c.textSub, fontSize: 12, fontWeight: '600' }}>{rutFormateado}</Text>
               </View>
             )}
             {!!me?.email && (
@@ -316,106 +297,25 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Tarjeta 1: Mi Evolución Clínica (Colapsable) */}
+        {/* Tarjeta 1: Recordatorio Diario */}
         <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
-          <TouchableOpacity
-            activeOpacity={0.75}
-            onPress={() => toggleSeccion('evolucion')}
-            style={styles.cardHeader}
-          >
-            <View style={[styles.iconBadge, { backgroundColor: c.successBg }]}>
-              <MaterialCommunityIcons name="chart-line" size={19} color={c.success} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.cardTitle, { color: c.textMain }]}>Mi Evolución Clínica</Text>
-              <Text style={[styles.cardSubtitle, { color: c.textSub }]}>
-                {totalSesiones > 0
-                  ? `${totalSesiones} ${totalSesiones === 1 ? 'reporte' : 'reportes'} • EVA promedio ${promedioEva}/10`
-                  : 'Sin sesiones registradas aún'}
-              </Text>
-            </View>
-            <MaterialCommunityIcons
-              name={seccionAbierta === 'evolucion' ? 'chevron-up' : 'chevron-down'}
-              size={22}
-              color={c.textSub}
-            />
-          </TouchableOpacity>
-
-          {seccionAbierta === 'evolucion' && (
-            <View style={[styles.accordionBody, { borderTopColor: c.border }]}>
-              <View style={[styles.kpiStrip, { backgroundColor: c.surfaceSoft, borderColor: c.border, marginTop: 0 }]}>
-                <View style={styles.kpiCol}>
-                  <Text style={{ color: c.primary, fontSize: 18, fontWeight: '800' }}>{totalSesiones}</Text>
-                  <Text style={{ color: c.textSub, fontSize: 11, fontWeight: '600' }}>Reportes</Text>
-                </View>
-                <View style={[styles.kpiDivider, { backgroundColor: c.border }]} />
-                <View style={styles.kpiCol}>
-                  <Text style={{ color: c.success, fontSize: 18, fontWeight: '800' }}>{sesionesCompletas}</Text>
-                  <Text style={{ color: c.textSub, fontSize: 11, fontWeight: '600' }}>Completas</Text>
-                </View>
-                <View style={[styles.kpiDivider, { backgroundColor: c.border }]} />
-                <View style={styles.kpiCol}>
-                  <Text style={{ color: c.warn, fontSize: 18, fontWeight: '800' }}>{promedioEva}</Text>
-                  <Text style={{ color: c.textSub, fontSize: 11, fontWeight: '600' }}>EVA Promedio</Text>
-                </View>
+          <View style={styles.cardHeader}>
+            <TouchableOpacity
+              activeOpacity={0.75}
+              onPress={() => toggleSeccion('alarma')}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}
+            >
+              <View style={[styles.iconBadge, { backgroundColor: c.accentBg }]}>
+                <MaterialCommunityIcons name="bell-ring-outline" size={18} color={c.primary} />
               </View>
-
-              {historial.length > 0 ? (
-                <View style={{ gap: 8, marginTop: 12 }}>
-                  {historial.slice(0, 6).map((item, idx) => {
-                    const eva = Number(item.nivel_dolor ?? item.escala_dolor ?? 0);
-                    const evaColor = eva >= 6 ? c.danger : eva >= 4 ? c.warn : c.success;
-                    const fecha = item.fecha_ejecucion
-                      ? new Date(item.fecha_ejecucion).toLocaleDateString('es-CL')
-                      : 'Reciente';
-
-                    return (
-                      <View
-                        key={item.id ?? idx}
-                        style={[styles.historyRow, { backgroundColor: c.surfaceSoft, borderColor: c.border }]}
-                      >
-                        <View style={{ flex: 1 }}>
-                          <Text style={{ color: c.textMain, fontSize: 13, fontWeight: '700' }}>
-                            Sesión del {fecha}
-                          </Text>
-                          <Text numberOfLines={1} style={{ color: c.textSub, fontSize: 11.5, marginTop: 2 }}>
-                            {item.comentario || (item.completado ? 'Rutina completada' : 'Sesión parcial')}
-                          </Text>
-                        </View>
-                        <View style={[styles.evaPill, { backgroundColor: `${evaColor}22`, borderColor: evaColor }]}>
-                          <Text style={{ color: evaColor, fontSize: 11.5, fontWeight: '800' }}>
-                            EVA {eva}/10
-                          </Text>
-                        </View>
-                      </View>
-                    );
-                  })}
-                </View>
-              ) : (
-                <Text style={{ color: c.textSub, fontSize: 12.5, marginTop: 10 }}>
-                  Completa tu primera rutina para visualizar tu historial de evolución aquí.
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.cardTitle, { color: c.textMain }]}>Recordatorio Diario</Text>
+                <Text style={[styles.cardSubtitle, { color: c.textSub }]}>
+                  {recordatorioActivo ? `Activo a las ${horaRecordatorio} hrs (toca para cambiar)` : 'Desactivado'}
                 </Text>
-              )}
-            </View>
-          )}
-        </View>
+              </View>
+            </TouchableOpacity>
 
-        {/* Tarjeta 2: Recordatorio Diario (Colapsable + Hora Adaptable) */}
-        <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
-          <TouchableOpacity
-            activeOpacity={0.75}
-            onPress={() => toggleSeccion('alarma')}
-            style={styles.cardHeader}
-          >
-            <View style={[styles.iconBadge, { backgroundColor: c.accentBg }]}>
-              <MaterialCommunityIcons name="bell-ring-outline" size={18} color={c.primary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.cardTitle, { color: c.textMain }]}>Horario Habitual de Rutina</Text>
-              <Text style={[styles.cardSubtitle, { color: c.textSub }]}>
-                {recordatorioActivo ? `Meta diaria a las ${horaRecordatorio} hrs` : 'Recordatorio desactivado'}
-              </Text>
-            </View>
             <Switch
               value={recordatorioActivo}
               onValueChange={(val) => {
@@ -424,12 +324,7 @@ export default function ProfileScreen() {
               }}
               trackColor={{ false: c.border, true: c.primary }}
             />
-            <MaterialCommunityIcons
-              name={seccionAbierta === 'alarma' ? 'chevron-up' : 'chevron-down'}
-              size={22}
-              color={c.textSub}
-            />
-          </TouchableOpacity>
+          </View>
 
           {seccionAbierta === 'alarma' && (
             <View style={[styles.accordionBody, { borderTopColor: c.border }]}>
@@ -481,14 +376,14 @@ export default function ProfileScreen() {
                 </>
               ) : (
                 <Text style={{ color: c.textSub, fontSize: 12.5 }}>
-                  Activa el interruptor superior para configurar tu recordatorio diario de ejercicios.
+                  Activa el interruptor superior para configurar tu recordatorio diario.
                 </Text>
               )}
             </View>
           )}
         </View>
 
-        {/* Tarjeta 3: Apariencia (Colapsable) */}
+        {/* Tarjeta 2: Apariencia */}
         <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
           <TouchableOpacity
             activeOpacity={0.75}
@@ -501,7 +396,7 @@ export default function ProfileScreen() {
             <View style={{ flex: 1 }}>
               <Text style={[styles.cardTitle, { color: c.textMain }]}>Apariencia</Text>
               <Text style={[styles.cardSubtitle, { color: c.textSub }]}>
-                Tema actual: {labelTemaActual}
+                Tema: {labelTemaActual}
               </Text>
             </View>
             <MaterialCommunityIcons
@@ -555,7 +450,7 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        {/* Tarjeta 4: Seguridad (Colapsable) */}
+        {/* Tarjeta 3: Seguridad */}
         <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
           <TouchableOpacity
             activeOpacity={0.75}
@@ -567,7 +462,7 @@ export default function ProfileScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.cardTitle, { color: c.textMain }]}>Seguridad</Text>
-              <Text style={[styles.cardSubtitle, { color: c.textSub }]}>Actualiza tu contraseña de acceso</Text>
+              <Text style={[styles.cardSubtitle, { color: c.textSub }]}>Cambiar contraseña de acceso</Text>
             </View>
             <MaterialCommunityIcons
               name={seccionAbierta === 'seguridad' ? 'chevron-up' : 'chevron-down'}
@@ -659,7 +554,7 @@ export default function ProfileScreen() {
           onPress={logout}
           textColor={c.logoutText}
           style={[styles.logoutButton, { backgroundColor: c.logoutBg, borderColor: c.logoutBorder }]}
-          contentStyle={{ paddingVertical: 4 }}
+          contentStyle={{ paddingVertical: 6 }}
         >
           Cerrar sesión
         </Button>
@@ -680,7 +575,6 @@ export default function ProfileScreen() {
             </Text>
 
             <View style={styles.pickerRow}>
-              {/* Selector de Hora */}
               <View style={styles.pickerCol}>
                 <TouchableOpacity
                   onPress={() => setHoraTemp((h) => (h + 1) % 24)}
@@ -704,7 +598,6 @@ export default function ProfileScreen() {
 
               <Text style={{ color: c.textMain, fontSize: 28, fontWeight: '900', marginBottom: 18 }}>:</Text>
 
-              {/* Selector de Minutos */}
               <View style={styles.pickerCol}>
                 <TouchableOpacity
                   onPress={() => setMinutoTemp((m) => (m + 1) % 60)}
@@ -727,7 +620,6 @@ export default function ProfileScreen() {
               </View>
             </View>
 
-            {/* Atajos rápidos de minutos */}
             <View style={[styles.themeGrid, { marginTop: 12 }]}>
               {[0, 15, 30, 45].map((min) => {
                 const activo = minutoTemp === min;
@@ -786,7 +678,7 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   mainWrapper: { flex: 1 },
-  scrollPadding: { padding: 20, gap: 14, paddingBottom: 44 },
+  scrollPadding: { padding: 20, gap: 14 },
   heroProfileCard: {
     borderRadius: 22,
     borderWidth: 1,
@@ -794,9 +686,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   avatarCircle: {
-    width: 76,
-    height: 76,
-    borderRadius: 26,
+    width: 74,
+    height: 74,
+    borderRadius: 24,
     borderWidth: 2,
     justifyContent: 'center',
     alignItems: 'center',
@@ -853,31 +745,6 @@ const styles = StyleSheet.create({
   },
   cardTitle: { fontSize: 15.5, fontWeight: '700' },
   cardSubtitle: { fontSize: 12 },
-  kpiStrip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 14,
-    borderWidth: 1,
-    paddingVertical: 10,
-    marginTop: 14,
-  },
-  kpiCol: { flex: 1, alignItems: 'center' },
-  kpiDivider: { width: 1, height: 26 },
-  historyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  evaPill: {
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
   themeGrid: {
     flexDirection: 'row',
     gap: 8,
@@ -913,7 +780,7 @@ const styles = StyleSheet.create({
   logoutButton: {
     borderRadius: 14,
     borderWidth: 1,
-    marginTop: 4,
+    marginTop: 6,
   },
   modalBackdrop: {
     flex: 1,

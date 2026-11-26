@@ -22,6 +22,21 @@ function norm(txt) {
     .trim();
 }
 
+function humanizarLenguajePaciente(texto) {
+  if (!texto) return '';
+  return String(texto)
+    .replace(/\boccipucio\b/gi, 'nuca')
+    .replace(/\ben sedente\b/gi, 'sentado')
+    .replace(/\bsedente\b/gi, 'sentado')
+    .replace(/\ben supino\b/gi, 'acostado boca arriba')
+    .replace(/\bdecúbito supino\b/gi, 'acostado boca arriba')
+    .replace(/\bdecúbito prono\b/gi, 'acostado boca abajo')
+    .replace(/\bdecúbito lateral\b/gi, 'acostado de lado')
+    .replace(/\besternocleidomastoideo\b/gi, 'músculos laterales del cuello')
+    .replace(/\bpronosupinación\b/gi, 'giro de palma hacia arriba y abajo')
+    .replace(/\bmetacarpofalángica\b/gi, 'de los nudillos');
+}
+
 function formatearFechaHora(isoStr) {
   if (!isoStr) return '';
   const fecha = new Date(isoStr);
@@ -105,7 +120,7 @@ function obtenerDescansoPorIntensidad(item, extra = {}) {
 function parsearPasosClinicos(descripcion) {
   if (!descripcion) return [];
   const claves = ['Posición inicial:', 'Ejecución:', 'Ritmo y respiración:', 'Precaución postural:'];
-  const texto = String(descripcion);
+  const texto = humanizarLenguajePaciente(String(descripcion));
   const bloques = [];
 
   claves.forEach((clave, idx) => {
@@ -206,7 +221,6 @@ export default function PautaDetailScreen({ route, navigation }) {
   const [seriesHechas, setSeriesHechas] = useState({});
   const [modoGuiado, setModoGuiado] = useState(false);
   const [indiceActual, setIndiceActual] = useState(0);
-  const [mostrarGuiaVideo, setMostrarGuiaVideo] = useState(false);
   const [descansoRestante, setDescansoRestante] = useState(null);
 
   const [evaOpen, setEvaOpen] = useState(false);
@@ -307,7 +321,9 @@ export default function PautaDetailScreen({ route, navigation }) {
     return rawList.map((item, idx) => {
       const ejObj = item.ejercicio && typeof item.ejercicio === 'object' ? item.ejercicio : {};
       const ejId = typeof item.ejercicio === 'number' ? item.ejercicio : (item.ejercicio_id || ejObj.id);
-      const nombre = item.nombre || item.ejercicio_nombre || ejObj.nombre || 'Ejercicio terapéutico';
+      const nombre = humanizarLenguajePaciente(
+        item.nombre || item.ejercicio_nombre || ejObj.nombre || 'Ejercicio terapéutico'
+      );
       const extra = (ejId && catalogoMap[`id_${ejId}`]) || catalogoMap[`nom_${norm(nombre)}`] || {};
 
       const series = Math.max(1, Number(item.series || 3));
@@ -347,7 +363,7 @@ export default function PautaDetailScreen({ route, navigation }) {
         <ScrollView
           contentContainerStyle={[
             styles.container,
-            { paddingTop: insets.top + 16, paddingBottom: Math.max(56, insets.bottom + 32) },
+            { paddingTop: 16, paddingBottom: Math.max(56, insets.bottom + 32) },
           ]}
         >
           <Skeleton height={90} />
@@ -368,41 +384,24 @@ export default function PautaDetailScreen({ route, navigation }) {
   const rutinaCompleta = totalEjercicios > 0 && ejerciciosCompletados === totalEjercicios;
   const progresoGlobal = totalSeries > 0 ? seriesCompletadas / totalSeries : 0;
 
-  const toggleSerie = (ej, serieIdx) => {
-    if (esSoloConsulta) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const actuales = seriesHechas[ej.key] || [];
-    const yaEstaba = actuales.includes(serieIdx);
-    const nuevas = yaEstaba
-      ? actuales.filter((s) => s !== serieIdx)
-      : [...actuales, serieIdx].sort((a, b) => a - b);
-
-    setSeriesHechas((prev) => ({ ...prev, [ej.key]: nuevas }));
-
-    if (!yaEstaba) {
-      const esUltimaSerieFinal = nuevas.length >= ej.series && indiceActual === totalEjercicios - 1;
-      if (!esUltimaSerieFinal && ej.descanso > 0) {
-        setDescansoRestante(ej.descanso);
-      }
-      if (modoGuiado && nuevas.length >= ej.series && indiceActual < totalEjercicios - 1) {
-        setTimeout(() => {
-          setMostrarGuiaVideo(false);
-          setIndiceActual((prev) => Math.min(totalEjercicios - 1, prev + 1));
-        }, 400);
-      }
-    } else {
-      setDescansoRestante(null);
-    }
-  };
-
   const completarSiguienteSerie = (ej) => {
     if (esSoloConsulta) return;
     const actuales = seriesHechas[ej.key] || [];
-    for (let i = 0; i < ej.series; i++) {
-      if (!actuales.includes(i)) {
-        toggleSerie(ej, i);
-        return;
-      }
+    if (actuales.length >= ej.series) return;
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const siguienteIdx = actuales.length;
+    const nuevas = [...actuales, siguienteIdx];
+    setSeriesHechas((prev) => ({ ...prev, [ej.key]: nuevas }));
+
+    const esUltimaSerieFinal = nuevas.length >= ej.series && indiceActual === totalEjercicios - 1;
+    if (!esUltimaSerieFinal && ej.descanso > 0) {
+      setDescansoRestante(ej.descanso);
+    }
+    if (nuevas.length >= ej.series && indiceActual < totalEjercicios - 1) {
+      setTimeout(() => {
+        setIndiceActual((prev) => Math.min(totalEjercicios - 1, prev + 1));
+      }, 450);
     }
   };
 
@@ -410,6 +409,30 @@ export default function PautaDetailScreen({ route, navigation }) {
     if (esSoloConsulta) return;
     setDescansoRestante(null);
     setEvaOpen(true);
+  };
+
+  const solicitarFinalizarRutina = () => {
+    if (esSoloConsulta) return;
+    if (seriesCompletadas === 0) {
+      Alert.alert(
+        'Aún no registras series',
+        'Completa al menos una serie antes de finalizar la sesión, o usa el botón inferior si sentiste dolor agudo.'
+      );
+      return;
+    }
+    if (!rutinaCompleta) {
+      const faltantes = totalSeries - seriesCompletadas;
+      Alert.alert(
+        'Tienes series pendientes',
+        `Aún te faltan ${faltantes} ${faltantes === 1 ? 'serie' : 'series'} por completar. ¿Deseas finalizar la rutina de todas formas?`,
+        [
+          { text: 'Seguir entrenando', style: 'cancel' },
+          { text: 'Finalizar igual', onPress: abrirEvaluacionDolor },
+        ]
+      );
+      return;
+    }
+    abrirEvaluacionDolor();
   };
 
   const enviar = async (nivel, comentario) => {
@@ -440,14 +463,14 @@ export default function PautaDetailScreen({ route, navigation }) {
       if (evaNivel >= 7) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         Alert.alert(
-          `⚠️ Alerta de Dolor Severo (EVA ${evaNivel}/10)`,
-          `Se activó una alerta clínica prioritaria. ${estadoEnvioTexto}\n\nPor seguridad, suspende los ejercicios por hoy, mantén reposo relativo y espera la indicación de tu kinesiólogo antes de retomar la rutina.`,
+          `Alerta de Dolor Severo (EVA ${evaNivel}/10)`,
+          `Se activó una alerta clínica prioritaria. ${estadoEnvioTexto}\n\nPor seguridad, suspende los ejercicios por hoy, mantén reposo relativo y espera la indicación de tu kinesiólogo.`,
           [{ text: 'Entendido', onPress: () => navigation.goBack() }]
         );
       } else if (evaNivel >= 6) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         Alert.alert(
-          `⚠️ Dolor Elevado Registrado (EVA ${evaNivel}/10)`,
+          `Dolor Elevado Registrado (EVA ${evaNivel}/10)`,
           `Se envió una alerta clínica para revisar la carga de tu pauta. ${estadoEnvioTexto}\n\nEvita forzar repeticiones adicionales hoy si persiste la molestia.`,
           [{ text: 'Entendido', onPress: () => navigation.goBack() }]
         );
@@ -456,17 +479,15 @@ export default function PautaDetailScreen({ route, navigation }) {
         Alert.alert(
           '¡Sesión registrada!',
           estado === 'enviado'
-            ? 'Tu sesión diaria quedó completada. Se desbloqueará nuevamente a las 00:00 hrs.'
+            ? 'Tu sesión diaria quedó completada. Podrás realizar la siguiente sesión mañana.'
             : 'Sin conexión: se enviará automáticamente cuando recuperes señal.',
           [{ text: 'Listo', onPress: () => navigation.goBack() }]
         );
       }
     } catch (err) {
-      console.log('Error POST feedback:', err?.response?.status, JSON.stringify(err?.response?.data || err?.message));
       const data = err?.response?.data;
       let detalle = 'No se pudo registrar el feedback. Revisa tu conexión e inténtalo de nuevo.';
-
-      if (typeof data === 'string' && data.trim()) {
+      if (typeof data === 'string' && data.trim() && !data.trim().startsWith('<')) {
         detalle = data.slice(0, 220);
       } else if (Array.isArray(data) && data[0]) {
         detalle = String(data[0]);
@@ -478,7 +499,6 @@ export default function PautaDetailScreen({ route, navigation }) {
           detalle = primerValor;
         }
       }
-
       Alert.alert('No se pudo enviar el reporte', detalle);
     } finally {
       setSending(false);
@@ -491,13 +511,13 @@ export default function PautaDetailScreen({ route, navigation }) {
     if (bloqueadaHastaManana && !metaCumplidaApi) {
       return (
         <View style={[styles.readOnlyBanner, { backgroundColor: c.warningBg, borderColor: c.warning }]}>
-          <MaterialCommunityIcons name="clock-check-outline" size={21} color={c.warning} />
+          <MaterialCommunityIcons name="calendar-check-outline" size={21} color={c.warning} />
           <View style={{ flex: 1 }}>
             <Text style={{ color: c.warning, fontSize: 12.5, fontWeight: '800' }}>
-              Sesión diaria completada • Se desbloquea a las 00:00 hrs
+              Sesión diaria completada • Disponible mañana
             </Text>
             <Text style={{ color: c.textSub, fontSize: 11.5, marginTop: 2, lineHeight: 16 }}>
-              Por hoy ya cumpliste tu entrenamiento de esta pauta (meta: {metaSemanalPauta} {metaSemanalPauta === 1 ? 'vez' : 'veces'}/semana). Puedes repasar los videos cuando quieras.
+              Por hoy ya cumpliste tu entrenamiento de esta pauta (meta: {metaSemanalPauta} {metaSemanalPauta === 1 ? 'vez' : 'veces'}/semana). Puedes repasar la técnica cuando quieras.
             </Text>
           </View>
         </View>
@@ -509,16 +529,17 @@ export default function PautaDetailScreen({ route, navigation }) {
         <MaterialCommunityIcons name="eye-check-outline" size={20} color={c.success} />
         <View style={{ flex: 1 }}>
           <Text style={{ color: c.success, fontSize: 12.5, fontWeight: '800' }}>
-            Modo Solo Consulta • Meta semanal cumplida ({metaSemanalPauta}/{metaSemanalPauta})
+            Modo Repaso • Meta semanal cumplida ({metaSemanalPauta}/{metaSemanalPauta})
           </Text>
           <Text style={{ color: c.textSub, fontSize: 11.5, marginTop: 2, lineHeight: 16 }}>
-            Puedes revisar los videos y la técnica postural, pero el registro de sesiones está pausado hasta tu próximo ciclo.
+            Puedes revisar las indicaciones y la técnica postural, mientras el registro de nuevas sesiones queda pausado hasta tu próximo ciclo.
           </Text>
         </View>
       </View>
     );
   };
 
+  // ================= VISTA GUIADA DE EJERCICIO (JERARQUÍA CLÍNICA + HEADER STICKY) =================
   if (modoGuiado && totalEjercicios > 0) {
     const ej = ejercicios[indiceActual] || ejercicios[0];
     const hechas = seriesHechas[ej.key] || [];
@@ -528,17 +549,18 @@ export default function PautaDetailScreen({ route, navigation }) {
 
     return (
       <View style={[styles.screen, { backgroundColor: c.bg }]}>
-        <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + 12, paddingBottom: Math.max(56, insets.bottom + 32) }]}>
+        {/* Header Sticky fijo arriba */}
+        <View style={[styles.stickyHeader, { backgroundColor: c.surface, borderBottomColor: c.border }]}>
           <View style={styles.topRow}>
             <TouchableOpacity
               onPress={() => { setDescansoRestante(null); setModoGuiado(false); }}
-              style={[styles.pillBtn, { backgroundColor: c.surface, borderColor: c.border }]}
+              style={[styles.pillBtn, { backgroundColor: c.surfaceSoft, borderColor: c.border }]}
             >
               <MaterialCommunityIcons name="format-list-bulleted" size={16} color={c.primary} />
-              <Text style={{ color: c.textMain, fontWeight: '600', fontSize: 13 }}>Lista</Text>
+              <Text style={{ color: c.textMain, fontWeight: '700', fontSize: 13 }}>Ver lista</Text>
             </TouchableOpacity>
 
-            <Text style={{ color: c.textSub, fontWeight: '700', fontSize: 13 }}>
+            <Text style={{ color: c.textMain, fontWeight: '800', fontSize: 13.5 }}>
               Ejercicio {indiceActual + 1} de {totalEjercicios}
             </Text>
 
@@ -551,106 +573,50 @@ export default function PautaDetailScreen({ route, navigation }) {
             <ProgressBar
               progress={progresoGlobal}
               color={rutinaCompleta ? c.success : c.primary}
-              style={{ height: 6, borderRadius: 3, backgroundColor: c.border, marginBottom: 12 }}
+              style={{ height: 6, borderRadius: 3, backgroundColor: c.border, marginTop: 8 }}
             />
           )}
+        </View>
 
+        <ScrollView contentContainerStyle={[styles.container, { paddingBottom: Math.max(56, insets.bottom + 32) }]}>
           {renderBannerSoloConsulta()}
 
           <View style={[styles.mainCard, { backgroundColor: c.surface, borderColor: c.border }]}>
-            {ej.mediaUrl ? (
-              <View>
-                <VideoMedia uri={ej.mediaUrl} />
-                {ej.pasos.length > 0 && (
-                  <TouchableOpacity
-                    onPress={() => setMostrarGuiaVideo((v) => !v)}
-                    style={[styles.toggleStepsBar, { backgroundColor: c.surfaceSoft, borderBottomColor: c.border }]}
-                  >
-                    <Text style={{ color: c.primary, fontWeight: '700', fontSize: 12.5 }}>
-                      {mostrarGuiaVideo ? 'Ocultar instrucciones escritas' : 'Ver instrucciones paso a paso'}
-                    </Text>
-                    <MaterialCommunityIcons
-                      name={mostrarGuiaVideo ? 'chevron-up' : 'chevron-down'}
-                      size={18}
-                      color={c.primary}
-                    />
-                  </TouchableOpacity>
-                )}
-                {mostrarGuiaVideo && ej.pasos.length > 0 && (
-                  <View style={[styles.stepsContainer, { backgroundColor: c.surfaceSoft, borderBottomColor: c.border }]}>
-                    {ej.pasos.map((p, i) => (
-                      <View key={i} style={styles.stepRow}>
-                        <View style={[styles.stepNumber, { backgroundColor: c.accentBg }]}>
-                          <Text style={{ color: c.accentText, fontWeight: '800', fontSize: 11 }}>{i + 1}</Text>
-                        </View>
-                        <Text style={{ flex: 1, color: c.textMain, fontSize: 13, lineHeight: 19 }}>
-                          <Text style={{ fontWeight: '700', color: c.primary }}>{p.titulo}: </Text>
-                          {p.contenido}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </View>
-            ) : (
-              <View style={[styles.stepsContainer, { backgroundColor: c.surfaceSoft, borderBottomColor: c.border }]}>
-                <Text style={{ color: c.primary, fontWeight: '800', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>
-                  Cómo realizar este ejercicio
-                </Text>
-                {ej.pasos.length > 0 ? (
-                  ej.pasos.map((p, i) => (
-                    <View key={i} style={styles.stepRow}>
-                      <View style={[styles.stepNumber, { backgroundColor: c.accentBg }]}>
-                        <Text style={{ color: c.accentText, fontWeight: '800', fontSize: 11 }}>{i + 1}</Text>
-                      </View>
-                      <Text style={{ flex: 1, color: c.textMain, fontSize: 13.5, lineHeight: 20 }}>
-                        <Text style={{ fontWeight: '700', color: c.textMain }}>{p.titulo}: </Text>
-                        {p.contenido}
-                      </Text>
-                    </View>
-                  ))
-                ) : (
-                  <Text style={{ color: c.textSub, fontSize: 13 }}>
-                    Ejecuta el movimiento de forma lenta y controlada sin dolor agudo.
-                  </Text>
-                )}
-              </View>
-            )}
-
-            <View style={{ padding: 18 }}>
-              <Text style={{ color: c.textSub, fontSize: 12, fontWeight: '700', marginBottom: 2 }}>
+            {/* 1. PRIMERO: Qué ejercicio es y cuántas series son */}
+            <View style={{ padding: 18, paddingBottom: 14 }}>
+              <Text style={{ color: c.primary, fontSize: 12, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
                 {ej.zona} • Nivel {ej.dificultad}
               </Text>
-              <Text style={{ color: c.textMain, fontSize: 20, fontWeight: '800', marginBottom: 14 }}>
+              <Text style={{ color: c.textMain, fontSize: 21, fontWeight: '800', marginBottom: 14, lineHeight: 27 }}>
                 {ej.nombre}
               </Text>
 
               <View style={[styles.metricsStrip, { backgroundColor: c.surfaceSoft, borderColor: c.border, marginBottom: esSoloConsulta ? 0 : 14 }]}>
                 <View style={styles.metricCol}>
-                  <Text style={{ color: c.primary, fontSize: 18, fontWeight: '800' }}>{ej.series}</Text>
-                  <Text style={{ color: c.textSub, fontSize: 11, fontWeight: '600' }}>Series</Text>
+                  <Text style={{ color: c.primary, fontSize: 19, fontWeight: '900' }}>{ej.series}</Text>
+                  <Text style={{ color: c.textSub, fontSize: 11.5, fontWeight: '600' }}>Series</Text>
                 </View>
                 <View style={[styles.metricDivider, { backgroundColor: c.border }]} />
                 <View style={styles.metricCol}>
-                  <Text style={{ color: c.primary, fontSize: 18, fontWeight: '800' }}>{ej.repeticiones}</Text>
-                  <Text style={{ color: c.textSub, fontSize: 11, fontWeight: '600' }}>{etiquetaUnidad}</Text>
+                  <Text style={{ color: c.primary, fontSize: 19, fontWeight: '900' }}>{ej.repeticiones}</Text>
+                  <Text style={{ color: c.textSub, fontSize: 11.5, fontWeight: '600' }}>{etiquetaUnidad}</Text>
                 </View>
                 <View style={[styles.metricDivider, { backgroundColor: c.border }]} />
                 <View style={styles.metricCol}>
-                  <Text style={{ color: c.primary, fontSize: 18, fontWeight: '800' }}>{ej.descanso}s</Text>
-                  <Text style={{ color: c.textSub, fontSize: 11, fontWeight: '600' }}>Descanso</Text>
+                  <Text style={{ color: c.primary, fontSize: 19, fontWeight: '900' }}>{ej.descanso}s</Text>
+                  <Text style={{ color: c.textSub, fontSize: 11.5, fontWeight: '600' }}>Descanso</Text>
                 </View>
               </View>
 
+              {/* Controles de series: indicadores pasivos S1..Sn + un solo botón de acción */}
               {!esSoloConsulta && (
                 <>
                   <View style={styles.seriesDotsRow}>
                     {Array.from({ length: ej.series }).map((_, sIdx) => {
                       const done = hechas.includes(sIdx);
                       return (
-                        <TouchableOpacity
+                        <View
                           key={sIdx}
-                          onPress={() => toggleSerie(ej, sIdx)}
                           style={[
                             styles.serieDot,
                             {
@@ -660,14 +626,14 @@ export default function PautaDetailScreen({ route, navigation }) {
                           ]}
                         >
                           <MaterialCommunityIcons
-                            name={done ? 'check' : 'circle-outline'}
+                            name={done ? 'check-circle' : 'circle-outline'}
                             size={15}
                             color={done ? c.success : c.textSub}
                           />
-                          <Text style={{ color: done ? c.success : c.textMain, fontWeight: '700', fontSize: 12.5 }}>
-                            S{sIdx + 1}
+                          <Text style={{ color: done ? c.success : c.textSub, fontWeight: '700', fontSize: 12.5 }}>
+                            Serie {sIdx + 1}
                           </Text>
-                        </TouchableOpacity>
+                        </View>
                       );
                     })}
                   </View>
@@ -676,15 +642,20 @@ export default function PautaDetailScreen({ route, navigation }) {
                     <View style={[styles.restActionBox, { backgroundColor: c.accentBg, borderColor: c.primary }]}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                         <MaterialCommunityIcons name="timer-sand" size={22} color={c.primary} />
-                        <Text style={{ color: c.textMain, fontWeight: '800', fontSize: 16 }}>
-                          Descanso: {descansoRestante}s
-                        </Text>
+                        <View>
+                          <Text style={{ color: c.textMain, fontWeight: '800', fontSize: 16 }}>
+                            Descanso: {descansoRestante}s
+                          </Text>
+                          <Text style={{ color: c.textSub, fontSize: 11.5 }}>
+                            Respira profundo antes de la siguiente serie
+                          </Text>
+                        </View>
                       </View>
                       <TouchableOpacity
                         onPress={() => setDescansoRestante(null)}
                         style={[styles.skipRestBtn, { backgroundColor: c.surface, borderColor: c.primary }]}
                       >
-                        <Text style={{ color: c.primary, fontWeight: '800', fontSize: 12.5 }}>Saltar descanso →</Text>
+                        <Text style={{ color: c.primary, fontWeight: '800', fontSize: 12.5 }}>Saltar →</Text>
                       </TouchableOpacity>
                     </View>
                   ) : !ejTerminado ? (
@@ -710,13 +681,50 @@ export default function PautaDetailScreen({ route, navigation }) {
                 </>
               )}
             </View>
+
+            {/* 2. SEGUNDO: Video demostrativo si existe, o tarjeta visual honesta sin prometer videos */}
+            {ej.mediaUrl ? (
+              <VideoMedia uri={ej.mediaUrl} />
+            ) : (
+              <View style={[styles.noVideoBanner, { backgroundColor: c.surfaceSoft, borderTopColor: c.border, borderBottomColor: c.border }]}>
+                <MaterialCommunityIcons name="human-handsup" size={22} color={c.primary} />
+                <Text style={{ flex: 1, color: c.textSub, fontSize: 12.5, fontWeight: '600' }}>
+                  Guía paso a paso • Sigue las indicaciones posturales de abajo
+                </Text>
+              </View>
+            )}
+
+            {/* 3. TERCERO: Instrucciones claras en español humano */}
+            <View style={[styles.stepsContainer, { backgroundColor: c.surfaceSoft }]}>
+              <Text style={{ color: c.primary, fontWeight: '800', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
+                Cómo realizar este ejercicio
+              </Text>
+              {ej.pasos.length > 0 ? (
+                ej.pasos.map((p, i) => (
+                  <View key={i} style={styles.stepRow}>
+                    <View style={[styles.stepNumber, { backgroundColor: c.accentBg }]}>
+                      <Text style={{ color: c.accentText, fontWeight: '800', fontSize: 11 }}>{i + 1}</Text>
+                    </View>
+                    <Text style={{ flex: 1, color: c.textMain, fontSize: 13.5, lineHeight: 20 }}>
+                      <Text style={{ fontWeight: '700', color: c.textMain }}>{p.titulo}: </Text>
+                      {p.contenido}
+                    </Text>
+                  </View>
+                ))
+              ) : (
+                <Text style={{ color: c.textSub, fontSize: 13 }}>
+                  Ejecuta el movimiento de forma lenta y controlada sin dolor agudo.
+                </Text>
+              )}
+            </View>
           </View>
 
+          {/* Navegación entre ejercicios (sin trampa visual en Finalizar Rutina) */}
           <View style={styles.footerNav}>
             <Button
               mode="outlined"
               disabled={indiceActual === 0}
-              onPress={() => { setDescansoRestante(null); setMostrarGuiaVideo(false); setIndiceActual((p) => Math.max(0, p - 1)); }}
+              onPress={() => { setDescansoRestante(null); setIndiceActual((p) => Math.max(0, p - 1)); }}
               style={{ flex: 1, borderRadius: 12, borderColor: c.border }}
               textColor={c.textMain}
             >
@@ -725,11 +733,11 @@ export default function PautaDetailScreen({ route, navigation }) {
 
             {indiceActual < totalEjercicios - 1 ? (
               <Button
-                mode="contained"
-                onPress={() => { setDescansoRestante(null); setMostrarGuiaVideo(false); setIndiceActual((p) => Math.min(totalEjercicios - 1, p + 1)); }}
-                buttonColor={esSoloConsulta || ejTerminado ? c.primary : c.surfaceSoft}
-                textColor={esSoloConsulta || ejTerminado ? (isDark ? '#0F172A' : '#FFFFFF') : c.textMain}
-                style={{ flex: 1, borderRadius: 12 }}
+                mode={ejTerminado || esSoloConsulta ? 'contained' : 'outlined'}
+                onPress={() => { setDescansoRestante(null); setIndiceActual((p) => Math.min(totalEjercicios - 1, p + 1)); }}
+                buttonColor={ejTerminado || esSoloConsulta ? c.primary : undefined}
+                textColor={ejTerminado || esSoloConsulta ? (isDark ? '#0F172A' : '#FFFFFF') : c.textMain}
+                style={{ flex: 1, borderRadius: 12, borderColor: c.border }}
               >
                 Siguiente →
               </Button>
@@ -745,11 +753,12 @@ export default function PautaDetailScreen({ route, navigation }) {
               </Button>
             ) : (
               <Button
-                mode="contained"
-                onPress={abrirEvaluacionDolor}
-                buttonColor={rutinaCompleta ? c.success : c.primary}
-                textColor="#FFFFFF"
-                style={{ flex: 1, borderRadius: 12 }}
+                mode={rutinaCompleta ? 'contained' : 'outlined'}
+                disabled={seriesCompletadas === 0}
+                onPress={solicitarFinalizarRutina}
+                buttonColor={rutinaCompleta ? c.success : undefined}
+                textColor={rutinaCompleta ? '#FFFFFF' : c.textSub}
+                style={{ flex: 1, borderRadius: 12, borderColor: c.border }}
               >
                 Finalizar Rutina
               </Button>
@@ -783,28 +792,24 @@ export default function PautaDetailScreen({ route, navigation }) {
     );
   }
 
+  // ================= VISTA RESUMEN DE PAUTA =================
   const autorRespuestaPauta = resolverAutorKinesiologo(pauta, respuestasPauta[0]);
   const autorIndicacionPauta = resolverAutorKinesiologo(pauta);
 
   return (
     <View style={[styles.screen, { backgroundColor: c.bg }]}>
-      <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + 16, paddingBottom: Math.max(56, insets.bottom + 32) }]}>
+      <ScrollView contentContainerStyle={[styles.container, { paddingTop: 16, paddingBottom: Math.max(56, insets.bottom + 32) }]}>
         <Text style={{ color: c.textMain, fontSize: 22, fontWeight: '800' }}>
           {pauta.titulo || 'Tu Sesión'}
         </Text>
 
+        {/* Indicaciones clínicas ARRIBA del todo para que el paciente las lea antes de empezar */}
         {!!pauta.notas && (
           <View
-            style={{
-              backgroundColor: c.accentBg,
-              borderColor: c.primary,
-              borderWidth: 1,
-              borderLeftWidth: 4,
-              borderRadius: 14,
-              padding: 13,
-              marginTop: 4,
-              gap: 6,
-            }}
+            style={[
+              styles.indicacionBox,
+              { backgroundColor: c.accentBg, borderColor: c.primary },
+            ]}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -815,7 +820,7 @@ export default function PautaDetailScreen({ route, navigation }) {
               </View>
               {!!pauta.actualizado_en && (
                 <Text style={{ color: c.textSub, fontSize: 11, fontWeight: '600' }}>
-                  Act. {new Date(pauta.actualizado_en).toLocaleDateString('es-CL', { timeZone: 'America/Santiago' })}
+                  {new Date(pauta.actualizado_en).toLocaleDateString('es-CL', { timeZone: 'America/Santiago' })}
                 </Text>
               )}
             </View>
@@ -825,44 +830,66 @@ export default function PautaDetailScreen({ route, navigation }) {
           </View>
         )}
 
-        {renderBannerSoloConsulta()}
-
-        <View style={[styles.summaryBox, { backgroundColor: c.surface, borderColor: c.border }]}>
-          {!esSoloConsulta && (
-            <>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                <Text style={{ color: c.textMain, fontWeight: '700', fontSize: 14 }}>Progreso de hoy</Text>
-                <Text style={{ color: c.primary, fontWeight: '700', fontSize: 13 }}>
-                  {seriesCompletadas}/{totalSeries} series
+        {respuestasPauta.length > 0 && (
+          <View style={[styles.kineReplyBox, { backgroundColor: c.surfaceSoft, borderColor: c.primary }]}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+                <MaterialCommunityIcons name="doctor" size={17} color={c.primary} />
+                <Text style={{ color: c.primary, fontSize: 12.5, fontWeight: '800' }}>
+                  Comentario reciente de {autorRespuestaPauta}
                 </Text>
               </View>
-              <ProgressBar
-                progress={progresoGlobal}
-                color={rutinaCompleta ? c.success : c.primary}
-                style={{ height: 8, borderRadius: 4, backgroundColor: c.border, marginBottom: 14 }}
-              />
-            </>
-          )}
+              {!!formatearFechaHora(respuestasPauta[0].fecha_respuesta || respuestasPauta[0].fecha_ejecucion) && (
+                <Text style={{ color: c.textSub, fontSize: 11, fontWeight: '600' }}>
+                  {formatearFechaHora(respuestasPauta[0].fecha_respuesta || respuestasPauta[0].fecha_ejecucion)}
+                </Text>
+              )}
+            </View>
+            <Text style={{ color: c.textMain, fontSize: 13.5, lineHeight: 19 }}>
+              {String(respuestasPauta[0].respuesta_kinesiologo).trim()}
+            </Text>
+          </View>
+        )}
 
-          <Button
-            mode="contained"
-            icon={esSoloConsulta ? 'eye-outline' : 'play'}
-            onPress={() => {
-              const pendiente = ejercicios.findIndex((ej) => (seriesHechas[ej.key]?.length || 0) < ej.series);
-              setIndiceActual(!esSoloConsulta && pendiente >= 0 ? pendiente : 0);
-              setModoGuiado(true);
-            }}
-            buttonColor={c.primary}
-            textColor={isDark ? '#0F172A' : '#FFFFFF'}
-            style={{ borderRadius: 12 }}
-          >
-            {esSoloConsulta
-              ? 'Repasar Videos y Técnica'
-              : seriesCompletadas > 0
-                ? 'Continuar Sesión'
-                : 'Comenzar Sesión Guiada'}
-          </Button>
-        </View>
+        {renderBannerSoloConsulta()}
+
+        {/* Progreso solo si la sesión está activa */}
+        {!esSoloConsulta && (
+          <View style={[styles.summaryBox, { backgroundColor: c.surface, borderColor: c.border }]}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+              <Text style={{ color: c.textMain, fontWeight: '700', fontSize: 14 }}>Progreso de hoy</Text>
+              <Text style={{ color: c.primary, fontWeight: '700', fontSize: 13 }}>
+                {seriesCompletadas}/{totalSeries} series
+              </Text>
+            </View>
+            <ProgressBar
+              progress={progresoGlobal}
+              color={rutinaCompleta ? c.success : c.primary}
+              style={{ height: 8, borderRadius: 4, backgroundColor: c.border }}
+            />
+          </View>
+        )}
+
+        {/* Botón principal directo (sin caja envolvente extra) */}
+        <Button
+          mode="contained"
+          icon={esSoloConsulta ? 'book-open-variant-outline' : 'play'}
+          onPress={() => {
+            const pendiente = ejercicios.findIndex((ej) => (seriesHechas[ej.key]?.length || 0) < ej.series);
+            setIndiceActual(!esSoloConsulta && pendiente >= 0 ? pendiente : 0);
+            setModoGuiado(true);
+          }}
+          buttonColor={c.primary}
+          textColor={isDark ? '#0F172A' : '#FFFFFF'}
+          style={{ borderRadius: 14, marginTop: 2 }}
+          contentStyle={{ paddingVertical: 6 }}
+        >
+          {esSoloConsulta
+            ? 'Repasar Rutina y Técnica'
+            : seriesCompletadas > 0
+              ? 'Continuar Sesión'
+              : 'Comenzar Sesión Guiada'}
+        </Button>
 
         {ejercicios.map((ej, index) => {
           const hechas = seriesHechas[ej.key]?.length || 0;
@@ -899,36 +926,14 @@ export default function PautaDetailScreen({ route, navigation }) {
           );
         })}
 
-        {respuestasPauta.length > 0 && (
-          <View style={[styles.kineReplyBox, { backgroundColor: c.surfaceSoft, borderColor: c.primary, borderWidth: 1.5, borderLeftWidth: 4 }]}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
-                <MaterialCommunityIcons name="doctor" size={17} color={c.primary} />
-                <Text style={{ color: c.primary, fontSize: 12.5, fontWeight: '800' }}>
-                  Respuesta de {autorRespuestaPauta}
-                </Text>
-              </View>
-              {!!formatearFechaHora(respuestasPauta[0].fecha_respuesta || respuestasPauta[0].fecha_ejecucion) && (
-                <Text style={{ color: c.textSub, fontSize: 11, fontWeight: '600' }}>
-                  {formatearFechaHora(respuestasPauta[0].fecha_respuesta || respuestasPauta[0].fecha_ejecucion)}
-                </Text>
-              )}
-            </View>
-            <Text style={{ color: c.textMain, fontSize: 13.5, lineHeight: 19 }}>
-              {String(respuestasPauta[0].respuesta_kinesiologo).trim()}
-            </Text>
-          </View>
-        )}
-
-        {!esSoloConsulta && (
+        {!esSoloConsulta && seriesCompletadas > 0 && (
           <Button
-            mode="contained"
-            style={{ marginTop: 8, borderRadius: 14 }}
+            mode={rutinaCompleta ? 'contained' : 'outlined'}
+            style={{ marginTop: 8, borderRadius: 14, borderColor: c.border }}
             contentStyle={{ paddingVertical: 6 }}
-            disabled={seriesCompletadas === 0}
-            buttonColor={rutinaCompleta ? c.success : c.primary}
-            textColor="#FFFFFF"
-            onPress={abrirEvaluacionDolor}
+            buttonColor={rutinaCompleta ? c.success : undefined}
+            textColor={rutinaCompleta ? '#FFFFFF' : c.textMain}
+            onPress={solicitarFinalizarRutina}
           >
             Finalizar y enviar evaluación
           </Button>
@@ -947,8 +952,14 @@ export default function PautaDetailScreen({ route, navigation }) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
+  stickyHeader: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+  },
   container: { padding: 16, gap: 10, paddingBottom: 56 },
-  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   pillBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderWidth: 1 },
   readOnlyBanner: {
     flexDirection: 'row',
@@ -958,19 +969,34 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
   },
+  indicacionBox: {
+    borderWidth: 1,
+    borderLeftWidth: 4,
+    borderRadius: 14,
+    padding: 13,
+    gap: 6,
+  },
   mainCard: { borderRadius: 20, borderWidth: 1, overflow: 'hidden' },
   media: { width: '100%', height: 200, backgroundColor: '#000' },
-  toggleStepsBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1 },
-  stepsContainer: { padding: 16, gap: 10, borderBottomWidth: 1 },
+  noVideoBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 11,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+  },
+  stepsContainer: { padding: 16, gap: 10 },
   stepRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   stepNumber: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
   metricsStrip: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1, paddingVertical: 10, marginBottom: 14 },
   metricCol: { flex: 1, alignItems: 'center' },
   metricDivider: { width: 1, height: 26 },
   seriesDotsRow: { flexDirection: 'row', gap: 8, marginBottom: 14, flexWrap: 'wrap' },
-  serieDot: { flex: 1, minWidth: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 9, borderRadius: 10, borderWidth: 1.5 },
+  serieDot: { flex: 1, minWidth: 64, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 8, borderRadius: 10, borderWidth: 1.5 },
   restActionBox: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 12, borderRadius: 14, borderWidth: 1.5 },
-  skipRestBtn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10, borderWidth: 1 },
+  skipRestBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, borderWidth: 1 },
   doneBox: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 14 },
   footerNav: { flexDirection: 'row', gap: 10, marginTop: 6 },
   painStopBtn: {
@@ -984,15 +1010,14 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     marginTop: 6,
   },
-  summaryBox: { padding: 16, borderRadius: 16, borderWidth: 1, marginTop: 4 },
+  summaryBox: { padding: 14, borderRadius: 16, borderWidth: 1 },
   listCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 16, borderWidth: 1.5 },
   badgeStatus: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
   kineReplyBox: {
     padding: 14,
     borderRadius: 16,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderLeftWidth: 4,
-    marginTop: 4,
     gap: 6,
   },
 });

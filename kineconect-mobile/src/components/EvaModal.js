@@ -6,57 +6,27 @@ import { Button, Modal, Portal, Text, TextInput, useTheme } from 'react-native-p
 
 const ESCALA_EVA = [
   { valor: 0, titulo: 'Sin dolor', guia: 'Ejecución limpia, sin molestias durante ni después.', color: '#10B981', icono: 'emoticon-happy-outline' },
-  { valor: 1, titulo: 'Dolor muy leve', guia: 'Apenas perceptible, no interfiere con el movimiento.', color: '#22C55E', icono: 'emoticon-happy-outline' },
-  { valor: 2, titulo: 'Dolor leve', guia: 'Molestia ligera que desaparece al entrar en calor.', color: '#4ADE80', icono: 'emoticon-neutral-outline' },
-  { valor: 3, titulo: 'Dolor leve-moderado', guia: 'Se siente al exigir el rango, pero es totalmente tolerable.', color: '#84CC16', icono: 'emoticon-neutral-outline' },
-  { valor: 4, titulo: 'Dolor moderado', guia: 'Molestia constante que exige bajar un poco el ritmo.', color: '#EAB308', icono: 'emoticon-confused-outline' },
-  { valor: 5, titulo: 'Dolor moderado-alto', guia: 'Incomoda al completar las últimas repeticiones.', color: '#F59E0B', icono: 'emoticon-confused-outline' },
-  { valor: 6, titulo: 'Dolor fuerte', guia: 'Limita parcialmente el rango o la fuerza del ejercicio.', color: '#F97316', icono: 'emoticon-sad-outline' },
-  { valor: 7, titulo: 'Dolor intenso', guia: 'Cuesta mantener la técnica por la molestia.', color: '#EA580C', icono: 'emoticon-sad-outline' },
-  { valor: 8, titulo: 'Dolor muy intenso', guia: 'Obliga a detener o modificar el ejercicio.', color: '#EF4444', icono: 'emoticon-cry-outline' },
-  { valor: 9, titulo: 'Dolor severo', guia: 'Dolor agudo persistente incluso en reposo.', color: '#DC2626', icono: 'emoticon-cry-outline' },
-  { valor: 10, titulo: 'Dolor insoportable', guia: 'Máximo dolor posible; requiere revisión kinésica.', color: '#B91C1C', icono: 'alert-circle-outline' },
+  { valor: 1, titulo: 'Muy leve', guia: 'Apenas perceptible, no interfiere con el movimiento.', color: '#22C55E', icono: 'emoticon-happy-outline' },
+  { valor: 2, titulo: 'Leve', guia: 'Molestia ligera que desaparece al entrar en calor.', color: '#4ADE80', icono: 'emoticon-neutral-outline' },
+  { valor: 3, titulo: 'Leve-moderado', guia: 'Se siente al exigir el rango, pero es tolerable.', color: '#84CC16', icono: 'emoticon-neutral-outline' },
+  { valor: 4, titulo: 'Moderado', guia: 'Molestia constante que exige bajar el ritmo.', color: '#EAB308', icono: 'emoticon-confused-outline' },
+  { valor: 5, titulo: 'Moderado-alto', guia: 'Incomoda al completar las últimas repeticiones.', color: '#F59E0B', icono: 'emoticon-confused-outline' },
+  { valor: 6, titulo: 'Fuerte', guia: 'Limita parcialmente el rango o la fuerza.', color: '#F97316', icono: 'emoticon-sad-outline' },
+  { valor: 7, titulo: 'Intenso', guia: 'Cuesta mantener la técnica por la molestia.', color: '#EA580C', icono: 'emoticon-sad-outline' },
+  { valor: 8, titulo: 'Muy intenso', guia: 'Obliga a detener o modificar el ejercicio.', color: '#EF4444', icono: 'emoticon-cry-outline' },
+  { valor: 9, titulo: 'Severo', guia: 'Dolor agudo persistente incluso en reposo.', color: '#DC2626', icono: 'emoticon-cry-outline' },
+  { valor: 10, titulo: 'Insoportable', guia: 'Máximo dolor posible; requiere revisión kinésica.', color: '#B91C1C', icono: 'alert-circle-outline' },
 ];
 
 const NIVELES_ESFUERZO = [
-  {
-    valor: 2,
-    etiqueta: 'Muy liviano',
-    desc: 'Casi sin esfuerzo, pude hacerlo muy fácil.',
-    icono: 'feather',
-    color: '#10B981',
-  },
-  {
-    valor: 4,
-    etiqueta: 'Moderado',
-    desc: 'Se sintió el trabajo muscular, pero a buen ritmo.',
-    icono: 'walk',
-    color: '#84CC16',
-  },
-  {
-    valor: 6,
-    etiqueta: 'Exigente',
-    desc: 'Me costó un poco, manteniendo buena técnica.',
-    icono: 'run',
-    color: '#EAB308',
-  },
-  {
-    valor: 8,
-    etiqueta: 'Muy exigente',
-    desc: 'Terminé bastante cansado en las últimas series.',
-    icono: 'fire',
-    color: '#F97316',
-  },
-  {
-    valor: 10,
-    etiqueta: 'Al límite',
-    desc: 'Agotamiento máximo, no podía dar más.',
-    icono: 'lightning-bolt',
-    color: '#EF4444',
-  },
+  { valor: 2, etiqueta: 'Muy liviano', desc: 'Casi sin esfuerzo, pude hacerlo muy fácil.', icono: 'feather', color: '#10B981' },
+  { valor: 4, etiqueta: 'Moderado', desc: 'Se sintió el trabajo muscular a buen ritmo.', icono: 'walk', color: '#84CC16' },
+  { valor: 6, etiqueta: 'Exigente', desc: 'Me costó un poco, manteniendo buena técnica.', icono: 'run', color: '#EAB308' },
+  { valor: 8, etiqueta: 'Muy exigente', desc: 'Terminé bastante cansado en las últimas series.', icono: 'fire', color: '#F97316' },
+  { valor: 10, etiqueta: 'Al límite', desc: 'Agotamiento máximo, no podía dar más.', icono: 'lightning-bolt', color: '#EF4444' },
 ];
 
-const SENSACIONES_RAPIDAS = [
+const TAGS_NORMALES = [
   'Buena tolerancia',
   'Fatiga muscular',
   'Rigidez / Tensión',
@@ -64,13 +34,22 @@ const SENSACIONES_RAPIDAS = [
   'Mejor que la sesión anterior',
 ];
 
+const TAGS_DOLOR_ALTO = [
+  'Dolor punzante / agudo',
+  'Tuve que detener la rutina',
+  'Molestia articular',
+  'Irradiación o hormigueo',
+  'Inflamación / Calor local',
+];
+
 export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
   const theme = useTheme();
   const isDark = theme.dark;
 
+  // Sin preselección por defecto para evitar datos falsos
   const [paso, setPaso] = useState(1);
-  const [dolor, setDolor] = useState(0);
-  const [borg, setBorg] = useState(4);
+  const [dolor, setDolor] = useState(null);
+  const [borg, setBorg] = useState(null);
   const [tagsSeleccionados, setTagsSeleccionados] = useState([]);
   const [comentario, setComentario] = useState('');
 
@@ -82,14 +61,20 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
     textSub: isDark ? '#94A3B8' : '#64748B',
     primary: isDark ? '#38BDF8' : '#0284C7',
     accentBg: isDark ? '#082F49' : '#E0F2FE',
+    dangerBg: isDark ? '#450A0A' : '#FEF2F2',
+    dangerBorder: isDark ? '#EF4444' : '#FCA5A5',
+    dangerText: isDark ? '#FCA5A5' : '#DC2626',
   };
 
-  const nivelActual = ESCALA_EVA[dolor] || ESCALA_EVA[0];
-  const esfuerzoActual = NIVELES_ESFUERZO.find((b) => b.valor === borg) || NIVELES_ESFUERZO[1];
+  const nivelActual = dolor !== null ? ESCALA_EVA[dolor] : null;
+  const esfuerzoActual = borg !== null ? NIVELES_ESFUERZO.find((b) => b.valor === borg) : null;
+  const esDolorAlto = dolor !== null && dolor >= 7;
+  const listaTags = esDolorAlto ? TAGS_DOLOR_ALTO : TAGS_NORMALES;
 
   const seleccionarDolor = (val) => {
     Haptics.selectionAsync();
     setDolor(val);
+    setTagsSeleccionados([]);
   };
 
   const seleccionarEsfuerzo = (val) => {
@@ -106,8 +91,8 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
 
   const reiniciarEstado = () => {
     setPaso(1);
-    setDolor(0);
-    setBorg(4);
+    setDolor(null);
+    setBorg(null);
     setTagsSeleccionados([]);
     setComentario('');
   };
@@ -128,6 +113,7 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
   };
 
   const limpiarYEnviar = () => {
+    if (dolor === null || esfuerzoActual === null) return;
     const partes = [`Esfuerzo Borg: ${esfuerzoActual.valor}/10 (${esfuerzoActual.etiqueta})`];
     if (tagsSeleccionados.length > 0) {
       partes.push(`[${tagsSeleccionados.join(', ')}]`);
@@ -150,7 +136,6 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
         ]}
       >
         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-          {/* Indicador de progreso de 3 pasos */}
           <View style={styles.stepHeader}>
             <Text style={[styles.stepCounter, { color: c.primary }]}>
               PASO {paso} DE 3
@@ -161,9 +146,7 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
                   key={num}
                   style={[
                     styles.stepBar,
-                    {
-                      backgroundColor: num <= paso ? c.primary : c.border,
-                    },
+                    { backgroundColor: num <= paso ? c.primary : c.border },
                   ]}
                 />
               ))}
@@ -177,7 +160,7 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
                 ¿Sentiste dolor físico?
               </Text>
               <Text style={[styles.subtitle, { color: c.textSub }]}>
-                Evalúa solo el dolor o molestia articular/muscular (0 = nada, 10 = máximo)
+                Selecciona un número del 0 al 10 para continuar
               </Text>
 
               <View
@@ -185,50 +168,75 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
                   styles.heroCard,
                   {
                     backgroundColor: c.surfaceSoft,
-                    borderColor: nivelActual.color,
+                    borderColor: nivelActual ? nivelActual.color : c.border,
                   },
                 ]}
               >
-                <View style={styles.heroTopRow}>
-                  <View style={[styles.scoreBadge, { backgroundColor: nivelActual.color }]}>
-                    <Text style={styles.scoreNumber}>{nivelActual.valor}</Text>
-                    <Text style={styles.scoreMax}>/10</Text>
-                  </View>
+                {nivelActual ? (
+                  <>
+                    <View style={styles.heroTopRow}>
+                      <View style={[styles.scoreBadge, { backgroundColor: nivelActual.color }]}>
+                        <Text style={styles.scoreNumber}>{nivelActual.valor}</Text>
+                        <Text style={styles.scoreMax}>/10</Text>
+                      </View>
 
-                  <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <MaterialCommunityIcons
-                        name={nivelActual.icono}
-                        size={20}
-                        color={nivelActual.color}
-                      />
-                      <Text style={{ color: nivelActual.color, fontWeight: '800', fontSize: 16 }}>
-                        {nivelActual.titulo}
-                      </Text>
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                          <MaterialCommunityIcons
+                            name={nivelActual.icono}
+                            size={20}
+                            color={nivelActual.color}
+                          />
+                          <Text style={{ color: nivelActual.color, fontWeight: '800', fontSize: 16 }}>
+                            {nivelActual.titulo}
+                          </Text>
+                        </View>
+                        <Text style={{ color: c.textSub, fontSize: 13, marginTop: 4, lineHeight: 18 }}>
+                          {nivelActual.guia}
+                        </Text>
+                      </View>
                     </View>
-                    <Text style={{ color: c.textSub, fontSize: 13, marginTop: 4, lineHeight: 18 }}>
-                      {nivelActual.guia}
+
+                    <View style={styles.trackBar}>
+                      {ESCALA_EVA.map((item) => (
+                        <View
+                          key={item.valor}
+                          style={[
+                            styles.trackSegment,
+                            { backgroundColor: item.valor <= dolor ? item.color : c.border },
+                          ]}
+                        />
+                      ))}
+                    </View>
+                  </>
+                ) : (
+                  <View style={{ alignItems: 'center', paddingVertical: 8 }}>
+                    <Text style={{ color: c.textSub, fontSize: 13.5, fontWeight: '600' }}>
+                      Toca una opción abajo para evaluar tu dolor
                     </Text>
                   </View>
-                </View>
-
-                <View style={styles.trackBar}>
-                  {ESCALA_EVA.map((item) => (
-                    <View
-                      key={item.valor}
-                      style={[
-                        styles.trackSegment,
-                        {
-                          backgroundColor: item.valor <= dolor ? item.color : c.border,
-                        },
-                      ]}
-                    />
-                  ))}
-                </View>
+                )}
               </View>
 
-              <View style={styles.gridNumeros}>
-                {ESCALA_EVA.map((item) => {
+              {/* Botón 0 ancho arriba + grilla simétrica 2x5 (1-5 y 6-10) */}
+              <TouchableOpacity
+                activeOpacity={0.75}
+                onPress={() => seleccionarDolor(0)}
+                style={[
+                  styles.zeroBtn,
+                  {
+                    backgroundColor: dolor === 0 ? '#10B981' : c.surfaceSoft,
+                    borderColor: dolor === 0 ? '#10B981' : c.border,
+                  },
+                ]}
+              >
+                <Text style={{ color: dolor === 0 ? '#FFFFFF' : c.textMain, fontWeight: '800', fontSize: 14 }}>
+                  0 • Sin dolor
+                </Text>
+              </TouchableOpacity>
+
+              <View style={styles.gridRow5}>
+                {ESCALA_EVA.slice(1, 6).map((item) => {
                   const activo = dolor === item.valor;
                   return (
                     <TouchableOpacity
@@ -236,20 +244,38 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
                       activeOpacity={0.75}
                       onPress={() => seleccionarDolor(item.valor)}
                       style={[
-                        styles.numBtn,
+                        styles.numBtn5,
                         {
                           backgroundColor: activo ? item.color : c.surfaceSoft,
                           borderColor: activo ? item.color : c.border,
                         },
                       ]}
                     >
-                      <Text
-                        style={{
-                          color: activo ? '#FFFFFF' : c.textMain,
-                          fontWeight: activo ? '800' : '600',
-                          fontSize: 15,
-                        }}
-                      >
+                      <Text style={{ color: activo ? '#FFFFFF' : c.textMain, fontWeight: '800', fontSize: 15 }}>
+                        {item.valor}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <View style={[styles.gridRow5, { marginTop: 8 }]}>
+                {ESCALA_EVA.slice(6, 11).map((item) => {
+                  const activo = dolor === item.valor;
+                  return (
+                    <TouchableOpacity
+                      key={item.valor}
+                      activeOpacity={0.75}
+                      onPress={() => seleccionarDolor(item.valor)}
+                      style={[
+                        styles.numBtn5,
+                        {
+                          backgroundColor: activo ? item.color : c.surfaceSoft,
+                          borderColor: activo ? item.color : c.border,
+                        },
+                      ]}
+                    >
+                      <Text style={{ color: activo ? '#FFFFFF' : c.textMain, fontWeight: '800', fontSize: 15 }}>
                         {item.valor}
                       </Text>
                     </TouchableOpacity>
@@ -258,9 +284,9 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
               </View>
 
               <View style={styles.extremosRow}>
-                <Text style={{ color: c.textSub, fontSize: 11.5, fontWeight: '600' }}>0 • Sin dolor</Text>
-                <Text style={{ color: c.textSub, fontSize: 11.5, fontWeight: '600' }}>5 • Moderado</Text>
-                <Text style={{ color: c.textSub, fontSize: 11.5, fontWeight: '600' }}>10 • Máximo</Text>
+                <Text style={{ color: c.textSub, fontSize: 11.5, fontWeight: '600' }}>1–3 Leve</Text>
+                <Text style={{ color: c.textSub, fontSize: 11.5, fontWeight: '600' }}>4–6 Moderado</Text>
+                <Text style={{ color: c.textSub, fontSize: 11.5, fontWeight: '600' }}>7–10 Intenso</Text>
               </View>
 
               <View style={styles.actions}>
@@ -270,6 +296,7 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
                 <Button
                   mode="contained"
                   icon="arrow-right"
+                  disabled={dolor === null}
                   contentStyle={{ flexDirection: 'row-reverse', paddingVertical: 4 }}
                   onPress={avanzarPaso}
                   buttonColor={c.primary}
@@ -289,7 +316,7 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
                 ¿Qué tan cansado quedaste?
               </Text>
               <Text style={[styles.subtitle, { color: c.textSub }]}>
-                Elige la opción que mejor describa tu agotamiento físico al terminar
+                Elige una opción para continuar
               </Text>
 
               <View style={styles.esfuerzoList}>
@@ -367,6 +394,7 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
                 <Button
                   mode="contained"
                   icon="arrow-right"
+                  disabled={borg === null}
                   contentStyle={{ flexDirection: 'row-reverse', paddingVertical: 4 }}
                   onPress={avanzarPaso}
                   buttonColor={c.primary}
@@ -380,37 +408,46 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
           )}
 
           {/* ================= PASO 3: SENSACIONES Y OBSERVACIONES ================= */}
-          {paso === 3 && (
+          {paso === 3 && nivelActual && esfuerzoActual && (
             <View>
               <Text style={[styles.title, { color: c.textMain }]}>
                 Comentarios finales
               </Text>
               <Text style={[styles.subtitle, { color: c.textSub }]}>
-                Opcional: marca cómo te sentiste o deja una nota al kinesiólogo
+                Confirma tu reporte para enviarlo a tu kinesiólogo
               </Text>
 
-              {/* Resumen compacto de los pasos 1 y 2 */}
+              {esDolorAlto && (
+                <View style={[styles.alertSafetyBox, { backgroundColor: c.dangerBg, borderColor: c.dangerBorder }]}>
+                  <MaterialCommunityIcons name="alert-octagon" size={20} color={c.dangerText} />
+                  <Text style={{ flex: 1, color: c.dangerText, fontSize: 12, fontWeight: '700', lineHeight: 17 }}>
+                    Reportaste dolor intenso ({nivelActual.valor}/10). Suspende los ejercicios por hoy; se enviará una alerta prioritaria a tu kinesiólogo.
+                  </Text>
+                </View>
+              )}
+
+              {/* Resumen simétrico */}
               <View style={[styles.resumenStrip, { backgroundColor: c.surfaceSoft, borderColor: c.border }]}>
                 <View style={styles.resumenItem}>
-                  <Text style={{ color: c.textSub, fontSize: 11, fontWeight: '600' }}>DOLOR</Text>
-                  <Text style={{ color: nivelActual.color, fontSize: 14, fontWeight: '800', marginTop: 2 }}>
+                  <Text style={{ color: c.textSub, fontSize: 11, fontWeight: '700' }}>DOLOR (EVA)</Text>
+                  <Text numberOfLines={1} style={{ color: nivelActual.color, fontSize: 14, fontWeight: '800', marginTop: 3 }}>
                     {nivelActual.valor}/10 • {nivelActual.titulo}
                   </Text>
                 </View>
                 <View style={[styles.resumenDivider, { backgroundColor: c.border }]} />
                 <View style={styles.resumenItem}>
-                  <Text style={{ color: c.textSub, fontSize: 11, fontWeight: '600' }}>CANSANCIO</Text>
-                  <Text style={{ color: esfuerzoActual.color, fontSize: 14, fontWeight: '800', marginTop: 2 }}>
+                  <Text style={{ color: c.textSub, fontSize: 11, fontWeight: '700' }}>ESFUERZO</Text>
+                  <Text numberOfLines={1} style={{ color: esfuerzoActual.color, fontSize: 14, fontWeight: '800', marginTop: 3 }}>
                     {esfuerzoActual.etiqueta}
                   </Text>
                 </View>
               </View>
 
               <Text style={[styles.sectionLabel, { color: c.textMain }]}>
-                Sensaciones predominantes:
+                {esDolorAlto ? '¿Qué síntoma sentiste?' : 'Sensaciones predominantes:'}
               </Text>
               <View style={styles.tagsWrap}>
-                {SENSACIONES_RAPIDAS.map((tag) => {
+                {listaTags.map((tag) => {
                   const marcado = tagsSeleccionados.includes(tag);
                   return (
                     <TouchableOpacity
@@ -420,14 +457,14 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
                       style={[
                         styles.tagChip,
                         {
-                          backgroundColor: marcado ? c.accentBg : c.surfaceSoft,
-                          borderColor: marcado ? c.primary : c.border,
+                          backgroundColor: marcado ? (esDolorAlto ? c.dangerBg : c.accentBg) : c.surfaceSoft,
+                          borderColor: marcado ? (esDolorAlto ? c.dangerBorder : c.primary) : c.border,
                         },
                       ]}
                     >
                       <Text
                         style={{
-                          color: marcado ? c.primary : c.textSub,
+                          color: marcado ? (esDolorAlto ? c.dangerText : c.primary) : c.textSub,
                           fontSize: 12.5,
                           fontWeight: marcado ? '700' : '500',
                         }}
@@ -442,7 +479,7 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
               <TextInput
                 mode="outlined"
                 label="Observaciones para tu kinesiólogo (opcional)"
-                placeholder="Ej: Sentí leve tirantez en la última serie..."
+                placeholder="Ej: Sentí tirantez en el cuello al final..."
                 value={comentario}
                 onChangeText={setComentario}
                 multiline
@@ -470,8 +507,8 @@ export default function EvaModal({ visible, onDismiss, onSubmit, sending }) {
                   onPress={limpiarYEnviar}
                   loading={sending}
                   disabled={sending}
-                  buttonColor={c.primary}
-                  textColor={isDark ? '#0F172A' : '#FFFFFF'}
+                  buttonColor={esDolorAlto ? '#EF4444' : c.primary}
+                  textColor={esDolorAlto ? '#FFFFFF' : (isDark ? '#0F172A' : '#FFFFFF')}
                   style={{ borderRadius: 12 }}
                   contentStyle={{ paddingVertical: 4 }}
                 >
@@ -530,7 +567,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1.5,
     padding: 14,
-    marginBottom: 14,
+    marginBottom: 12,
   },
   heroTopRow: {
     flexDirection: 'row',
@@ -567,15 +604,20 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
   },
-  gridNumeros: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    justifyContent: 'space-between',
+  zeroBtn: {
+    paddingVertical: 11,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
   },
-  numBtn: {
-    width: '14.5%',
-    minWidth: 42,
+  gridRow5: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  numBtn5: {
+    flex: 1,
     paddingVertical: 11,
     borderRadius: 11,
     borderWidth: 1.5,
@@ -585,7 +627,7 @@ const styles = StyleSheet.create({
   extremosRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 6,
+    marginTop: 8,
     marginBottom: 16,
   },
   esfuerzoList: {
@@ -607,13 +649,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  alertSafetyBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
   resumenStrip: {
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 14,
     borderWidth: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
     marginBottom: 14,
   },
   resumenItem: {
@@ -622,7 +673,7 @@ const styles = StyleSheet.create({
   },
   resumenDivider: {
     width: 1,
-    height: 30,
+    height: 32,
     marginHorizontal: 8,
   },
   sectionLabel: {

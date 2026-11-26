@@ -3,7 +3,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import { useCallback, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Button, ProgressBar, Text, useTheme } from 'react-native-paper';
+import { ProgressBar, Text, useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import EmptyState from '../components/EmptyState';
@@ -95,6 +95,22 @@ function combinarRespuestasKine(listaFeedback = [], listaPautas = []) {
           });
         }
       }
+      // Si la pauta tiene indicaciones clínicas escritas, las incluimos para no contradecir el estado
+      if (p?.notas && String(p.notas).trim().length > 0) {
+        const keyNota = `nota_${p.id}_${p.actualizado_en || p.creado_en || ''}`;
+        if (!mapa.has(keyNota)) {
+          mapa.set(keyNota, {
+            id: keyNota,
+            pauta: p.id,
+            pauta_titulo: p.titulo,
+            kinesiologo_nombre: p.kinesiologo_nombre,
+            nivel_dolor: 0,
+            respuesta_kinesiologo: String(p.notas).trim(),
+            fecha_respuesta: p.actualizado_en || p.creado_en || '',
+            esIndicacionPauta: true,
+          });
+        }
+      }
     });
   }
 
@@ -125,7 +141,7 @@ function obtenerInfoKinesiologo(me, pautas = []) {
 
   return {
     asignado: true,
-    nombre: nombre ? capitalizarNombre(nombre) : 'Kinesiólogo Asignado',
+    nombre: nombre ? capitalizarNombre(nombre) : 'Asignado',
   };
 }
 
@@ -239,20 +255,11 @@ export default function HomeScreen({ navigation }) {
     await cacheSet(CACHE_KEY_OCULTAS, nuevasOcultas);
   };
 
-  const saludoAleatorio = useMemo(() => {
-    const frases = [
-      '¡A darlo todo hoy',
-      'Listo para tu sesión',
-      'Un día más de progreso',
-      'Tu cuerpo te lo agradecerá',
-      'Vamos por esa meta',
-      'Excelente día para moverte',
-    ];
-    const emojis = ['💪', '🏃‍♂️', '🔥', '✨', '🙌', '🚀'];
-    return {
-      frase: frases[Math.floor(Math.random() * frases.length)],
-      emoji: emojis[Math.floor(Math.random() * emojis.length)],
-    };
+  const saludo = useMemo(() => {
+    const hora = new Date().getHours();
+    if (hora < 12) return 'Buenos días';
+    if (hora < 20) return 'Buenas tardes';
+    return 'Buenas noches';
   }, []);
 
   if (error) {
@@ -283,7 +290,7 @@ export default function HomeScreen({ navigation }) {
         ]}
       >
         <Skeleton height={80} />
-        <Skeleton height={160} />
+        <Skeleton height={130} />
         <Skeleton height={110} />
       </ScrollView>
     );
@@ -321,21 +328,13 @@ export default function HomeScreen({ navigation }) {
 
   const esPautaBloqueadaHoy = (pauta) => Boolean(pauta?.completada_hoy);
 
-  const pautaPrincipal =
-    pautas.find((p) => !esPautaCumplida(p) && !esPautaBloqueadaHoy(p)) ||
-    pautas.find((p) => !esPautaCumplida(p)) ||
-    (pautas.length > 0 ? pautas[0] : null);
-
-  const principalCumplida = pautaPrincipal ? esPautaCumplida(pautaPrincipal) : metaGlobalCumplida;
-  const principalBloqueadaHoy = pautaPrincipal ? esPautaBloqueadaHoy(pautaPrincipal) : false;
-  const principalSoloLectura = principalCumplida || principalBloqueadaHoy;
-
   const abrirPauta = (pauta) => {
     if (!pauta?.id) return;
     const cumplida = esPautaCumplida(pauta);
     const bloqueadaHoy = esPautaBloqueadaHoy(pauta);
     navigation.navigate('PautaDetail', {
       id: pauta.id,
+      pautaInicial: pauta,
       soloConsulta: cumplida || bloqueadaHoy,
       bloqueadaHoy,
     });
@@ -354,6 +353,7 @@ export default function HomeScreen({ navigation }) {
 
     navigation.navigate('PautaDetail', {
       id: encontrada?.id ?? pautaId,
+      pautaInicial: encontrada || null,
       soloConsulta: cumplida || bloqueadaHoy,
       bloqueadaHoy,
     });
@@ -374,12 +374,12 @@ export default function HomeScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl onRefresh={onRefresh} refreshing={refreshing} tintColor={c.primary} />}
       >
-        {/* Cabecera superior */}
+        {/* Cabecera superior limpia */}
         <View style={styles.header}>
           <View style={styles.headerTextContainer}>
-            <Text style={[styles.subGreeting, { color: c.primary }]}>PANEL DEL PACIENTE</Text>
-            <Text style={[styles.greeting, { color: c.textMain }]}>
-              {saludoAleatorio.frase}, {nombrePaciente} {saludoAleatorio.emoji}
+            <Text style={[styles.subGreeting, { color: c.primary }]}>MI REHABILITACIÓN</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.greeting, { color: c.textMain }]}>
+              {saludo}, {nombrePaciente}
             </Text>
 
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
@@ -398,28 +398,23 @@ export default function HomeScreen({ navigation }) {
                   size={14}
                 />
                 <Text style={[styles.kineText, { color: infoKine.asignado ? c.accentText : c.textSub }]}>
-                  {infoKine.asignado ? infoKine.nombre : 'Sin kinesiólogo asignado'}
+                  {infoKine.asignado ? `Kinesiólogo: ${infoKine.nombre}` : 'Sin kinesiólogo asignado'}
                 </Text>
               </View>
 
-              <View
-                style={[
-                  styles.kineTag,
-                  {
-                    backgroundColor: pendientesOffline > 0 ? c.warningBg : c.successBg,
-                    borderColor: pendientesOffline > 0 ? c.warning : c.success,
-                  },
-                ]}
-              >
-                <MaterialCommunityIcons
-                  color={pendientesOffline > 0 ? c.warning : c.success}
-                  name={pendientesOffline > 0 ? 'cloud-upload-outline' : 'cloud-check-outline'}
-                  size={14}
-                />
-                <Text style={[styles.kineText, { color: pendientesOffline > 0 ? c.warning : c.success }]}>
-                  {pendientesOffline > 0 ? `${pendientesOffline} por sincronizar` : 'Sincronizado'}
-                </Text>
-              </View>
+              {pendientesOffline > 0 && (
+                <View
+                  style={[
+                    styles.kineTag,
+                    { backgroundColor: c.warningBg, borderColor: c.warning },
+                  ]}
+                >
+                  <MaterialCommunityIcons color={c.warning} name="cloud-upload-outline" size={14} />
+                  <Text style={[styles.kineText, { color: c.warning }]}>
+                    {pendientesOffline} por enviar
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
 
@@ -434,7 +429,7 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* Tarjeta Hero: Progreso Semanal + Acción Rápida */}
+        {/* Tarjeta de Adherencia Semanal (sin duplicar acciones de las pautas) */}
         <View style={[styles.heroCard, { backgroundColor: c.surface, borderColor: c.border }]}>
           <View style={styles.statsHeader}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -461,7 +456,7 @@ export default function HomeScreen({ navigation }) {
                   fontWeight: '700',
                 }}
               >
-                {metaGlobalCumplida ? '✓ Meta cumplida' : `${Math.round(progreso * 100)}%`}
+                {metaGlobalCumplida ? '✓ Meta semanal cumplida' : `${Math.round(progreso * 100)}%`}
               </Text>
             </View>
           </View>
@@ -471,7 +466,7 @@ export default function HomeScreen({ navigation }) {
               {Math.min(sesionesSemana, metaSemanal)}
             </Text>
             <Text style={[styles.totalSessions, { color: c.textSub }]}>
-              {' '}/ {metaSemanal} sesiones completadas
+              {' '}/ {metaSemanal} sesiones esta semana
             </Text>
           </View>
 
@@ -480,41 +475,6 @@ export default function HomeScreen({ navigation }) {
             progress={progreso}
             style={[styles.thickProgressBar, { backgroundColor: c.surfaceSoft }]}
           />
-
-          {metaGlobalCumplida ? (
-            <View style={[styles.restNoticeBox, { backgroundColor: c.successBg, borderColor: c.success }]}>
-              <MaterialCommunityIcons name="shield-check-outline" size={18} color={c.success} />
-              <Text style={{ flex: 1, color: c.success, fontSize: 12.5, fontWeight: '700', lineHeight: 17 }}>
-                Meta semanal completada. Puedes repasar tus videos y técnica en modo solo consulta.
-              </Text>
-            </View>
-          ) : principalBloqueadaHoy ? (
-            <View style={[styles.restNoticeBox, { backgroundColor: c.warningBg, borderColor: c.warning }]}>
-              <MaterialCommunityIcons name="clock-check-outline" size={18} color={c.warning} />
-              <Text style={{ flex: 1, color: c.warning, fontSize: 12.5, fontWeight: '700', lineHeight: 17 }}>
-                Sesión de hoy completada. Se desbloqueará nuevamente a las 00:00 hrs.
-              </Text>
-            </View>
-          ) : null}
-
-          {pautaPrincipal && (
-            <Button
-              mode={principalSoloLectura ? 'outlined' : 'contained'}
-              icon={principalSoloLectura ? 'eye-outline' : 'play'}
-              onPress={() => abrirPauta(pautaPrincipal)}
-              buttonColor={principalSoloLectura ? c.accentBg : c.primary}
-              textColor={principalSoloLectura ? c.primary : (isDark ? '#0F172A' : '#FFFFFF')}
-              style={[
-                { marginTop: 16, borderRadius: 14 },
-                principalSoloLectura && { borderColor: c.primary, borderWidth: 1.5 },
-              ]}
-              contentStyle={{ paddingVertical: 4 }}
-            >
-              {principalSoloLectura
-                ? `Repasar ejercicios: ${pautaPrincipal.titulo}`
-                : `Entrenar: ${pautaPrincipal.titulo}`}
-            </Button>
-          )}
         </View>
 
         {/* Listado de Pautas Activas */}
@@ -573,9 +533,9 @@ export default function HomeScreen({ navigation }) {
                       color={pautaCumplida ? c.success : pautaBloqueadaHoy ? c.warning : c.primary}
                       name={
                         pautaCumplida
-                          ? 'book-open-page-variant-outline'
+                          ? 'check-decagram-outline'
                           : pautaBloqueadaHoy
-                          ? 'clock-check-outline'
+                          ? 'calendar-check-outline'
                           : 'dumbbell'
                       }
                       size={24}
@@ -591,7 +551,7 @@ export default function HomeScreen({ navigation }) {
                       {pautaCumplida
                         ? `Meta semanal cumplida (${metaP}/${metaP})`
                         : pautaBloqueadaHoy
-                        ? `Hecha hoy (${hechasP ?? 1}/${metaP}) • Vuelve a las 00:00`
+                        ? `Sesión de hoy completada (${hechasP ?? 1}/${metaP})`
                         : hechasP != null
                         ? `${hechasP}/${metaP} sesiones esta semana`
                         : `Frecuencia: ${metaP}x/semana`}
@@ -600,17 +560,19 @@ export default function HomeScreen({ navigation }) {
 
                   <View
                     style={[
-                      styles.playPill,
-                      {
-                        backgroundColor: soloLectura ? c.accentBg : c.primary,
-                      },
+                      styles.actionPill,
+                      { backgroundColor: soloLectura ? c.accentBg : c.primary },
                     ]}
                   >
-                    <MaterialCommunityIcons
-                      color={soloLectura ? c.primary : (isDark ? '#0F172A' : '#FFFFFF')}
-                      name={soloLectura ? 'eye-outline' : 'chevron-right'}
-                      size={20}
-                    />
+                    <Text
+                      style={{
+                        color: soloLectura ? c.primary : (isDark ? '#0F172A' : '#FFFFFF'),
+                        fontSize: 12,
+                        fontWeight: '800',
+                      }}
+                    >
+                      {soloLectura ? 'Repasar' : 'Iniciar'}
+                    </Text>
                   </View>
                 </View>
 
@@ -627,10 +589,10 @@ export default function HomeScreen({ navigation }) {
           })
         )}
 
-        {/* Respuestas del Kinesiólogo (con Visto y Cerrar) */}
+        {/* Indicaciones y Respuestas del Kinesiólogo */}
         <View style={[styles.sectionHeader, { marginTop: 12, justifyContent: 'space-between' }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Text style={[styles.sectionTitle, { color: c.textMain }]}>Respuesta de tu kinesiólogo</Text>
+            <Text style={[styles.sectionTitle, { color: c.textMain }]}>Indicaciones del kinesiólogo</Text>
             {respuestasVisibles.length > 0 && (
               <View
                 style={[
@@ -646,7 +608,7 @@ export default function HomeScreen({ navigation }) {
                 >
                   {cantidadNuevas > 0
                     ? `${cantidadNuevas} nueva${cantidadNuevas > 1 ? 's' : ''}`
-                    : 'Todo leído'}
+                    : 'Leídas'}
                 </Text>
               </View>
             )}
@@ -658,7 +620,7 @@ export default function HomeScreen({ navigation }) {
               onPress={() => limpiarRespuestasLeidas(respuestasVisibles)}
             >
               <Text style={{ color: c.textSub, fontSize: 12, fontWeight: '700' }}>
-                Limpiar leídos
+                Limpiar leídas
               </Text>
             </TouchableOpacity>
           )}
@@ -668,7 +630,7 @@ export default function HomeScreen({ navigation }) {
           <View style={[styles.respuestaEmptyCard, { backgroundColor: c.surface, borderColor: c.border }]}>
             <MaterialCommunityIcons name="message-text-outline" size={20} color={c.textSub} />
             <Text style={{ flex: 1, color: c.textSub, fontSize: 12.5, lineHeight: 18 }}>
-              No tienes mensajes pendientes de tu kinesiólogo.
+              No tienes indicaciones nuevas de tu kinesiólogo.
             </Text>
           </View>
         ) : (
@@ -676,8 +638,7 @@ export default function HomeScreen({ navigation }) {
             const fechaTexto = formatearFechaCorta(item.fecha_respuesta || item.fecha_ejecucion);
             const tituloPauta = item.pauta_titulo || item.titulo_pauta || '';
             const autorKine = capitalizarNombre(item.kinesiologo_nombre || infoKine.nombre || 'Tu Kinesiólogo');
-            const requiereRevisionPauta = Number(item?.nivel_dolor ?? 0) >= 6;
-            const pautaId = requiereRevisionPauta ? obtenerPautaIdRespuesta(item) : null;
+            const pautaId = obtenerPautaIdRespuesta(item);
             const yaVisto = Boolean(respuestasVistas[clave]);
             const esNueva = !yaVisto;
 
@@ -728,7 +689,7 @@ export default function HomeScreen({ navigation }) {
                       </View>
                     ) : (
                       <View style={[styles.nuevaPill, { backgroundColor: c.surfaceSoft, borderColor: c.border }]}>
-                        <Text style={[styles.nuevaText, { color: c.textSub }]}>✓ Visto</Text>
+                        <Text style={[styles.nuevaText, { color: c.textSub }]}>✓ Leída</Text>
                       </View>
                     )}
 
@@ -769,7 +730,7 @@ export default function HomeScreen({ navigation }) {
                       >
                         <MaterialCommunityIcons name="check" size={14} color={c.primary} />
                         <Text style={[styles.verPautaLink, { color: c.primary }]}>
-                          Marcar como visto
+                          Marcar como leída
                         </Text>
                       </TouchableOpacity>
                     ) : (
@@ -783,7 +744,7 @@ export default function HomeScreen({ navigation }) {
                         style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
                       >
                         <Text style={[styles.verPautaLink, { color: c.primary }]}>
-                          Revisar pauta ajustada
+                          Ir a la pauta
                         </Text>
                         <MaterialCommunityIcons name="arrow-right" size={14} color={c.primary} />
                       </TouchableOpacity>
@@ -806,7 +767,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 20,
+    marginBottom: 18,
     gap: 12,
   },
   headerTextContainer: { flex: 1 },
@@ -833,19 +794,19 @@ const styles = StyleSheet.create({
   },
   kineText: { fontSize: 12, fontWeight: '700' },
   avatarPlaceholder: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
+    width: 46,
+    height: 46,
+    borderRadius: 15,
     borderWidth: 1.5,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  avatarText: { fontSize: 20, fontWeight: '800' },
+  avatarText: { fontSize: 19, fontWeight: '800' },
   heroCard: {
     borderRadius: 20,
     padding: 18,
     borderWidth: 1,
-    marginBottom: 24,
+    marginBottom: 22,
   },
   statsHeader: {
     flexDirection: 'row',
@@ -874,16 +835,6 @@ const styles = StyleSheet.create({
   currentSessions: { fontSize: 30, fontWeight: '900' },
   totalSessions: { fontSize: 14, fontWeight: '600' },
   thickProgressBar: { height: 9, borderRadius: 5 },
-  restNoticeBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -916,10 +867,10 @@ const styles = StyleSheet.create({
   pautaInfo: { flex: 1 },
   pautaTitle: { fontSize: 15.5, fontWeight: '700', marginBottom: 3 },
   pautaSubtitle: { fontSize: 12.5 },
-  playPill: {
-    width: 34,
-    height: 34,
-    borderRadius: 11,
+  actionPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
