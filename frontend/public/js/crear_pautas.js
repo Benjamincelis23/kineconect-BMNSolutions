@@ -564,11 +564,11 @@ function filtrarYRenderizarEjercicios() {
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                padding: 6px 10px;
+                padding: 7px 11px;
                 margin-top: ${idx === 0 ? '2px' : '12px'};
                 margin-bottom: 4px;
-                background: #f1f5f9;
-                border-left: 3px solid var(--azul-900);
+                background: rgba(14, 165, 233, 0.12);
+                border-left: 3px solid #0284c7;
                 border-radius: 6px;
             `;
             cabecera.innerHTML = `

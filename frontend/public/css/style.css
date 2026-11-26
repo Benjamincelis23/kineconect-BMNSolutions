@@ -1603,3 +1603,13 @@ html[data-theme="dark"] .empty-text {
 [data-theme="dark"] .field[style*="#f0f9ff"] small {
     color: #7dd3fc !important;
 }
+[data-theme="dark"] .btn-vista-toggle.inactivo {
+    background: #0f1929 !important;
+    color: #94a3b8 !important;
+    border-color: #334155 !important;
+}
+
+[data-theme="dark"] #lista-ejercicios-disponibles > div:not(.ejercicio-item-card) {
+    background: rgba(56, 189, 248, 0.12) !important;
+    border-left-color: #38bdf8 !important;
+}
