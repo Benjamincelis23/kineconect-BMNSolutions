@@ -429,10 +429,17 @@ class FeedbackCreateView(generics.CreateAPIView):
         pauta = serializer.validated_data['pauta']
         if pauta.paciente_id != self.request.user.id:
             raise PermissionDenied('Esa pauta no es tuya.')
-        _validar_limite_sesiones(pauta)
+
+        completado = bool(serializer.validated_data.get('completado', False))
+        nivel_dolor = int(serializer.validated_data.get('nivel_dolor', 0) or 0)
+
+        # Solo validamos límite diario/semanal si intenta completar una sesión o reporta rutina normal.
+        # Si detiene la sesión por dolor agudo (completado=False y EVA >= 6), siempre se registra la alerta.
+        if completado or nivel_dolor < 6:
+            _validar_limite_sesiones(pauta)
+
         feedback = serializer.save()
         _notificar_alerta_dolor(feedback)
-
 
 class CambiarPasswordView(APIView):
     permission_classes = [IsAuthenticated]
@@ -806,6 +813,12 @@ class RegistroFeedbackViewSet(viewsets.ModelViewSet):
         pauta = serializer.validated_data['pauta']
         if _rol(user) == 'PACIENTE' and not _es_admin(user) and pauta.paciente_id != user.id:
             raise PermissionDenied('Esa pauta no es tuya.')
-        _validar_limite_sesiones(pauta)
+
+        completado = bool(serializer.validated_data.get('completado', False))
+        nivel_dolor = int(serializer.validated_data.get('nivel_dolor', 0) or 0)
+
+        if completado or nivel_dolor < 6:
+            _validar_limite_sesiones(pauta)
+
         feedback = serializer.save()
         _notificar_alerta_dolor(feedback)

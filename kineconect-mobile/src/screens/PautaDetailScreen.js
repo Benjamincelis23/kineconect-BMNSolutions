@@ -165,7 +165,12 @@ function VideoMedia({ uri }) {
 }
 
 export default function PautaDetailScreen({ route, navigation }) {
-  const { id, soloConsulta: soloConsultaParam = false, bloqueadaHoy: bloqueadaHoyParam = false } = route.params;
+  const {
+    id,
+    pautaInicial = null,
+    soloConsulta: soloConsultaParam = false,
+    bloqueadaHoy: bloqueadaHoyParam = false,
+  } = route.params;
   const theme = useTheme();
   const isDark = theme.dark;
   const insets = useSafeAreaInsets();
@@ -189,12 +194,14 @@ export default function PautaDetailScreen({ route, navigation }) {
     dangerBorder: isDark ? '#EF4444' : '#FCA5A5',
   };
 
-  const [pauta, setPauta] = useState(null);
+  const [pauta, setPauta] = useState(pautaInicial);
   const [catalogoMap, setCatalogoMap] = useState({});
   const [respuestasPauta, setRespuestasPauta] = useState([]);
   const [error, setError] = useState(false);
   const [metaCumplidaApi, setMetaCumplidaApi] = useState(Boolean(soloConsultaParam));
-  const [completadaHoyApi, setCompletadaHoyApi] = useState(Boolean(bloqueadaHoyParam));
+  const [completadaHoyApi, setCompletadaHoyApi] = useState(
+    Boolean(bloqueadaHoyParam) || Boolean(pautaInicial?.completada_hoy)
+  );
 
   const [seriesHechas, setSeriesHechas] = useState({});
   const [modoGuiado, setModoGuiado] = useState(false);
@@ -259,21 +266,28 @@ export default function PautaDetailScreen({ route, navigation }) {
         if (cachedMap) setCatalogoMap(cachedMap);
       }
     } catch {
-      const [cachedPauta, cachedMap, cachedFb] = await Promise.all([
+      const [cachedPauta, cachedMap, cachedFb, homeCache] = await Promise.all([
         cacheGet(`pauta_${id}`),
         cacheGet('catalogo_ejercicios_map_v2'),
         cacheGet(`pauta_feedback_${id}`),
+        cacheGet('home'),
       ]);
       if (cachedMap) setCatalogoMap(cachedMap);
       if (Array.isArray(cachedFb)) setRespuestasPauta(ordenarRespuestasRecientes(cachedFb));
-      if (cachedPauta) {
-        setPauta(cachedPauta);
-        if (cachedPauta.completada_hoy) setCompletadaHoyApi(true);
+
+      const pautaDesdeHome = Array.isArray(homeCache?.pautas)
+        ? homeCache.pautas.find((item) => Number(item?.id) === Number(id))
+        : null;
+      const respaldo = cachedPauta || pautaInicial || pautaDesdeHome;
+
+      if (respaldo) {
+        setPauta(respaldo);
+        if (respaldo.completada_hoy) setCompletadaHoyApi(true);
       } else {
         setError(true);
       }
     }
-  }, [id]);
+  }, [id, pautaInicial]);
 
   useEffect(() => { cargar(); }, [cargar]);
 
@@ -448,8 +462,24 @@ export default function PautaDetailScreen({ route, navigation }) {
         );
       }
     } catch (err) {
-      const msgApi = err?.response?.data?.detail || err?.response?.data?.[0];
-      Alert.alert('Aviso', typeof msgApi === 'string' ? msgApi : 'No se pudo registrar el feedback.');
+      console.log('Error POST feedback:', err?.response?.status, JSON.stringify(err?.response?.data || err?.message));
+      const data = err?.response?.data;
+      let detalle = 'No se pudo registrar el feedback. Revisa tu conexión e inténtalo de nuevo.';
+
+      if (typeof data === 'string' && data.trim()) {
+        detalle = data.slice(0, 220);
+      } else if (Array.isArray(data) && data[0]) {
+        detalle = String(data[0]);
+      } else if (data && typeof data === 'object') {
+        const primerValor = data.detail || data.non_field_errors || Object.values(data)[0];
+        if (Array.isArray(primerValor) && primerValor[0]) {
+          detalle = String(primerValor[0]);
+        } else if (typeof primerValor === 'string') {
+          detalle = primerValor;
+        }
+      }
+
+      Alert.alert('No se pudo enviar el reporte', detalle);
     } finally {
       setSending(false);
     }
