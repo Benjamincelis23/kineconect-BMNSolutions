@@ -707,6 +707,9 @@ class PautaViewSet(viewsets.ModelViewSet):
                         kwargs_det['repeticiones'] = int(item.get('repeticiones', 12))
                     if 'tiempo_descanso_segundos' in campos_validos:
                         kwargs_det['tiempo_descanso_segundos'] = int(item.get('tiempo_descanso_segundos', 60))
+                    if 'unidad_medida' in campos_validos:
+                        unidad = str(item.get('unidad_medida', 'REPS')).upper()
+                        kwargs_det['unidad_medida'] = unidad if unidad in ('REPS', 'SEG') else 'REPS'
                     if 'orden' in campos_validos:
                         kwargs_det['orden'] = int(item.get('orden', idx + 1))
                     DetalleModel.objects.create(**kwargs_det)

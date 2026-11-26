@@ -7,6 +7,7 @@ let zonaSeleccionadaActual = '';
 let areaClinicaActual = 'todos';
 let soloConVideoPauta = false;
 let vistaActual = 'frontal';
+let pautaEditandoId = null;
 
 const ORDEN_ZONAS_CLINICAS = [
     'Cuello',
@@ -1076,12 +1077,26 @@ window.confirmarGuardadoFinal = async function () {
     };
 
     try {
-        await api.crearPauta(payload);
+        if (pautaEditandoId) {
+            payload.ejercicios = payload.ejercicios_detalle;
+            if (typeof api.actualizarPauta === 'function') {
+                await api.actualizarPauta(pautaEditandoId, payload);
+            } else {
+                await api.request(`/pautas/${pautaEditandoId}/`, {
+                    method: 'PATCH',
+                    body: JSON.stringify(payload),
+                });
+            }
+        } else {
+            await api.crearPauta(payload);
+        }
         cerrarModalDosificacion();
         mostrarToast(
-            esSoloPlantilla
-                ? '¡Protocolo maestro guardado con éxito!'
-                : '¡Pauta clínica creada y asignada con éxito!',
+            pautaEditandoId
+                ? '¡Pauta clínica actualizada con éxito!'
+                : esSoloPlantilla
+                    ? '¡Protocolo maestro guardado con éxito!'
+                    : '¡Pauta clínica creada y asignada con éxito!',
             'success',
             1600
         );
@@ -1093,9 +1108,11 @@ window.confirmarGuardadoFinal = async function () {
         mostrarToast(`Error al guardar: ${error.message || 'Comprueba los datos ingresados.'}`, 'error', 4500);
         if (btnFinal) {
             btnFinal.disabled = false;
-            btnFinal.innerHTML = esSoloPlantilla
-                ? "<i class='bx bx-bookmark-alt'></i> Confirmar y Guardar Plantilla"
-                : "<i class='bx bx-check-circle'></i> Confirmar y Asignar Pauta";
+            btnFinal.innerHTML = pautaEditandoId
+                ? "<i class='bx bx-check-circle'></i> Confirmar Cambios"
+                : esSoloPlantilla
+                    ? "<i class='bx bx-bookmark-alt'></i> Confirmar y Guardar Plantilla"
+                    : "<i class='bx bx-check-circle'></i> Confirmar y Asignar Pauta";
         }
     }
 };
@@ -1162,6 +1179,23 @@ async function cargarSelectorPlantillas() {
             if (pauta) {
                 if (pauta.es_plantilla) select.value = String(pauta.id);
                 aplicarPautaAlFormulario(pauta);
+            }
+        }
+        const editarId = parseInt(new URLSearchParams(window.location.search).get('editar'), 10);
+        if (editarId) {
+            pautaEditandoId = editarId;
+            let pautaEditar = todasLasPautas.find(p => p.id === editarId);
+            if (!pautaEditar && typeof api.request === 'function') {
+                pautaEditar = await api.request(`/pautas/${editarId}/`);
+            }
+            if (pautaEditar) {
+                aplicarPautaAlFormulario(pautaEditar);
+                const selectPac = document.getElementById('select-paciente-pauta');
+                if (selectPac && pautaEditar.paciente) {
+                    selectPac.value = String(pautaEditar.paciente);
+                }
+                const h2 = document.querySelector('.page-header h2');
+                if (h2) h2.textContent = `Editar Pauta Prescrita #${editarId}`;
             }
         }
     } catch (error) {

@@ -305,10 +305,10 @@ class PautaListSerializer(serializers.ModelSerializer):
         model = Pauta
         fields = [
             'id', 'titulo', 'notas', 'paciente', 'paciente_nombre', 'paciente_rut',
-            'kinesiologo_nombre', 'creado_en', 'actualizado_en', 'fecha_creacion', 'activo',
-            'total_ejercicios', 'cantidad_ejercicios', 'es_plantilla',
+            'kinesiologo_nombre', 'es_plantilla', 'activo', 'frecuencia_semanal', 'completada_hoy',
+            'creado_en', 'actualizado_en', 'fecha_creacion',
             'sesiones_semana', 'meta_semanal', 'evolucion_clinica',
-            'ultima_respuesta_kine', 'ejercicios_detalle', 'frecuencia_semanal', 'completada_hoy'
+            'ultima_respuesta_kine', 'ejercicios', 'ejercicios_detalle',
         ]
 
     def get_paciente_nombre(self, obj):
