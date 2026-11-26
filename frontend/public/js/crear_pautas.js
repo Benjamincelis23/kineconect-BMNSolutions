@@ -786,29 +786,30 @@ function asegurarModalDosificacion() {
     modal.className = 'modal-overlay';
     modal.style.cssText = 'display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.72); z-index: 9998; align-items: center; justify-content: center; padding: 16px;';
     modal.innerHTML = `
-        <div class="card" style="width: 100%; max-width: 860px; max-height: 90vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 16px;">
-            <div style="padding: 18px 22px; border-bottom: 1px solid var(--gris-200); display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+        <div class="card" style="width: 100%; max-width: 920px; max-height: 92vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 16px;">
+            <!-- Header fijo -->
+            <div style="padding: 16px 22px; border-bottom: 1px solid var(--gris-200); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-shrink: 0;">
                 <div>
-                    <h3 style="margin: 0; font-size: 1.15rem; color: var(--azul-900); display: flex; align-items: center; gap: 8px;">
+                    <h3 style="margin: 0; font-size: 1.12rem; color: var(--azul-900); display: flex; align-items: center; gap: 8px;">
                         <i class='bx bx-sliders-alt' style="color: #0284c7;"></i> Configurar Dosificación y Confirmar Pauta
                     </h3>
-                    <p id="modal-dosif-subtitulo" style="margin: 4px 0 0; font-size: 0.83rem; color: var(--gris-600);"></p>
+                    <p id="modal-dosif-subtitulo" style="margin: 3px 0 0; font-size: 0.82rem; color: var(--gris-600);"></p>
                 </div>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="cerrarModalDosificacion()">
                     <i class='bx bx-arrow-back'></i> Volver a elegir
                 </button>
             </div>
 
-            <div style="padding: 18px 22px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 16px;">
-                <!-- Resumen editable de cabecera -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; padding: 14px; border-radius: 12px; border: 1px solid var(--gris-200); background: var(--gris-50, #f8fafc);">
+            <!-- Cabecera fija de datos generales (no se pierde al hacer scroll) -->
+            <div style="padding: 14px 22px; border-bottom: 1px solid var(--gris-200); background: var(--gris-50, #f8fafc); flex-shrink: 0;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;">
                     <div class="field" style="margin: 0;">
-                        <label style="font-size: 0.76rem; font-weight: 700;">Nombre de la Pauta *</label>
-                        <input type="text" id="modal-dosif-titulo" style="width: 100%; padding: 7px 10px; font-size: 0.86rem;">
+                        <label style="font-size: 0.74rem; font-weight: 700; margin-bottom: 3px; display: block;">Nombre de la Pauta *</label>
+                        <input type="text" id="modal-dosif-titulo" style="width: 100%; padding: 6px 10px; font-size: 0.85rem;">
                     </div>
                     <div class="field" style="margin: 0;">
-                        <label style="font-size: 0.76rem; font-weight: 700;">Frecuencia Semanal *</label>
-                        <select id="modal-dosif-frecuencia" style="width: 100%; padding: 7px 10px; font-size: 0.86rem; border-radius: 8px;">
+                        <label style="font-size: 0.74rem; font-weight: 700; margin-bottom: 3px; display: block;">Frecuencia Semanal *</label>
+                        <select id="modal-dosif-frecuencia" style="width: 100%; padding: 6px 10px; font-size: 0.85rem; border-radius: 8px;">
                             <option value="1">1 vez por semana (cada 7 días)</option>
                             <option value="2">2 veces por semana (cada 3–4 días)</option>
                             <option value="3">3 veces por semana (Estándar - día por medio)</option>
@@ -818,23 +819,24 @@ function asegurarModalDosificacion() {
                             <option value="7">7 veces por semana (Todos los días)</option>
                         </select>
                     </div>
-                    <div class="field" style="margin: 0; grid-column: 1 / -1;">
-                        <label style="font-size: 0.76rem; font-weight: 700;">Objetivo / Instrucciones para el Paciente</label>
-                        <input type="text" id="modal-dosif-notas" placeholder="Indicaciones clínicas..." style="width: 100%; padding: 7px 10px; font-size: 0.86rem;">
+                    <div class="field" style="margin: 0;">
+                        <label style="font-size: 0.74rem; font-weight: 700; margin-bottom: 3px; display: block;">Objetivo / Instrucciones</label>
+                        <input type="text" id="modal-dosif-notas" placeholder="Indicaciones clínicas..." style="width: 100%; padding: 6px 10px; font-size: 0.85rem;">
                     </div>
-                </div>
-
-                <!-- Lista amplia de ejercicios con sus 4 parámetros cómodos -->
-                <div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <strong style="font-size: 0.9rem; color: var(--azul-900);">Detalle de Ejercicios Seleccionados</strong>
-                        <span id="modal-dosif-contador" class="badge badge-ok">0 Ejercicios</span>
-                    </div>
-                    <div id="modal-dosif-lista" style="display: flex; flex-direction: column; gap: 10px;"></div>
                 </div>
             </div>
 
-            <div style="padding: 14px 22px; border-top: 1px solid var(--gris-200); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <!-- Sub-barra fija del listado -->
+            <div style="padding: 10px 22px 6px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+                <strong style="font-size: 0.88rem; color: var(--azul-900);">Detalle de Ejercicios Seleccionados</strong>
+                <span id="modal-dosif-contador" class="badge badge-ok">0 Ejercicios</span>
+            </div>
+
+            <!-- Única zona con scroll: los ejercicios -->
+            <div id="modal-dosif-lista" style="padding: 8px 22px 18px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 8px;"></div>
+
+            <!-- Footer fijo -->
+            <div style="padding: 13px 22px; border-top: 1px solid var(--gris-200); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; flex-shrink: 0;">
                 <button type="button" class="btn btn-secondary" onclick="cerrarModalDosificacion()">
                     <i class='bx bx-plus'></i> Seguir añadiendo ejercicios
                 </button>
@@ -865,50 +867,47 @@ function renderizarListaModalDosificacion() {
         const esTiempo = item.unidad_medida === 'SEG';
 
         return `
-            <div style="padding: 14px 16px; border-radius: 12px; border: 1px solid var(--gris-200); background: var(--blanco, #fff); display: flex; flex-direction: column; gap: 10px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
-                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <strong style="font-size: 0.95rem; color: var(--azul-900);">${idx + 1}. ${esc(nombre)}</strong>
-                        <span class="badge badge-neutro" style="font-size: 0.7rem;">${esc(zona)}</span>
-                    </div>
-                    <button type="button" class="btn btn-secondary btn-sm" style="color: #ef4444;" onclick="eliminarDelCarrito(${idx})" title="Quitar ejercicio">
-                        <i class='bx bx-trash'></i> Quitar
-                    </button>
+            <div style="padding: 10px 14px; border-radius: 10px; border: 1px solid var(--gris-200); background: var(--blanco, #fff); display: grid; grid-template-columns: minmax(210px, 1.4fr) repeat(4, minmax(88px, 1fr)) auto; align-items: end; gap: 10px;">
+                <div style="min-width: 0; align-self: center;">
+                    <strong style="display: block; font-size: 0.88rem; color: var(--azul-900); line-height: 1.25;">${idx + 1}. ${esc(nombre)}</strong>
+                    <span class="badge badge-neutro" style="font-size: 0.66rem; margin-top: 4px; display: inline-block;">${esc(zona)}</span>
                 </div>
 
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
-                    <div class="field" style="margin: 0;">
-                        <label style="font-size: 0.75rem; font-weight: 700; display: block; margin-bottom: 4px;">Series</label>
-                        <input type="number" min="1" max="20" value="${item.series}"
-                            onchange="actualizarDosificacion(${idx}, 'series', this.value)"
-                            style="width: 100%; padding: 7px 10px; font-size: 0.88rem;">
-                    </div>
-
-                    <div class="field" style="margin: 0;">
-                        <label style="font-size: 0.75rem; font-weight: 700; display: block; margin-bottom: 4px;">Modalidad</label>
-                        <select onchange="actualizarDosificacion(${idx}, 'unidad_medida', this.value)"
-                            style="width: 100%; padding: 7px 10px; font-size: 0.86rem; border-radius: 8px;">
-                            <option value="REPS" ${!esTiempo ? 'selected' : ''}>Repeticiones</option>
-                            <option value="SEG" ${esTiempo ? 'selected' : ''}>Tiempo (segundos)</option>
-                        </select>
-                    </div>
-
-                    <div class="field" style="margin: 0;">
-                        <label style="font-size: 0.75rem; font-weight: 700; display: block; margin-bottom: 4px;">
-                            ${esTiempo ? 'Duración (seg)' : 'Repeticiones'}
-                        </label>
-                        <input type="number" min="1" max="300" value="${item.repeticiones}"
-                            onchange="actualizarDosificacion(${idx}, 'repeticiones', this.value)"
-                            style="width: 100%; padding: 7px 10px; font-size: 0.88rem;">
-                    </div>
-
-                    <div class="field" style="margin: 0;">
-                        <label style="font-size: 0.75rem; font-weight: 700; display: block; margin-bottom: 4px;">Descanso (seg)</label>
-                        <input type="number" min="0" max="300" step="5" value="${item.descanso}"
-                            onchange="actualizarDosificacion(${idx}, 'descanso', this.value)"
-                            style="width: 100%; padding: 7px 10px; font-size: 0.88rem;">
-                    </div>
+                <div class="field" style="margin: 0;">
+                    <label style="font-size: 0.7rem; font-weight: 700; display: block; margin-bottom: 3px;">Series</label>
+                    <input type="number" min="1" max="20" value="${item.series}"
+                        onchange="actualizarDosificacion(${idx}, 'series', this.value)"
+                        style="width: 100%; padding: 5px 8px; font-size: 0.85rem;">
                 </div>
+
+                <div class="field" style="margin: 0;">
+                    <label style="font-size: 0.7rem; font-weight: 700; display: block; margin-bottom: 3px;">Modalidad</label>
+                    <select onchange="actualizarDosificacion(${idx}, 'unidad_medida', this.value)"
+                        style="width: 100%; padding: 5px 6px; font-size: 0.82rem; border-radius: 8px;">
+                        <option value="REPS" ${!esTiempo ? 'selected' : ''}>Reps</option>
+                        <option value="SEG" ${esTiempo ? 'selected' : ''}>Segundos</option>
+                    </select>
+                </div>
+
+                <div class="field" style="margin: 0;">
+                    <label style="font-size: 0.7rem; font-weight: 700; display: block; margin-bottom: 3px;">
+                        ${esTiempo ? 'Duración (s)' : 'Cantidad'}
+                    </label>
+                    <input type="number" min="1" max="300" value="${item.repeticiones}"
+                        onchange="actualizarDosificacion(${idx}, 'repeticiones', this.value)"
+                        style="width: 100%; padding: 5px 8px; font-size: 0.85rem;">
+                </div>
+
+                <div class="field" style="margin: 0;">
+                    <label style="font-size: 0.7rem; font-weight: 700; display: block; margin-bottom: 3px;">Descanso (s)</label>
+                    <input type="number" min="0" max="300" step="5" value="${item.descanso}"
+                        onchange="actualizarDosificacion(${idx}, 'descanso', this.value)"
+                        style="width: 100%; padding: 5px 8px; font-size: 0.85rem;">
+                </div>
+
+                <button type="button" class="btn btn-secondary btn-sm" style="color: #ef4444; padding: 6px 8px;" onclick="eliminarDelCarrito(${idx})" title="Quitar ejercicio">
+                    <i class='bx bx-trash'></i>
+                </button>
             </div>
         `;
     }).join('');
