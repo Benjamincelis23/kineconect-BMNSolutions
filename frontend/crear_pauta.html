@@ -30,6 +30,64 @@
                 background-position: -200% 0;
             }
         }
+
+        /* Corrección de desborde horizontal y ajuste limpio en Carrito Pauta */
+        .carrito-card {
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        #carrito-items-container {
+            overflow-x: hidden !important;
+            overflow-y: auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        #carrito-items-container > div {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            box-sizing: border-box !important;
+            overflow: hidden !important;
+        }
+
+        #carrito-items-container strong,
+        #carrito-items-container h4,
+        #carrito-items-container span {
+            overflow-wrap: break-word;
+            word-break: break-word;
+            min-width: 0;
+        }
+
+        #carrito-items-container [style*="grid-template-columns"] {
+            display: grid !important;
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            gap: 6px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+
+        #carrito-items-container [style*="grid-template-columns"] > div {
+            min-width: 0 !important;
+        }
+
+        #carrito-items-container input[type="number"] {
+            width: 100% !important;
+            min-width: 0 !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            padding: 5px 6px !important;
+            font-size: 0.82rem !important;
+            text-align: center;
+        }
+
+        #carrito-items-container label {
+            font-size: 0.7rem !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
     </style>
 </head>
 

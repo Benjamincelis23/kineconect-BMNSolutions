@@ -1,6 +1,6 @@
 // Aplicar tema de inmediato para evitar parpadeos visuales al cargar la página
 (function () {
-    const savedTheme = localStorage.getItem('KineConnect_theme') || 'light';
+    const savedTheme = localStorage.getItem('KineConnect_theme') || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
 })();
 
@@ -22,16 +22,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const isInicio = path.endsWith('/inicio.html') || path.endsWith('/') || path.endsWith('/frontend/');
     const isCrearPauta = path.includes('crear_pauta');
     const isEjercicios = path.includes('ejercicios');
-    const isPautas = path.includes('pautas');
     const isMensajes = path.includes('mensajes');
+    const isPautas = path.includes('pautas');
     const isPacientes = path.includes('pacientes');
 
     let tituloPagina = 'Panel Clínico';
     if (isInicio) tituloPagina = 'Resumen Clínico';
     else if (isCrearPauta) tituloPagina = 'Prescripción Biomecánica';
     else if (isEjercicios) tituloPagina = 'Catálogo de Ejercicios';
-    else if (isPautas) tituloPagina = 'Pautas y Plantillas';
     else if (isMensajes) tituloPagina = 'Bandeja de Reportes';
+    else if (isPautas) tituloPagina = 'Pautas y Plantillas';
     else if (isPacientes) tituloPagina = 'Gestión de Pacientes';
 
     const sidebarHTML = `
@@ -71,11 +71,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 <a href="ejercicios.html" class="${isEjercicios ? 'active' : ''}">
                     <i class='bx bx-dumbbell'></i> Catálogo Ejercicios
                 </a>
-                <a href="pautas.html" class="${isPautas ? 'active' : ''}">
-                    <i class='bx bx-clipboard'></i> Pautas y Plantillas
-                </a>
                 <a href="mensajes.html" class="${isMensajes ? 'active' : ''}">
                     <i class='bx bx-message-square-detail'></i> Bandeja de Reportes
+                </a>
+                <a href="pautas.html" class="${isPautas ? 'active' : ''}">
+                    <i class='bx bx-clipboard'></i> Pautas y Plantillas
                 </a>
                 <a href="pacientes.html" class="${isPacientes ? 'active' : ''}">
                     <i class='bx bx-group'></i> Gestión Pacientes
@@ -150,13 +150,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
     actualizarBotonTema(currentTheme);
 
     const btnTheme = document.getElementById('btn-toggle-theme');
     if (btnTheme) {
         btnTheme.addEventListener('click', () => {
-            const activeTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const activeTheme = document.documentElement.getAttribute('data-theme') || 'dark';
             const nextTheme = activeTheme === 'dark' ? 'light' : 'dark';
             document.documentElement.setAttribute('data-theme', nextTheme);
             localStorage.setItem('KineConnect_theme', nextTheme);

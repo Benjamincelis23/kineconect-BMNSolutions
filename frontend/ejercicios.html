@@ -8,6 +8,57 @@
     <!-- Estilos unificados y Boxicons -->
     <link rel="stylesheet" href="public/css/style.css">
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <style>
+        .seccion-header-acordeon {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            cursor: pointer;
+            user-select: none;
+            padding: 8px 12px;
+            border-radius: 10px;
+            background: var(--gris-50, #f8fafc);
+            border: 1px solid var(--gris-200);
+            transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        .seccion-header-acordeon:hover {
+            border-color: #0284c7;
+        }
+        [data-theme="dark"] .seccion-header-acordeon {
+            background: #0f1929;
+            border-color: #24344d;
+        }
+        .letra-pill-btn {
+            min-width: 30px;
+            height: 28px;
+            padding: 0 8px;
+            border-radius: 7px;
+            border: 1px solid var(--gris-200);
+            background: var(--blanco, #fff);
+            color: var(--azul-900);
+            font-size: 0.78rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.14s ease;
+        }
+        .letra-pill-btn:hover,
+        .letra-pill-btn.activa {
+            background: #0284c7;
+            border-color: #0284c7;
+            color: #ffffff;
+        }
+        [data-theme="dark"] .letra-pill-btn {
+            background: #162236;
+            border-color: #24344d;
+            color: #f8fafc;
+        }
+        [data-theme="dark"] .letra-pill-btn.activa {
+            background: #0284c7;
+            border-color: #0284c7;
+            color: #ffffff;
+        }
+    </style>
 </head>
 
 <body>
@@ -50,8 +101,8 @@
                                 title="Modo de visualización"
                                 style="padding: 7px 12px; border-radius: 8px; border: 1px solid var(--gris-200); font-size: 0.83rem; font-weight: 600; color: var(--azul-900); background: #fff; cursor: pointer;">
                                 <option value="zona">Agrupado por Zona</option>
+                                <option value="alfabetico">Alfabético (A–Z por Letra)</option>
                                 <option value="video">Con Video primero</option>
-                                <option value="alfabetico">Alfabético (A–Z)</option>
                             </select>
 
                             <button type="button" id="btn-limpiar-filtros" class="btn btn-secondary btn-sm"
@@ -98,6 +149,14 @@
                         </div>
                     </div>
 
+                    <!-- Barra rápida por Inicial (se muestra en modo Alfabético) -->
+                    <div id="barra-filtro-letras" style="display: none; align-items: center; gap: 6px; flex-wrap: wrap; padding-top: 12px; border-top: 1px solid var(--gris-100);">
+                        <span style="font-size: 0.82rem; font-weight: 700; color: var(--azul-900); margin-right: 4px;">
+                            <i class='bx bx-sort-a-z'></i> Letra:
+                        </span>
+                        <div id="contenedor-pills-letras" style="display: flex; gap: 5px; flex-wrap: wrap;"></div>
+                    </div>
+
                     <!-- Fila 4: Contador + Contraer/Expandir secciones -->
                     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding-top: 10px; border-top: 1px solid var(--gris-100);">
                         <span id="contador-resultados-catalogo" style="font-size: 0.83rem; font-weight: 600; color: var(--gris-600);">
@@ -112,22 +171,18 @@
 
                 <!-- Lista / Cuadrícula de Ejercicios -->
                 <div class="card" style="padding: 20px;">
-                    <!-- Estado de Carga -->
                     <div id="loading-ejercicios" class="empty-state">
                         <i class='bx bx-loader-alt bx-spin loading-icon'></i>
                         <p class="loading-text">Cargando catálogo biomecánico...</p>
                     </div>
 
-                    <!-- Contenedor de Secciones / Tarjetas de Ejercicios -->
                     <div id="grid-catalogo-ejercicios" style="display: none;"></div>
 
-                    <!-- Estado Vacío -->
                     <div id="no-ejercicios" class="empty-state" style="display: none;">
                         <i class='bx bx-dumbbell empty-icon'></i>
                         <p class="empty-text">No se encontraron ejercicios con los filtros seleccionados.</p>
                     </div>
 
-                    <!-- Estado de Error -->
                     <div id="error-ejercicios" class="empty-state" style="display: none;">
                         <i class='bx bx-error-circle error-icon'></i>
                         <p id="error-text" class="error-msg-text"></p>
@@ -171,16 +226,15 @@
         </div>
     </div>
 
-    <!-- Scripts Esenciales -->
     <script src="js/api.js"></script>
     <script src="js/layout.js"></script>
 
-    <!-- Lógica de Consulta, Agrupación y Filtrado del Catálogo -->
     <script>
         let catalogoCompleto = [];
         let listaRenderizadaActual = [];
         let zonaFiltroActual = 'todos';
         let areaFiltroActual = 'todos';
+        let letraFiltroActual = 'todas';
         let soloConVideoActual = false;
         let ordenActual = 'zona';
         let seccionesContraidas = false;
@@ -211,6 +265,16 @@
                 .replace(/[\u0300-\u036f]/g, '')
                 .replace(/[-_]+/g, ' ')
                 .trim();
+        }
+
+        function obtenerLetraInicial(item) {
+            const nombre = String(item.nombre || item.titulo || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .trim()
+                .toUpperCase();
+            const primera = nombre.charAt(0);
+            return /[A-Z]/.test(primera) ? primera : '#';
         }
 
         function obtenerGrupoZona(item) {
@@ -507,6 +571,73 @@
             }
         }
 
+        function filtrarPorLetra(letra) {
+            letraFiltroActual = letra;
+            aplicarFiltros();
+        }
+
+        function actualizarBarraLetras(listaBaseSinFiltroLetra) {
+            const barra = document.getElementById('barra-filtro-letras');
+            const cont = document.getElementById('contenedor-pills-letras');
+            if (!barra || !cont) return;
+
+            if (ordenActual !== 'alfabetico') {
+                barra.style.display = 'none';
+                return;
+            }
+
+            const letrasDisponibles = Array.from(
+                new Set(listaBaseSinFiltroLetra.map(obtenerLetraInicial))
+            ).sort((a, b) => a.localeCompare(b, 'es'));
+
+            barra.style.display = 'flex';
+            cont.innerHTML = [
+                `<button type="button" class="letra-pill-btn ${letraFiltroActual === 'todas' ? 'activa' : ''}" onclick="filtrarPorLetra('todas')">Todas</button>`,
+                ...letrasDisponibles.map(l =>
+                    `<button type="button" class="letra-pill-btn ${letraFiltroActual === l ? 'activa' : ''}" onclick="filtrarPorLetra('${l}')">${l}</button>`
+                )
+            ].join('');
+        }
+
+        function renderizarSeccionesAcordeon(gruposOrdenados, mapaGrupos, etiquetaPrefijo = '') {
+            const contenedor = document.getElementById('grid-catalogo-ejercicios');
+            gruposOrdenados.forEach((nombreGrupo, idxSeccion) => {
+                const itemsGrupo = mapaGrupos[nombreGrupo];
+
+                const seccion = document.createElement('section');
+                seccion.style.cssText = idxSeccion === 0
+                    ? 'margin-bottom: 24px;'
+                    : 'margin-bottom: 24px; padding-top: 20px; border-top: 1px solid var(--gris-200);';
+
+                const tituloMostrar = etiquetaPrefijo ? `${etiquetaPrefijo}${nombreGrupo}` : nombreGrupo;
+
+                const header = document.createElement('div');
+                header.className = 'seccion-header-acordeon';
+                header.onclick = () => toggleSeccionIndividual(header);
+                header.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class='bx ${seccionesContraidas ? 'bx-chevron-right' : 'bx-chevron-down'} icono-acordeon' style="font-size: 1.2rem; color: var(--azul-900);"></i>
+                        <h3 style="margin: 0; font-size: 1.02rem; color: var(--azul-900); font-weight: 800;">${escaparHtml(tituloMostrar)}</h3>
+                    </div>
+                    <span class="badge badge-neutro">${itemsGrupo.length} ${itemsGrupo.length === 1 ? 'ejercicio' : 'ejercicios'}</span>
+                `;
+
+                const gridZona = document.createElement('div');
+                gridZona.className = 'seccion-zona-grid';
+                gridZona.style.cssText = `display: ${seccionesContraidas ? 'none' : 'grid'}; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px;`;
+
+                itemsGrupo.forEach(item => {
+                    const idxGlobal = listaRenderizadaActual.length;
+                    listaRenderizadaActual.push(item);
+                    gridZona.appendChild(crearTarjetaEjercicio(item, idxGlobal));
+                });
+
+                seccion.appendChild(header);
+                seccion.appendChild(gridZona);
+                contenedor.appendChild(seccion);
+            });
+        }
+
         function renderizarCatalogo(lista) {
             const contenedor = document.getElementById('grid-catalogo-ejercicios');
             const noData = document.getElementById('no-ejercicios');
@@ -528,10 +659,28 @@
             noData.style.display = 'none';
             contenedor.style.display = 'block';
 
-            const modoAgrupado = ordenActual === 'zona' && zonaFiltroActual === 'todos' && !hayBusquedaTexto;
-            if (btnSecciones) btnSecciones.style.display = modoAgrupado ? 'inline-flex' : 'none';
+            // 1. Modo Alfabético A-Z agrupado por letra desplegable
+            if (ordenActual === 'alfabetico') {
+                if (btnSecciones) btnSecciones.style.display = 'inline-flex';
+                const listaOrdenada = ordenarEjercicios(lista, false);
+                const mapaLetras = {};
 
-            if (modoAgrupado) {
+                listaOrdenada.forEach(item => {
+                    const letra = obtenerLetraInicial(item);
+                    if (!mapaLetras[letra]) mapaLetras[letra] = [];
+                    mapaLetras[letra].push(item);
+                });
+
+                const letrasOrdenadas = Object.keys(mapaLetras).sort((a, b) => a.localeCompare(b, 'es'));
+                renderizarSeccionesAcordeon(letrasOrdenadas, mapaLetras, 'Letra ');
+                return;
+            }
+
+            // 2. Modo Agrupado por Zona Anatómica
+            const modoAgrupadoZona = ordenActual === 'zona' && zonaFiltroActual === 'todos' && !hayBusquedaTexto;
+            if (btnSecciones) btnSecciones.style.display = modoAgrupadoZona ? 'inline-flex' : 'none';
+
+            if (modoAgrupadoZona) {
                 const grupos = {};
                 ORDEN_ZONAS_CLINICAS.forEach(z => { grupos[z] = []; });
 
@@ -542,43 +691,16 @@
                 });
 
                 const seccionesActivas = ORDEN_ZONAS_CLINICAS.filter(z => grupos[z] && grupos[z].length > 0);
-
-                seccionesActivas.forEach((nombreZona, idxSeccion) => {
-                    const ejerciciosZona = ordenarEjercicios(grupos[nombreZona], true);
-
-                    const seccion = document.createElement('section');
-                    seccion.style.cssText = idxSeccion === 0
-                        ? 'margin-bottom: 24px;'
-                        : 'margin-bottom: 24px; padding-top: 20px; border-top: 1px solid var(--gris-200);';
-
-                    const header = document.createElement('div');
-                    header.onclick = () => toggleSeccionIndividual(header);
-                    header.style.cssText = 'display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; cursor: pointer; user-select: none; padding: 6px 8px; border-radius: 8px; background: #f8fafc;';
-                    header.innerHTML = `
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <i class='bx ${seccionesContraidas ? 'bx-chevron-right' : 'bx-chevron-down'} icono-acordeon' style="font-size: 1.2rem; color: var(--azul-900);"></i>
-                            <h3 style="margin: 0; font-size: 1.02rem; color: var(--azul-900); font-weight: 700;">${escaparHtml(nombreZona)}</h3>
-                        </div>
-                        <span class="badge badge-neutro">${ejerciciosZona.length} ${ejerciciosZona.length === 1 ? 'ejercicio' : 'ejercicios'}</span>
-                    `;
-
-                    const gridZona = document.createElement('div');
-                    gridZona.className = 'seccion-zona-grid';
-                    gridZona.style.cssText = `display: ${seccionesContraidas ? 'none' : 'grid'}; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px;`;
-
-                    ejerciciosZona.forEach(item => {
-                        const idxGlobal = listaRenderizadaActual.length;
-                        listaRenderizadaActual.push(item);
-                        gridZona.appendChild(crearTarjetaEjercicio(item, idxGlobal));
-                    });
-
-                    seccion.appendChild(header);
-                    seccion.appendChild(gridZona);
-                    contenedor.appendChild(seccion);
+                const gruposOrdenadosFinal = {};
+                seccionesActivas.forEach(z => {
+                    gruposOrdenadosFinal[z] = ordenarEjercicios(grupos[z], true);
                 });
+
+                renderizarSeccionesAcordeon(seccionesActivas, gruposOrdenadosFinal);
                 return;
             }
 
+            // 3. Vista plana (Con Video primero o filtro de zona específico)
             const listaOrdenada = ordenarEjercicios(lista, ordenActual === 'video' || ordenActual === 'zona');
             const gridPlano = document.createElement('div');
             gridPlano.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px;';
@@ -595,7 +717,7 @@
         function actualizarBotonLimpiar() {
             const inputTexto = document.getElementById('input-buscar-catalogo');
             const hayTexto = Boolean(inputTexto && inputTexto.value.trim());
-            const hayFiltros = zonaFiltroActual !== 'todos' || areaFiltroActual !== 'todos' || soloConVideoActual || hayTexto;
+            const hayFiltros = zonaFiltroActual !== 'todos' || areaFiltroActual !== 'todos' || letraFiltroActual !== 'todas' || soloConVideoActual || hayTexto;
             const btnLimpiar = document.getElementById('btn-limpiar-filtros');
             if (btnLimpiar) btnLimpiar.style.display = hayFiltros ? 'inline-flex' : 'none';
         }
@@ -603,6 +725,7 @@
         function limpiarTodosLosFiltros() {
             zonaFiltroActual = 'todos';
             areaFiltroActual = 'todos';
+            letraFiltroActual = 'todas';
             soloConVideoActual = false;
 
             const inputTexto = document.getElementById('input-buscar-catalogo');
@@ -652,6 +775,7 @@
 
         function cambiarOrdenCatalogo(nuevoOrden) {
             ordenActual = nuevoOrden;
+            letraFiltroActual = 'todas';
             aplicarFiltros();
         }
 
@@ -664,7 +788,7 @@
             const inputTexto = document.getElementById('input-buscar-catalogo');
             const termino = normalizarTexto(inputTexto ? inputTexto.value.trim() : '');
 
-            const filtrados = catalogoCompleto.filter(item => {
+            const filtradosBase = catalogoCompleto.filter(item => {
                 const nombre = normalizarTexto(item.nombre || item.titulo);
                 const grupo = normalizarTexto(item.zona_cuerpo || item.zona_corporal || item.grupo_muscular);
                 const patron = normalizarTexto(item.patron_movimiento || item.patron);
@@ -693,7 +817,13 @@
                 return coincideZona && coincideArea && coincideVideo && coincideTexto;
             });
 
-            renderizarCatalogo(filtrados);
+            actualizarBarraLetras(filtradosBase);
+
+            const filtradosFinal = (ordenActual === 'alfabetico' && letraFiltroActual !== 'todas')
+                ? filtradosBase.filter(item => obtenerLetraInicial(item) === letraFiltroActual)
+                : filtradosBase;
+
+            renderizarCatalogo(filtradosFinal);
         }
 
         document.addEventListener('keydown', (e) => {

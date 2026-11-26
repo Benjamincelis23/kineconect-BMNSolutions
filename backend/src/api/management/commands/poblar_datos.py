@@ -772,18 +772,70 @@ class Command(BaseCommand):
 # =====================================================================
         # 7. PACIENTES Y CASOS CLÍNICOS REALISTAS PARA DEMOSTRACIÓN
         # =====================================================================
-        from django.contrib.auth.models import User
-        from django.utils import timezone
         from datetime import timedelta
-        from api.models import Perfil, Pauta, PautaEjercicio, RegistroFeedback
+        from django.contrib.auth.models import User
+        from django.db import connection
+        from django.utils import timezone
+        from api.models import Perfil, Pauta, PautaEjercicio
+
+        def limpiar_feedbacks_pauta(pauta_obj):
+            with connection.cursor() as cursor:
+                cursor.execute("DELETE FROM api_registrofeedback WHERE pauta_id = %s", [pauta_obj.id])
+
+        def insertar_feedback_demo(pauta_obj, completado, nivel_dolor, comentario, dias_atras=0):
+            fecha_ej = timezone.now() - timedelta(days=dias_atras)
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO api_registrofeedback
+                        (pauta_id, completado, nivel_dolor, comentario, fecha_ejecucion, revisado)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    """,
+                    [pauta_obj.id, completado, nivel_dolor, comentario, fecha_ej, False],
+                )
+
+        def asignar_ejercicios_pauta(pauta_obj, nombres_buscar, zonas_fallback, series=3, reps=12, descanso=60):
+            PautaEjercicio.objects.filter(pauta=pauta_obj).delete()
+            elegidos = []
+            for nombre_b in nombres_buscar:
+                ej = Ejercicio.objects.filter(nombre__icontains=nombre_b).first()
+                if ej and ej not in elegidos:
+                    elegidos.append(ej)
+
+            if len(elegidos) < 3:
+                todos_ej = list(Ejercicio.objects.all().order_by('id'))
+                todos_ej.sort(key=lambda e: 0 if (getattr(e, 'video', None) or getattr(e, 'video_url', None)) else 1)
+                for ej in todos_ej:
+                    if ej not in elegidos and any(z in (ej.zona_cuerpo or '').lower() for z in zonas_fallback):
+                        elegidos.append(ej)
+                        if len(elegidos) >= 3:
+                            break
+                if len(elegidos) < 3:
+                    for ej in todos_ej:
+                        if ej not in elegidos:
+                            elegidos.append(ej)
+                            if len(elegidos) >= 3:
+                                break
+
+            PautaEjercicio.objects.bulk_create([
+                PautaEjercicio(
+                    pauta=pauta_obj,
+                    ejercicio=ej,
+                    series=series,
+                    repeticiones=reps,
+                    tiempo_descanso_segundos=descanso,
+                )
+                for ej in elegidos
+            ])
 
         kine_demo = (
-            User.objects.filter(perfil__rol='KINE').first()
+            User.objects.filter(username__iexact='palme').first()
+            or User.objects.filter(perfil__rol='KINE').first()
             or User.objects.filter(is_superuser=True).first()
         )
 
         if kine_demo:
-            # Caso 1: Camila Valdés (Paciente con alerta de dolor EVA 8/10 lista para ajuste)
+            # Caso 1: Camila Valdés (2 pautas: una con alerta EVA 8/10 y otra cervical)
             camila, _ = User.objects.get_or_create(
                 username='194528103',
                 defaults={
@@ -792,14 +844,14 @@ class Command(BaseCommand):
                     'email': 'camila.valdes.demo@kineconnect.cl',
                 },
             )
-            camila.set_password('Kine2026')
+            camila.set_password('Kine2026!')
             camila.save()
             Perfil.objects.update_or_create(
                 user=camila,
-                defaults={'rut': '19452810-3', 'rol': 'PACIENTE', 'kinesiologo_asignado': kine_demo},
+                defaults={'rut': '19.452.810-3', 'rol': 'PACIENTE', 'kinesiologo_asignado': kine_demo},
             )
 
-            pauta_camila, _ = Pauta.objects.update_or_create(
+            pauta_camila_1, _ = Pauta.objects.update_or_create(
                 paciente=camila,
                 titulo='Rehabilitación Lumbar — Fase 1',
                 defaults={
@@ -809,35 +861,24 @@ class Command(BaseCommand):
                     'notas': 'Ejecutar 3 veces por semana manteniendo columna neutra. Detener si EVA ≥ 6.',
                 },
             )
-            PautaEjercicio.objects.filter(pauta=pauta_camila).delete()
-            ej_bird = Ejercicio.objects.filter(nombre__icontains='Bird Dog').first()
-            ej_puente = Ejercicio.objects.filter(nombre__icontains='Puente Glúteo').first()
-            if ej_bird:
-                PautaEjercicio.objects.create(
-                    pauta=pauta_camila, ejercicio=ej_bird, series=3, repeticiones=10, tiempo_descanso_segundos=60
-                )
-            if ej_puente:
-                PautaEjercicio.objects.create(
-                    pauta=pauta_camila, ejercicio=ej_puente, series=3, repeticiones=12, tiempo_descanso_segundos=45
-                )
+            asignar_ejercicios_pauta(pauta_camila_1, ['Bird Dog', 'Puente Glúteo', 'Bicho Muerto'], ['core', 'lumbar'], 3, 10, 60)
+            limpiar_feedbacks_pauta(pauta_camila_1)
+            insertar_feedback_demo(pauta_camila_1, True, 4, 'Leve tensión lumbar al finalizar la última serie.', dias_atras=2)
+            insertar_feedback_demo(pauta_camila_1, False, 8, 'Dolor agudo en zona lumbar baja durante Bird Dog. | Esfuerzo Borg: 8/10 (Muy exigente)', dias_atras=0)
 
-            RegistroFeedback.objects.filter(pauta=pauta_camila).delete()
-            fb1 = RegistroFeedback.objects.create(
-                pauta=pauta_camila,
-                completado=True,
-                nivel_dolor=4,
-                comentario='Leve tensión lumbar al finalizar la última serie.',
+            pauta_camila_2, _ = Pauta.objects.update_or_create(
+                paciente=camila,
+                titulo='Descarga Cervical y Escapular',
+                defaults={
+                    'kinesiologo': kine_demo,
+                    'activo': True,
+                    'es_plantilla': False,
+                    'notas': 'Realizar al finalizar la jornada laboral con respiración lenta.',
+                },
             )
-            RegistroFeedback.objects.filter(id=fb1.id).update(fecha_ejecucion=timezone.now() - timedelta(days=2))
+            asignar_ejercicios_pauta(pauta_camila_2, ['Retracción Cervical', 'Apertura Torácica'], ['cuello', 'hombro', 'espalda'], 2, 10, 30)
 
-            RegistroFeedback.objects.create(
-                pauta=pauta_camila,
-                completado=True,
-                nivel_dolor=8,
-                comentario='Dolor agudo en zona lumbar baja durante Bird Dog.',
-            )
-
-            # Caso 2: Matías Contreras (Ciclo 3/3 completado — Modo Solo Consulta y PDF)
+            # Caso 2: Matías Contreras (Ciclo 3/3 completado — Modo Solo Consulta y Ficha PDF)
             matias_pac, _ = User.objects.get_or_create(
                 username='16834920K',
                 defaults={
@@ -846,11 +887,11 @@ class Command(BaseCommand):
                     'email': 'matias.contreras.demo@kineconnect.cl',
                 },
             )
-            matias_pac.set_password('Kine2026')
+            matias_pac.set_password('Kine2026!')
             matias_pac.save()
             Perfil.objects.update_or_create(
                 user=matias_pac,
-                defaults={'rut': '16834920-K', 'rol': 'PACIENTE', 'kinesiologo_asignado': kine_demo},
+                defaults={'rut': '16.834.920-K', 'rol': 'PACIENTE', 'kinesiologo_asignado': kine_demo},
             )
 
             pauta_matias, _ = Pauta.objects.update_or_create(
@@ -863,26 +904,76 @@ class Command(BaseCommand):
                     'notas': 'Controlar alineación de pelvis en Clamshell y movilidad completa de tobillo.',
                 },
             )
-            PautaEjercicio.objects.filter(pauta=pauta_matias).delete()
-            ej_clam = Ejercicio.objects.filter(nombre__icontains='Clamshell').first()
-            ej_tob = Ejercicio.objects.filter(nombre__icontains='Abecedario').first()
-            if ej_clam:
-                PautaEjercicio.objects.create(
-                    pauta=pauta_matias, ejercicio=ej_clam, series=3, repeticiones=12, tiempo_descanso_segundos=45
-                )
-            if ej_tob:
-                PautaEjercicio.objects.create(
-                    pauta=pauta_matias, ejercicio=ej_tob, series=2, repeticiones=10, tiempo_descanso_segundos=30
+            asignar_ejercicios_pauta(pauta_matias, ['Clamshell', 'Abecedario de Tobillo', 'Abducción de Cadera'], ['cadera', 'tobillo', 'pierna'], 3, 12, 45)
+            limpiar_feedbacks_pauta(pauta_matias)
+            for idx, dolor in enumerate([3, 2, 1]):
+                insertar_feedback_demo(
+                    pauta_matias,
+                    True,
+                    dolor,
+                    f'Sesión {idx + 1} completada con buena tolerancia.',
+                    dias_atras=(4 - idx * 2),
                 )
 
-            RegistroFeedback.objects.filter(pauta=pauta_matias).delete()
-            for idx, dolor in enumerate([3, 2, 1]):
-                fb = RegistroFeedback.objects.create(
-                    pauta=pauta_matias,
-                    completado=True,
-                    nivel_dolor=dolor,
-                    comentario=f'Sesión {idx + 1} completada con buena tolerancia.',
-                )
-                RegistroFeedback.objects.filter(id=fb.id).update(
-                    fecha_ejecucion=timezone.now() - timedelta(days=(4 - idx * 2))
-                )
+            # Caso 3: Valentina Morales (Hombro y Manguito Rotador — 1/3 sesiones en progreso)
+            valentina, _ = User.objects.get_or_create(
+                username='184529108',
+                defaults={
+                    'first_name': 'Valentina',
+                    'last_name': 'Morales Soto',
+                    'email': 'valentina.morales.demo@kineconnect.cl',
+                },
+            )
+            valentina.set_password('Kine2026!')
+            valentina.save()
+            Perfil.objects.update_or_create(
+                user=valentina,
+                defaults={'rut': '18.452.910-8', 'rol': 'PACIENTE', 'kinesiologo_asignado': kine_demo},
+            )
+
+            pauta_valentina, _ = Pauta.objects.update_or_create(
+                paciente=valentina,
+                titulo='Rehabilitación Manguito Rotador — Fase 1',
+                defaults={
+                    'kinesiologo': kine_demo,
+                    'activo': True,
+                    'es_plantilla': False,
+                    'notas': 'No superar los 90° de elevación si aparece pinzamiento.',
+                },
+            )
+            asignar_ejercicios_pauta(pauta_valentina, ['Rotación Externa', 'Péndulo', 'Elevación Frontal'], ['hombro', 'espalda'], 3, 12, 45)
+            limpiar_feedbacks_pauta(pauta_valentina)
+            insertar_feedback_demo(pauta_valentina, True, 3, 'Buena movilidad, sin dolor agudo.', dias_atras=1)
+
+            # Caso 4: Héctor Valenzuela (Fortalecimiento de Rodilla y Cuádriceps — listo en 0/3)
+            hector, _ = User.objects.get_or_create(
+                username='125489032',
+                defaults={
+                    'first_name': 'Héctor',
+                    'last_name': 'Valenzuela Pino',
+                    'email': 'hector.valenzuela.demo@kineconnect.cl',
+                },
+            )
+            hector.set_password('Kine2026!')
+            hector.save()
+            Perfil.objects.update_or_create(
+                user=hector,
+                defaults={'rut': '12.548.903-2', 'rol': 'PACIENTE', 'kinesiologo_asignado': kine_demo},
+            )
+
+            pauta_hector, _ = Pauta.objects.update_or_create(
+                paciente=hector,
+                titulo='Fortalecimiento Cuádriceps y Control de Rodilla',
+                defaults={
+                    'kinesiologo': kine_demo,
+                    'activo': True,
+                    'es_plantilla': False,
+                    'notas': 'Mantener rodilla alineada con la punta del pie; descanso completo de 60s entre series.',
+                },
+            )
+            asignar_ejercicios_pauta(pauta_hector, ['Activación Isométrica de Cuádriceps', 'Sentadilla', 'Puente Glúteo'], ['pierna', 'rodilla', 'cadera'], 3, 10, 60)
+            limpiar_feedbacks_pauta(pauta_hector)
+
+            self.stdout.write(self.style.SUCCESS(
+                f'Casos clínicos demo cargados para {kine_demo.username}: Camila (194528103), Matías (16834920K), Valentina (184529108) y Héctor (125489032) | Clave: Kine2026!'
+            ))

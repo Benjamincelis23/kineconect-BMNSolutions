@@ -10,40 +10,33 @@
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 
     <style>
-        .modulo-card {
-            padding: 18px;
+        .acceso-rapido-card {
+            padding: 13px 15px;
             text-decoration: none;
             display: flex;
-            flex-direction: column;
+            align-items: center;
             justify-content: space-between;
+            gap: 10px;
             border: 1px solid var(--gris-200);
-            border-radius: 14px;
+            border-radius: 12px;
             background: var(--blanco, #ffffff);
-            transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
         }
 
-        .modulo-card:hover {
+        .acceso-rapido-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 22px rgba(15, 23, 42, 0.14);
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
             border-color: #0284c7;
         }
 
-        .modulo-card-top {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 8px;
-            margin-bottom: 10px;
-        }
-
-        .modulo-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 11px;
+        .acceso-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             flex-shrink: 0;
         }
 
@@ -89,11 +82,11 @@
             background: rgba(239, 68, 68, 0.06) !important;
         }
 
-        /* Soporte total para Modo Oscuro de KineConnect */
-        body.dark-mode .modulo-card,
-        html.dark-mode .modulo-card,
-        [data-theme="dark"] .modulo-card,
-        body.dark .modulo-card {
+        /* Soporte Modo Oscuro */
+        body.dark-mode .acceso-rapido-card,
+        html.dark-mode .acceso-rapido-card,
+        [data-theme="dark"] .acceso-rapido-card,
+        body.dark .acceso-rapido-card {
             background: #162236 !important;
             border-color: #24344d !important;
         }
@@ -258,152 +251,9 @@
                     </div>
                 </div>
 
-                <!-- 3. MÓDULOS CLÍNICOS -->
-                <div style="margin-bottom: 24px;">
-                    <div
-                        style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                        <h3
-                            style="margin: 0; font-size: 0.98rem; color: var(--azul-900); display: flex; align-items: center; gap: 6px;">
-                            <i class='bx bx-grid-alt' style="color: #0284c7;"></i> Módulos Clínicos
-                        </h3>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 15px;">
-
-                        <!-- Módulo 1: Mapa Anatómico -->
-                        <a href="crear_pauta.html" class="modulo-card" style="border-top: 3px solid #0284c7;">
-                            <div>
-                                <div class="modulo-card-top">
-                                    <span class="modulo-icon" style="background: #e0f2fe; color: #0284c7;">
-                                        <i class='bx bx-body'></i>
-                                    </span>
-                                    <span class="badge"
-                                        style="background: #e0f2fe; color: #0369a1; font-weight: 700; font-size: 0.72rem;">
-                                        Prescribir
-                                    </span>
-                                </div>
-                                <strong
-                                    style="display: block; color: var(--azul-900); font-size: 1rem; margin-bottom: 5px;">
-                                    Mapa Anatómico
-                                </strong>
-                                <p
-                                    style="margin: 0 0 14px 0; font-size: 0.83rem; color: var(--gris-600); line-height: 1.45;">
-                                    Arma rutinas filtrando por grupos musculares, áreas clínicas o plantillas.
-                                </p>
-                            </div>
-                            <span style="font-size: 0.83rem; font-weight: 700; color: #0284c7;">
-                                Prescribir ahora →
-                            </span>
-                        </a>
-
-                        <!-- Módulo 2: Pautas y Plantillas -->
-                        <a href="pautas.html" class="modulo-card" style="border-top: 3px solid #0ea5e9;">
-                            <div>
-                                <div class="modulo-card-top">
-                                    <span class="modulo-icon" style="background: #e0f2fe; color: #0369a1;">
-                                        <i class='bx bx-clipboard'></i>
-                                    </span>
-                                    <span id="badge-mod-pautas" class="badge badge-neutro" style="font-size: 0.72rem;">
-                                        Rutinas
-                                    </span>
-                                </div>
-                                <strong
-                                    style="display: block; color: var(--azul-900); font-size: 1rem; margin-bottom: 5px;">
-                                    Pautas y Plantillas
-                                </strong>
-                                <p
-                                    style="margin: 0 0 14px 0; font-size: 0.83rem; color: var(--gris-600); line-height: 1.45;">
-                                    Administra rutinas asignadas, plantillas maestras y protocolos archivados.
-                                </p>
-                            </div>
-                            <span style="font-size: 0.83rem; font-weight: 700; color: #0369a1;">
-                                Gestionar pautas →
-                            </span>
-                        </a>
-
-                        <!-- Módulo 3: Bandeja de Reportes -->
-                        <a href="mensajes.html" class="modulo-card" style="border-top: 3px solid #f59e0b;">
-                            <div>
-                                <div class="modulo-card-top">
-                                    <span class="modulo-icon" style="background: #fef3c7; color: #d97706;">
-                                        <i class='bx bx-message-square-detail'></i>
-                                    </span>
-                                    <span id="badge-mod-reportes" class="badge badge-neutro"
-                                        style="font-size: 0.72rem;">
-                                        Bandeja
-                                    </span>
-                                </div>
-                                <strong
-                                    style="display: block; color: var(--azul-900); font-size: 1rem; margin-bottom: 5px;">
-                                    Bandeja de Reportes
-                                </strong>
-                                <p
-                                    style="margin: 0 0 14px 0; font-size: 0.83rem; color: var(--gris-600); line-height: 1.45;">
-                                    Revisa evaluaciones de dolor (EVA), esfuerzo Borg y responde a tus pacientes.
-                                </p>
-                            </div>
-                            <span style="font-size: 0.83rem; font-weight: 700; color: #d97706;">
-                                Revisar bandeja →
-                            </span>
-                        </a>
-
-                        <!-- Módulo 4: Gestión de Pacientes -->
-                        <a href="pacientes.html" class="modulo-card" style="border-top: 3px solid #2563eb;">
-                            <div>
-                                <div class="modulo-card-top">
-                                    <span class="modulo-icon" style="background: #dbeafe; color: #2563eb;">
-                                        <i class='bx bx-group'></i>
-                                    </span>
-                                    <span id="badge-mod-pacientes" class="badge badge-neutro"
-                                        style="font-size: 0.72rem;">
-                                        Pacientes
-                                    </span>
-                                </div>
-                                <strong
-                                    style="display: block; color: var(--azul-900); font-size: 1rem; margin-bottom: 5px;">
-                                    Gestión de Pacientes
-                                </strong>
-                                <p
-                                    style="margin: 0 0 14px 0; font-size: 0.83rem; color: var(--gris-600); line-height: 1.45;">
-                                    Registra pacientes, supervisa seguimiento clínico y exporta fichas PDF.
-                                </p>
-                            </div>
-                            <span style="font-size: 0.83rem; font-weight: 700; color: #2563eb;">
-                                Ver pacientes →
-                            </span>
-                        </a>
-
-                        <!-- Módulo 5: Catálogo de Ejercicios -->
-                        <a href="ejercicios.html" class="modulo-card" style="border-top: 3px solid #10b981;">
-                            <div>
-                                <div class="modulo-card-top">
-                                    <span class="modulo-icon" style="background: #d1fae5; color: #059669;">
-                                        <i class='bx bx-dumbbell'></i>
-                                    </span>
-                                    <span id="badge-mod-ejercicios" class="badge badge-ok" style="font-size: 0.72rem;">
-                                        Biblioteca
-                                    </span>
-                                </div>
-                                <strong
-                                    style="display: block; color: var(--azul-900); font-size: 1rem; margin-bottom: 5px;">
-                                    Catálogo de Ejercicios
-                                </strong>
-                                <p
-                                    style="margin: 0 0 14px 0; font-size: 0.83rem; color: var(--gris-600); line-height: 1.45;">
-                                    Explora la biblioteca clínica ordenada por segmento céfalo-caudal y video.
-                                </p>
-                            </div>
-                            <span style="font-size: 0.83rem; font-weight: 700; color: #059669;">
-                                Explorar catálogo →
-                            </span>
-                        </a>
-
-                    </div>
-                </div>
-
-                <!-- 4. ACTIVIDAD RECIENTE (2 COLUMNAS NIVELADAS) -->
+                <!-- 3. ACTIVIDAD RECIENTE (2 COLUMNAS NIVELADAS ARRIBA) -->
                 <div
-                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; align-items: stretch;">
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; align-items: stretch; margin-bottom: 24px;">
 
                     <!-- Últimos Reportes de Dolor -->
                     <div class="card" style="padding: 18px 20px; display: flex; flex-direction: column;">
@@ -446,6 +296,86 @@
                         </div>
                     </div>
 
+                </div>
+
+                <!-- 4. ACCESOS RÁPIDOS A MÓDULOS (COMPACTO) -->
+                <div>
+                    <div
+                        style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                        <h3
+                            style="margin: 0; font-size: 0.92rem; color: var(--gris-600); display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+                            <i class='bx bx-grid-alt' style="color: #0284c7;"></i> Accesos Directos
+                        </h3>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 12px;">
+
+                        <a href="crear_pauta.html" class="acceso-rapido-card" style="border-left: 3px solid #0284c7;">
+                            <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                                <span class="acceso-icon" style="background: #e0f2fe; color: #0284c7;">
+                                    <i class='bx bx-body'></i>
+                                </span>
+                                <div style="min-width: 0;">
+                                    <strong style="display: block; color: var(--azul-900); font-size: 0.9rem;">Mapa Anatómico</strong>
+                                    <span style="font-size: 0.76rem; color: var(--gris-600);">Prescribir rutina</span>
+                                </div>
+                            </div>
+                            <i class='bx bx-chevron-right' style="color: var(--gris-400); font-size: 1.2rem;"></i>
+                        </a>
+
+                        <a href="mensajes.html" class="acceso-rapido-card" style="border-left: 3px solid #f59e0b;">
+                            <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                                <span class="acceso-icon" style="background: #fef3c7; color: #d97706;">
+                                    <i class='bx bx-message-square-detail'></i>
+                                </span>
+                                <div style="min-width: 0;">
+                                    <strong style="display: block; color: var(--azul-900); font-size: 0.9rem;">Bandeja de Reportes</strong>
+                                    <span id="badge-mod-reportes" style="font-size: 0.76rem; color: var(--gris-600);">0 pendientes</span>
+                                </div>
+                            </div>
+                            <i class='bx bx-chevron-right' style="color: var(--gris-400); font-size: 1.2rem;"></i>
+                        </a>
+
+                        <a href="pautas.html" class="acceso-rapido-card" style="border-left: 3px solid #0ea5e9;">
+                            <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                                <span class="acceso-icon" style="background: #e0f2fe; color: #0369a1;">
+                                    <i class='bx bx-clipboard'></i>
+                                </span>
+                                <div style="min-width: 0;">
+                                    <strong style="display: block; color: var(--azul-900); font-size: 0.9rem;">Pautas y Plantillas</strong>
+                                    <span id="badge-mod-pautas" style="font-size: 0.76rem; color: var(--gris-600);">0 activas</span>
+                                </div>
+                            </div>
+                            <i class='bx bx-chevron-right' style="color: var(--gris-400); font-size: 1.2rem;"></i>
+                        </a>
+
+                        <a href="pacientes.html" class="acceso-rapido-card" style="border-left: 3px solid #2563eb;">
+                            <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                                <span class="acceso-icon" style="background: #dbeafe; color: #2563eb;">
+                                    <i class='bx bx-group'></i>
+                                </span>
+                                <div style="min-width: 0;">
+                                    <strong style="display: block; color: var(--azul-900); font-size: 0.9rem;">Gestión Pacientes</strong>
+                                    <span id="badge-mod-pacientes" style="font-size: 0.76rem; color: var(--gris-600);">0 activos</span>
+                                </div>
+                            </div>
+                            <i class='bx bx-chevron-right' style="color: var(--gris-400); font-size: 1.2rem;"></i>
+                        </a>
+
+                        <a href="ejercicios.html" class="acceso-rapido-card" style="border-left: 3px solid #10b981;">
+                            <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                                <span class="acceso-icon" style="background: #d1fae5; color: #059669;">
+                                    <i class='bx bx-dumbbell'></i>
+                                </span>
+                                <div style="min-width: 0;">
+                                    <strong style="display: block; color: var(--azul-900); font-size: 0.9rem;">Catálogo Ejercicios</strong>
+                                    <span id="badge-mod-ejercicios" style="font-size: 0.76rem; color: var(--gris-600);">39 ejercicios</span>
+                                </div>
+                            </div>
+                            <i class='bx bx-chevron-right' style="color: var(--gris-400); font-size: 1.2rem;"></i>
+                        </a>
+
+                    </div>
                 </div>
 
             </div>
@@ -508,46 +438,24 @@
     <script src="js/layout.js"></script>
     <script>
         const STORAGE_VISTOS_KINE = 'kc_reportes_vistos_kine_v1';
-        const vistosEnMemoria = {};
 
         let reportesActualesDashboard = [];
         let mapaPautasDashboard = {};
         let feedbackBandejaSeleccionado = null;
 
         function obtenerVistosKine() {
-            let almacenados = {};
             try {
-                almacenados = JSON.parse(localStorage.getItem(STORAGE_VISTOS_KINE) || '{}');
+                return JSON.parse(localStorage.getItem(STORAGE_VISTOS_KINE) || '{}');
             } catch {
-                almacenados = {};
+                return {};
             }
-            return { ...almacenados, ...vistosEnMemoria };
         }
 
-        async function marcarReporteVistoDesdeInicio(feedbackId) {
+        function marcarReporteVistoDesdeInicio(feedbackId) {
             if (feedbackId == null) return;
-            const marca = new Date().toISOString();
-            vistosEnMemoria[String(feedbackId)] = marca;
-
-            try {
-                const actuales = JSON.parse(localStorage.getItem(STORAGE_VISTOS_KINE) || '{}');
-                actuales[String(feedbackId)] = marca;
-                localStorage.setItem(STORAGE_VISTOS_KINE, JSON.stringify(actuales));
-            } catch {
-                // Ignora si el almacenamiento local está bloqueado
-            }
-
-            try {
-                if (typeof api !== 'undefined' && typeof api.fetchConSesion === 'function') {
-                    await api.fetchConSesion(`/api/v1/feedback/${feedbackId}/`, {
-                        method: 'PATCH',
-                        body: JSON.stringify({ revisado_kine: true })
-                    }).catch(() => null);
-                }
-            } catch {
-                // Mantiene el marcado local si el endpoint no exige campo extra
-            }
-
+            const vistos = obtenerVistosKine();
+            vistos[String(feedbackId)] = new Date().toISOString();
+            localStorage.setItem(STORAGE_VISTOS_KINE, JSON.stringify(vistos));
             renderizarBandejaPrioritaria([], reportesActualesDashboard, mapaPautasDashboard);
         }
 
@@ -716,7 +624,7 @@
             document.getElementById('lista-sugerencias-bandeja').innerHTML = opciones.map(op => `
                 <button type="button" class="btn btn-secondary btn-sm btn-sug-bandeja ${op.preventiva ? 'preventiva' : ''}"
                     onclick="aplicarSugerenciaBandeja('${escaparHtml(op.texto)}')">
-- ${escaparHtml(op.texto)}
+                    • ${escaparHtml(op.texto)}
                 </button>
             `).join('');
 
@@ -808,18 +716,22 @@
                 adherenciaTexto = `${Math.round((completas / reportes.length) * 100)}%`;
             }
 
+            // KPIs
             document.getElementById('kpi-pacientes').textContent = resumen?.kpis?.pacientes_activos ?? pacientes.length;
             document.getElementById('kpi-adherencia').textContent = adherenciaTexto;
             document.getElementById('kpi-abandono').textContent = resumen?.kpis?.riesgo_abandono ?? 0;
 
+            // Contadores en Accesos Directos
             document.getElementById('badge-mod-pautas').textContent = `${pautasActivas.length} ${pautasActivas.length === 1 ? 'activa' : 'activas'}`;
             document.getElementById('badge-mod-reportes').textContent = `${pendientesCount} ${pendientesCount === 1 ? 'pendiente' : 'pendientes'}`;
             document.getElementById('badge-mod-pacientes').textContent = `${pacientes.length} ${pacientes.length === 1 ? 'activo' : 'activos'}`;
             document.getElementById('badge-mod-ejercicios').textContent = `${totalEjercicios} ejercicios`;
 
+            // Bandeja de Atención Prioritaria
             reportesActualesDashboard = reportes;
             renderizarBandejaPrioritaria(resumen?.bandeja_prioritaria || [], reportes, mapaPautas);
 
+            // Últimos 4 reportes EVA
             const contReportes = document.getElementById('lista-ultimos-reportes');
             if (reportes.length === 0) {
                 contReportes.innerHTML = `<p style="margin: 0; font-size: 0.85rem; color: var(--gris-500);">Aún no hay reportes recibidos desde la app móvil.</p>`;
@@ -849,6 +761,7 @@
                 }).join('');
             }
 
+            // Pacientes asignados
             const contPacientes = document.getElementById('lista-pacientes-recientes');
             if (pacientes.length === 0) {
                 contPacientes.innerHTML = `<p style="margin: 0; font-size: 0.85rem; color: var(--gris-500);">No tienes pacientes registrados todavía.</p>`;
