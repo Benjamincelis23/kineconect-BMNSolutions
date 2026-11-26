@@ -289,14 +289,17 @@ class PautaListSerializer(serializers.ModelSerializer):
     def get_completada_hoy(self, obj):
         if getattr(obj, 'es_plantilla', False):
             return False
-        from zoneinfo import ZoneInfo
-        ahora_cl = timezone.now().astimezone(ZoneInfo('America/Santiago'))
-        inicio_dia_cl = ahora_cl.replace(hour=0, minute=0, second=0, microsecond=0)
-        return RegistroFeedback.objects.filter(
-            pauta=obj,
-            completado=True,
-            fecha_ejecucion__gte=inicio_dia_cl,
-        ).exists()
+        try:
+            from zoneinfo import ZoneInfo
+            ahora_cl = timezone.now().astimezone(ZoneInfo('America/Santiago'))
+            inicio_dia_cl = ahora_cl.replace(hour=0, minute=0, second=0, microsecond=0)
+            return RegistroFeedback.objects.filter(
+                pauta=obj,
+                completado=True,
+                fecha_ejecucion__gte=inicio_dia_cl,
+            ).exists()
+        except Exception:
+            return False
 
     class Meta:
         model = Pauta
