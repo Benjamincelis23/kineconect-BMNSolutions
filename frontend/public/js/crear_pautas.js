@@ -781,17 +781,93 @@ function asegurarModalDosificacion() {
     let modal = document.getElementById('modal-dosificacion-pauta');
     if (modal) return modal;
 
+    if (!document.getElementById('kc-modal-dosif-styles')) {
+        const styleEl = document.createElement('style');
+        styleEl.id = 'kc-modal-dosif-styles';
+        styleEl.textContent = `
+            .kc-dosif-shell {
+                background: #ffffff;
+                color: #0f172a;
+                border: 1px solid #e2e8f0;
+            }
+            .kc-dosif-subbox {
+                background: #f8fafc;
+                border-bottom: 1px solid #e2e8f0;
+            }
+            .kc-dosif-row {
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 12px;
+                padding: 12px 14px;
+                display: grid;
+                grid-template-columns: minmax(210px, 1.45fr) repeat(4, minmax(86px, 1fr)) auto;
+                align-items: end;
+                gap: 10px;
+            }
+            .kc-dosif-row label {
+                color: #475569;
+                font-size: 0.72rem;
+                font-weight: 700;
+                display: block;
+                margin-bottom: 4px;
+            }
+            .kc-dosif-row input,
+            .kc-dosif-row select {
+                background: #ffffff;
+                color: #0f172a;
+                border: 1px solid #cbd5e1;
+                border-radius: 8px;
+                width: 100%;
+                padding: 6px 8px;
+                font-size: 0.85rem;
+            }
+            [data-theme="dark"] .kc-dosif-shell {
+                background: #162236 !important;
+                color: #f8fafc !important;
+                border-color: #24344d !important;
+            }
+            [data-theme="dark"] .kc-dosif-subbox {
+                background: #0f1929 !important;
+                border-color: #24344d !important;
+            }
+            [data-theme="dark"] .kc-dosif-row {
+                background: #0f1929 !important;
+                border-color: #24344d !important;
+            }
+            [data-theme="dark"] .kc-dosif-row label {
+                color: #94a3b8 !important;
+            }
+            [data-theme="dark"] .kc-dosif-row input,
+            [data-theme="dark"] .kc-dosif-row select,
+            [data-theme="dark"] .kc-dosif-subbox input,
+            [data-theme="dark"] .kc-dosif-subbox select {
+                background: #162236 !important;
+                color: #f8fafc !important;
+                border-color: #334155 !important;
+            }
+            @media (max-width: 780px) {
+                .kc-dosif-row {
+                    grid-template-columns: 1fr 1fr;
+                }
+                .kc-dosif-row > div:first-child {
+                    grid-column: 1 / -1;
+                }
+            }
+        `;
+        document.head.appendChild(styleEl);
+    }
+
     modal = document.createElement('div');
     modal.id = 'modal-dosificacion-pauta';
     modal.className = 'modal-overlay';
-    modal.style.cssText = 'display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.72); z-index: 9998; align-items: center; justify-content: center; padding: 16px;';
+    modal.style.cssText = 'display: none; position: fixed; inset: 0; background: rgba(7, 13, 24, 0.78); backdrop-filter: blur(2px); z-index: 9998; align-items: center; justify-content: center; padding: 16px;';
     modal.innerHTML = `
-        <div class="card" style="width: 100%; max-width: 920px; max-height: 92vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 16px;">
+        <div class="card kc-dosif-shell" style="width: 100%; max-width: 920px; max-height: 92vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 16px;">
             <!-- Header fijo -->
             <div style="padding: 16px 22px; border-bottom: 1px solid var(--gris-200); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-shrink: 0;">
                 <div>
                     <h3 style="margin: 0; font-size: 1.12rem; color: var(--azul-900); display: flex; align-items: center; gap: 8px;">
-                        <i class='bx bx-sliders-alt' style="color: #0284c7;"></i> Configurar Dosificación y Confirmar Pauta
+                        <i class='bx bx-sliders-alt' style="color: #38bdf8;"></i> Configurar Dosificación y Confirmar Pauta
                     </h3>
                     <p id="modal-dosif-subtitulo" style="margin: 3px 0 0; font-size: 0.82rem; color: var(--gris-600);"></p>
                 </div>
@@ -801,7 +877,7 @@ function asegurarModalDosificacion() {
             </div>
 
             <!-- Cabecera fija de datos generales (no se pierde al hacer scroll) -->
-            <div style="padding: 14px 22px; border-bottom: 1px solid var(--gris-200); background: var(--gris-50, #f8fafc); flex-shrink: 0;">
+            <div class="kc-dosif-subbox" style="padding: 14px 22px; flex-shrink: 0;">
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;">
                     <div class="field" style="margin: 0;">
                         <label style="font-size: 0.74rem; font-weight: 700; margin-bottom: 3px; display: block;">Nombre de la Pauta *</label>
@@ -827,13 +903,13 @@ function asegurarModalDosificacion() {
             </div>
 
             <!-- Sub-barra fija del listado -->
-            <div style="padding: 10px 22px 6px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+            <div style="padding: 12px 22px 6px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
                 <strong style="font-size: 0.88rem; color: var(--azul-900);">Detalle de Ejercicios Seleccionados</strong>
                 <span id="modal-dosif-contador" class="badge badge-ok">0 Ejercicios</span>
             </div>
 
             <!-- Única zona con scroll: los ejercicios -->
-            <div id="modal-dosif-lista" style="padding: 8px 22px 18px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 8px;"></div>
+            <div id="modal-dosif-lista" style="padding: 8px 22px 18px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px;"></div>
 
             <!-- Footer fijo -->
             <div style="padding: 13px 22px; border-top: 1px solid var(--gris-200); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; flex-shrink: 0;">
@@ -867,45 +943,39 @@ function renderizarListaModalDosificacion() {
         const esTiempo = item.unidad_medida === 'SEG';
 
         return `
-            <div style="padding: 10px 14px; border-radius: 10px; border: 1px solid var(--gris-200); background: var(--blanco, #fff); display: grid; grid-template-columns: minmax(210px, 1.4fr) repeat(4, minmax(88px, 1fr)) auto; align-items: end; gap: 10px;">
+            <div class="kc-dosif-row">
                 <div style="min-width: 0; align-self: center;">
-                    <strong style="display: block; font-size: 0.88rem; color: var(--azul-900); line-height: 1.25;">${idx + 1}. ${esc(nombre)}</strong>
+                    <strong style="display: block; font-size: 0.9rem; color: var(--azul-900); line-height: 1.3;">${idx + 1}. ${esc(nombre)}</strong>
                     <span class="badge badge-neutro" style="font-size: 0.66rem; margin-top: 4px; display: inline-block;">${esc(zona)}</span>
                 </div>
 
-                <div class="field" style="margin: 0;">
-                    <label style="font-size: 0.7rem; font-weight: 700; display: block; margin-bottom: 3px;">Series</label>
+                <div>
+                    <label>Series</label>
                     <input type="number" min="1" max="20" value="${item.series}"
-                        onchange="actualizarDosificacion(${idx}, 'series', this.value)"
-                        style="width: 100%; padding: 5px 8px; font-size: 0.85rem;">
+                        onchange="actualizarDosificacion(${idx}, 'series', this.value)">
                 </div>
 
-                <div class="field" style="margin: 0;">
-                    <label style="font-size: 0.7rem; font-weight: 700; display: block; margin-bottom: 3px;">Modalidad</label>
-                    <select onchange="actualizarDosificacion(${idx}, 'unidad_medida', this.value)"
-                        style="width: 100%; padding: 5px 6px; font-size: 0.82rem; border-radius: 8px;">
-                        <option value="REPS" ${!esTiempo ? 'selected' : ''}>Reps</option>
-                        <option value="SEG" ${esTiempo ? 'selected' : ''}>Segundos</option>
+                <div>
+                    <label>Modalidad</label>
+                    <select onchange="actualizarDosificacion(${idx}, 'unidad_medida', this.value)">
+                        <option value="REPS" ${!esTiempo ? 'selected' : ''}>Repeticiones</option>
+                        <option value="SEG" ${esTiempo ? 'selected' : ''}>Tiempo (seg)</option>
                     </select>
                 </div>
 
-                <div class="field" style="margin: 0;">
-                    <label style="font-size: 0.7rem; font-weight: 700; display: block; margin-bottom: 3px;">
-                        ${esTiempo ? 'Duración (s)' : 'Cantidad'}
-                    </label>
+                <div>
+                    <label>${esTiempo ? 'Duración (seg)' : 'Cantidad'}</label>
                     <input type="number" min="1" max="300" value="${item.repeticiones}"
-                        onchange="actualizarDosificacion(${idx}, 'repeticiones', this.value)"
-                        style="width: 100%; padding: 5px 8px; font-size: 0.85rem;">
+                        onchange="actualizarDosificacion(${idx}, 'repeticiones', this.value)">
                 </div>
 
-                <div class="field" style="margin: 0;">
-                    <label style="font-size: 0.7rem; font-weight: 700; display: block; margin-bottom: 3px;">Descanso (s)</label>
+                <div>
+                    <label>Descanso (seg)</label>
                     <input type="number" min="0" max="300" step="5" value="${item.descanso}"
-                        onchange="actualizarDosificacion(${idx}, 'descanso', this.value)"
-                        style="width: 100%; padding: 5px 8px; font-size: 0.85rem;">
+                        onchange="actualizarDosificacion(${idx}, 'descanso', this.value)">
                 </div>
 
-                <button type="button" class="btn btn-secondary btn-sm" style="color: #ef4444; padding: 6px 8px;" onclick="eliminarDelCarrito(${idx})" title="Quitar ejercicio">
+                <button type="button" class="btn btn-secondary btn-sm" style="color: #f87171; padding: 7px 10px;" onclick="eliminarDelCarrito(${idx})" title="Quitar ejercicio">
                     <i class='bx bx-trash'></i>
                 </button>
             </div>
