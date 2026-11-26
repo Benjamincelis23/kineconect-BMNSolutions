@@ -2,6 +2,7 @@ import logging
 import secrets
 import string
 from datetime import timedelta
+from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -40,12 +41,20 @@ from .serializers import (
 logger = logging.getLogger(__name__)
 
 SALT = 'aprobacion-registro'
-
+CHILE_TZ = ZoneInfo('America/Santiago')
 
 # =========================================================
 # UTILIDADES
 # =========================================================
-
+def _realizada_hoy_chile(pauta):
+    """Devuelve True si el paciente ya completó una sesión de esta pauta hoy (corte 00:00 hora Chile)."""
+    ahora_cl = timezone.now().astimezone(CHILE_TZ)
+    inicio_dia_cl = ahora_cl.replace(hour=0, minute=0, second=0, microsecond=0)
+    return RegistroFeedback.objects.filter(
+        pauta=pauta,
+        completado=True,
+        fecha_ejecucion__gte=inicio_dia_cl,
+    ).exists()
 def _es_admin(user):
     return user.is_staff or user.is_superuser
 
@@ -321,7 +330,13 @@ class PautaDetailView(generics.RetrieveAPIView):
 
 
 def _validar_limite_sesiones(pauta):
-    """Impide registrar más sesiones completadas si el paciente ya cumplió su meta semanal vigente."""
+    """Valida tanto el bloqueo diario (hasta las 00:00) como la meta semanal prescrita."""
+    if _realizada_hoy_chile(pauta):
+        raise DRFValidationError(
+            'Ya completaste tu sesión de esta pauta por hoy. '
+            'Se desbloqueará automáticamente a las 00:00 hrs de mañana.'
+        )
+
     desde_fecha = _inicio_ciclo_pauta(pauta)
     sesiones_semana = RegistroFeedback.objects.filter(
         pauta=pauta,

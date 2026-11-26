@@ -154,12 +154,13 @@ class PautaEjercicioSerializer(serializers.ModelSerializer):
     media_url = serializers.SerializerMethodField()
     descanso_seg = serializers.IntegerField(source='tiempo_descanso_segundos', read_only=True)
     tiempo_descanso_segundos = serializers.IntegerField(read_only=True)
+    unidad_medida = serializers.CharField(read_only=True)
 
     class Meta:
         model = PautaEjercicio
         fields = [
             'id', 'ejercicio_id', 'nombre', 'zona', 'series', 'repeticiones',
-            'descanso_seg', 'tiempo_descanso_segundos', 'media_url',
+            'unidad_medida', 'descanso_seg', 'tiempo_descanso_segundos', 'media_url',
         ]
 
     def get_media_url(self, obj):
@@ -282,7 +283,20 @@ class PautaListSerializer(serializers.ModelSerializer):
     sesiones_semana = serializers.SerializerMethodField()
     meta_semanal = serializers.SerializerMethodField()
     evolucion_clinica = serializers.SerializerMethodField()
+    frecuencia_semanal = serializers.IntegerField(read_only=True)
+    completada_hoy = serializers.SerializerMethodField()
     ultima_respuesta_kine = serializers.SerializerMethodField()
+    def get_completada_hoy(self, obj):
+        if getattr(obj, 'es_plantilla', False):
+            return False
+        from zoneinfo import ZoneInfo
+        ahora_cl = timezone.now().astimezone(ZoneInfo('America/Santiago'))
+        inicio_dia_cl = ahora_cl.replace(hour=0, minute=0, second=0, microsecond=0)
+        return RegistroFeedback.objects.filter(
+            pauta=obj,
+            completado=True,
+            fecha_ejecucion__gte=inicio_dia_cl,
+        ).exists()
 
     class Meta:
         model = Pauta
@@ -291,7 +305,7 @@ class PautaListSerializer(serializers.ModelSerializer):
             'kinesiologo_nombre', 'creado_en', 'actualizado_en', 'fecha_creacion', 'activo',
             'total_ejercicios', 'cantidad_ejercicios', 'es_plantilla',
             'sesiones_semana', 'meta_semanal', 'evolucion_clinica',
-            'ultima_respuesta_kine', 'ejercicios_detalle',
+            'ultima_respuesta_kine', 'ejercicios_detalle', 'frecuencia_semanal', 'completada_hoy'
         ]
 
     def get_paciente_nombre(self, obj):
@@ -327,8 +341,22 @@ class PautaDetailSerializer(serializers.ModelSerializer):
     kinesiologo_nombre = serializers.SerializerMethodField()
     sesiones_semana = serializers.SerializerMethodField()
     meta_semanal = serializers.SerializerMethodField()
+    frecuencia_semanal = serializers.IntegerField(read_only=True)
+    completada_hoy = serializers.SerializerMethodField()
     evolucion_clinica = serializers.SerializerMethodField()
     ultima_respuesta_kine = serializers.SerializerMethodField()
+
+    def get_completada_hoy(self, obj):
+        if getattr(obj, 'es_plantilla', False):
+            return False
+        from zoneinfo import ZoneInfo
+        ahora_cl = timezone.now().astimezone(ZoneInfo('America/Santiago'))
+        inicio_dia_cl = ahora_cl.replace(hour=0, minute=0, second=0, microsecond=0)
+        return RegistroFeedback.objects.filter(
+            pauta=obj,
+            completado=True,
+            fecha_ejecucion__gte=inicio_dia_cl,
+        ).exists()
 
     class Meta:
         model = Pauta
@@ -394,13 +422,14 @@ class PautaCreateSerializer(serializers.ModelSerializer):
         queryset=User.objects.all(), required=False, allow_null=True,
     )
     notas = serializers.CharField(required=False, allow_blank=True, default='')
+    frecuencia_semanal = serializers.IntegerField(required=False, default=3, min_value=1, max_value=7)
     es_plantilla = serializers.BooleanField(required=False, default=False)
     guardar_como_plantilla = serializers.BooleanField(required=False, default=False, write_only=True)
 
     class Meta:
         model = Pauta
         fields = [
-            'id', 'titulo', 'notas', 'paciente', 'activo', 'es_plantilla',
+            'id', 'titulo', 'notas', 'paciente', 'frecuencia_semanal', 'activo', 'es_plantilla',
             'guardar_como_plantilla', 'ejercicios', 'ejercicios_detalle',
         ]
         read_only_fields = ('id',)
@@ -444,10 +473,12 @@ class PautaCreateSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError({
                         "ejercicios": f"El ejercicio en la posición {idx + 1} no es válido o no existe."
                     })
+                dunidad = str(item.get('unidad_medida', 'REPS')).upper()
                 detalles_limpios.append({
                     'ejercicio_id': int(ej_id),
                     'series': max(1, _a_entero(item.get('series'), 3)),
                     'repeticiones': max(1, _a_entero(item.get('repeticiones'), 10)),
+                    'unidad_medida': dunidad if dunidad in ('REPS', 'SEG') else 'REPS',
                     'tiempo_descanso_segundos': max(0, _a_entero(
                         item.get('tiempo_descanso_segundos', item.get('descanso_seg')), 60)),
                 })

@@ -87,6 +87,7 @@ class Pauta(models.Model):
     paciente = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='pautas_asignadas', null=True, blank=True
     )
+    frecuencia_semanal = models.PositiveSmallIntegerField(default=3)
     es_plantilla = models.BooleanField(default=False)
     activo = models.BooleanField(default=True)
     creado_en = models.DateTimeField(auto_now_add=True)
@@ -113,12 +114,16 @@ class Pauta(models.Model):
 
 
 class PautaEjercicio(models.Model):
+    UNIDADES = [
+        ('REPS', 'Repeticiones'),
+        ('SEG', 'Segundos'),
+    ]
     pauta = models.ForeignKey(Pauta, on_delete=models.CASCADE, related_name='ejercicios_detalle')
     ejercicio = models.ForeignKey(Ejercicio, on_delete=models.CASCADE)
     series = models.PositiveIntegerField(default=3)
     repeticiones = models.PositiveIntegerField(default=10)
+    unidad_medida = models.CharField(max_length=10, choices=UNIDADES, default='REPS')
     tiempo_descanso_segundos = models.PositiveIntegerField(default=60)
-
     def __str__(self):
         return f"{self.ejercicio.nombre} ({self.series}x{self.repeticiones})"
 

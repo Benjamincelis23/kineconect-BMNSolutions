@@ -292,18 +292,17 @@ export default function HomeScreen({ navigation }) {
   const nombrePaciente = capitalizarNombre(me.nombre);
   const infoKine = obtenerInfoKinesiologo(me, pautas);
 
-  // Sincroniza el contador global con las pautas activas para evitar contradicciones entre tarjetas
   const pautasConConteo = Array.isArray(pautas)
     ? pautas.filter((p) => p && p.sesiones_semana != null)
     : [];
 
   const metaSemanal = pautasConConteo.length > 0
-    ? pautasConConteo.reduce((acc, p) => acc + Math.max(1, Number(p.meta_semanal || 3)), 0)
+    ? pautasConConteo.reduce((acc, p) => acc + Math.max(1, Number(p.frecuencia_semanal || p.meta_semanal || 3)), 0)
     : Math.max(1, Number(me.meta_semanal || 3));
 
   const sesionesSemana = pautasConConteo.length > 0
     ? pautasConConteo.reduce((acc, p) => {
-        const metaP = Math.max(1, Number(p.meta_semanal || 3));
+        const metaP = Math.max(1, Number(p.frecuencia_semanal || p.meta_semanal || 3));
         return acc + Math.min(Number(p.sesiones_semana || 0), metaP);
       }, 0)
     : Number(me.sesiones_semana || 0);
@@ -313,21 +312,32 @@ export default function HomeScreen({ navigation }) {
 
   const esPautaCumplida = (pauta) => {
     if (!pauta) return metaGlobalCumplida;
-    const metaP = Math.max(1, Number(pauta.meta_semanal || 3));
+    const metaP = Math.max(1, Number(pauta.frecuencia_semanal || pauta.meta_semanal || 3));
     if (pauta.sesiones_semana != null) {
       return Number(pauta.sesiones_semana) >= metaP;
     }
     return metaGlobalCumplida;
   };
 
-  const pautaPrincipal = pautas.find((p) => !esPautaCumplida(p)) || (pautas.length > 0 ? pautas[0] : null);
+  const esPautaBloqueadaHoy = (pauta) => Boolean(pauta?.completada_hoy);
+
+  const pautaPrincipal =
+    pautas.find((p) => !esPautaCumplida(p) && !esPautaBloqueadaHoy(p)) ||
+    pautas.find((p) => !esPautaCumplida(p)) ||
+    (pautas.length > 0 ? pautas[0] : null);
+
   const principalCumplida = pautaPrincipal ? esPautaCumplida(pautaPrincipal) : metaGlobalCumplida;
+  const principalBloqueadaHoy = pautaPrincipal ? esPautaBloqueadaHoy(pautaPrincipal) : false;
+  const principalSoloLectura = principalCumplida || principalBloqueadaHoy;
 
   const abrirPauta = (pauta) => {
     if (!pauta?.id) return;
+    const cumplida = esPautaCumplida(pauta);
+    const bloqueadaHoy = esPautaBloqueadaHoy(pauta);
     navigation.navigate('PautaDetail', {
       id: pauta.id,
-      soloConsulta: esPautaCumplida(pauta),
+      soloConsulta: cumplida || bloqueadaHoy,
+      bloqueadaHoy,
     });
   };
 
@@ -339,9 +349,13 @@ export default function HomeScreen({ navigation }) {
       ? pautas.find((p) => Number(p?.id) === Number(pautaId))
       : null;
 
+    const cumplida = encontrada ? esPautaCumplida(encontrada) : false;
+    const bloqueadaHoy = encontrada ? esPautaBloqueadaHoy(encontrada) : false;
+
     navigation.navigate('PautaDetail', {
       id: encontrada?.id ?? pautaId,
-      soloConsulta: encontrada ? esPautaCumplida(encontrada) : false,
+      soloConsulta: cumplida || bloqueadaHoy,
+      bloqueadaHoy,
     });
   };
 
@@ -467,29 +481,36 @@ export default function HomeScreen({ navigation }) {
             style={[styles.thickProgressBar, { backgroundColor: c.surfaceSoft }]}
           />
 
-          {metaGlobalCumplida && (
+          {metaGlobalCumplida ? (
             <View style={[styles.restNoticeBox, { backgroundColor: c.successBg, borderColor: c.success }]}>
               <MaterialCommunityIcons name="shield-check-outline" size={18} color={c.success} />
               <Text style={{ flex: 1, color: c.success, fontSize: 12.5, fontWeight: '700', lineHeight: 17 }}>
                 Meta semanal completada. Puedes repasar tus videos y técnica en modo solo consulta.
               </Text>
             </View>
-          )}
+          ) : principalBloqueadaHoy ? (
+            <View style={[styles.restNoticeBox, { backgroundColor: c.warningBg, borderColor: c.warning }]}>
+              <MaterialCommunityIcons name="clock-check-outline" size={18} color={c.warning} />
+              <Text style={{ flex: 1, color: c.warning, fontSize: 12.5, fontWeight: '700', lineHeight: 17 }}>
+                Sesión de hoy completada. Se desbloqueará nuevamente a las 00:00 hrs.
+              </Text>
+            </View>
+          ) : null}
 
           {pautaPrincipal && (
             <Button
-              mode={principalCumplida ? 'outlined' : 'contained'}
-              icon={principalCumplida ? 'eye-outline' : 'play'}
+              mode={principalSoloLectura ? 'outlined' : 'contained'}
+              icon={principalSoloLectura ? 'eye-outline' : 'play'}
               onPress={() => abrirPauta(pautaPrincipal)}
-              buttonColor={principalCumplida ? c.accentBg : c.primary}
-              textColor={principalCumplida ? c.primary : (isDark ? '#0F172A' : '#FFFFFF')}
+              buttonColor={principalSoloLectura ? c.accentBg : c.primary}
+              textColor={principalSoloLectura ? c.primary : (isDark ? '#0F172A' : '#FFFFFF')}
               style={[
                 { marginTop: 16, borderRadius: 14 },
-                principalCumplida && { borderColor: c.primary, borderWidth: 1.5 },
+                principalSoloLectura && { borderColor: c.primary, borderWidth: 1.5 },
               ]}
               contentStyle={{ paddingVertical: 4 }}
             >
-              {principalCumplida
+              {principalSoloLectura
                 ? `Repasar ejercicios: ${pautaPrincipal.titulo}`
                 : `Entrenar: ${pautaPrincipal.titulo}`}
             </Button>
@@ -516,7 +537,9 @@ export default function HomeScreen({ navigation }) {
           pautas.map((p) => {
             const totalEj = p.total_ejercicios ?? p.ejercicios_detalle?.length ?? 0;
             const pautaCumplida = esPautaCumplida(p);
-            const metaP = Math.max(1, Number(p.meta_semanal || 3));
+            const pautaBloqueadaHoy = esPautaBloqueadaHoy(p);
+            const soloLectura = pautaCumplida || pautaBloqueadaHoy;
+            const metaP = Math.max(1, Number(p.frecuencia_semanal || p.meta_semanal || 3));
             const hechasP = p.sesiones_semana != null ? Math.min(Number(p.sesiones_semana), metaP) : null;
             const indicacion = (p.notas || '').trim();
 
@@ -529,7 +552,7 @@ export default function HomeScreen({ navigation }) {
                   styles.pautaItem,
                   {
                     backgroundColor: c.surface,
-                    borderColor: pautaCumplida ? c.success : c.border,
+                    borderColor: pautaCumplida ? c.success : pautaBloqueadaHoy ? c.warning : c.border,
                   },
                 ]}
               >
@@ -537,12 +560,24 @@ export default function HomeScreen({ navigation }) {
                   <View
                     style={[
                       styles.pautaIconWrapper,
-                      { backgroundColor: pautaCumplida ? c.successBg : c.accentBg },
+                      {
+                        backgroundColor: pautaCumplida
+                          ? c.successBg
+                          : pautaBloqueadaHoy
+                          ? c.warningBg
+                          : c.accentBg,
+                      },
                     ]}
                   >
                     <MaterialCommunityIcons
-                      color={pautaCumplida ? c.success : c.primary}
-                      name={pautaCumplida ? 'book-open-page-variant-outline' : 'dumbbell'}
+                      color={pautaCumplida ? c.success : pautaBloqueadaHoy ? c.warning : c.primary}
+                      name={
+                        pautaCumplida
+                          ? 'book-open-page-variant-outline'
+                          : pautaBloqueadaHoy
+                          ? 'clock-check-outline'
+                          : 'dumbbell'
+                      }
                       size={24}
                     />
                   </View>
@@ -554,10 +589,12 @@ export default function HomeScreen({ navigation }) {
                     <Text style={[styles.pautaSubtitle, { color: c.textSub }]}>
                       {totalEj} {totalEj === 1 ? 'ejercicio' : 'ejercicios'} •{' '}
                       {pautaCumplida
-                        ? 'Modo solo consulta (repaso técnico)'
+                        ? `Meta semanal cumplida (${metaP}/${metaP})`
+                        : pautaBloqueadaHoy
+                        ? `Hecha hoy (${hechasP ?? 1}/${metaP}) • Vuelve a las 00:00`
                         : hechasP != null
                         ? `${hechasP}/${metaP} sesiones esta semana`
-                        : `Asignada el ${new Date(p.fecha_creacion).toLocaleDateString('es-CL')}`}
+                        : `Frecuencia: ${metaP}x/semana`}
                     </Text>
                   </View>
 
@@ -565,13 +602,13 @@ export default function HomeScreen({ navigation }) {
                     style={[
                       styles.playPill,
                       {
-                        backgroundColor: pautaCumplida ? c.accentBg : c.primary,
+                        backgroundColor: soloLectura ? c.accentBg : c.primary,
                       },
                     ]}
                   >
                     <MaterialCommunityIcons
-                      color={pautaCumplida ? c.primary : (isDark ? '#0F172A' : '#FFFFFF')}
-                      name={pautaCumplida ? 'eye-outline' : 'chevron-right'}
+                      color={soloLectura ? c.primary : (isDark ? '#0F172A' : '#FFFFFF')}
+                      name={soloLectura ? 'eye-outline' : 'chevron-right'}
                       size={20}
                     />
                   </View>

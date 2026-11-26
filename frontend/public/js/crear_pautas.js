@@ -42,6 +42,25 @@ function normalizarTexto(txt) {
         .trim();
 }
 
+function inferirUnidadEjercicio(ejercicio, unidadExplicita = null) {
+    if (unidadExplicita) {
+        const u = String(unidadExplicita).toUpperCase();
+        if (u === 'SEG' || u === 'REPS') return u;
+    }
+    const nombre = normalizarTexto(ejercicio?.nombre || ejercicio?.titulo);
+    if (
+        nombre.includes('isometric') ||
+        nombre.includes('plancha') ||
+        nombre.includes('estiramiento') ||
+        nombre.includes('elongacion') ||
+        nombre.includes('equilibrio') ||
+        nombre.includes('sosten')
+    ) {
+        return 'SEG';
+    }
+    return 'REPS';
+}
+
 function asegurarContenedorToast() {
     let cont = document.getElementById('kc-toast-container');
     if (!cont && document.body) {
@@ -331,7 +350,7 @@ async function inicializarCatalogo() {
 
     inicializarBarraControlCatalogo();
 
-    if (loading) loading.style.display = 'block';
+    if (loading) loading.style.display = 'flex';
     if (container) container.style.display = 'none';
     if (noData) noData.style.display = 'none';
 
@@ -649,16 +668,19 @@ window.cerrarModalMultimedia = function () {
     if (modal) modal.style.display = 'none';
 };
 
-// ---------- 6. Carrito de prescripción ----------
+// ---------- 6. Carrito de prescripción (Diseño aireado + Reps vs Seg) ----------
 window.agregarAlCarrito = function (idEjercicio, dosificacion = null) {
     const ejercicio = todosLosEjercicios.find(e => e.id === idEjercicio);
     if (!ejercicio) return;
 
+    const unidadInferida = inferirUnidadEjercicio(ejercicio, dosificacion?.unidad_medida);
     const existente = carrito.find(item => item.ejercicio.id === idEjercicio);
+
     if (existente) {
         if (dosificacion) {
             existente.series = dosificacion.series ?? existente.series;
             existente.repeticiones = dosificacion.repeticiones ?? existente.repeticiones;
+            existente.unidad_medida = unidadInferida;
             existente.descanso = dosificacion.descanso ?? existente.descanso;
         } else {
             existente.series += 1;
@@ -667,7 +689,8 @@ window.agregarAlCarrito = function (idEjercicio, dosificacion = null) {
         carrito.push({
             ejercicio,
             series: dosificacion?.series ?? 3,
-            repeticiones: dosificacion?.repeticiones ?? 12,
+            repeticiones: dosificacion?.repeticiones ?? (unidadInferida === 'SEG' ? 30 : 12),
+            unidad_medida: unidadInferida,
             descanso: dosificacion?.descanso ?? 60
         });
     }
@@ -681,6 +704,11 @@ window.eliminarDelCarrito = function (index) {
 
 window.actualizarDosificacion = function (index, campo, valor) {
     if (!carrito[index]) return;
+    if (campo === 'unidad_medida') {
+        carrito[index].unidad_medida = valor === 'SEG' ? 'SEG' : 'REPS';
+        renderizarCarrito();
+        return;
+    }
     const minimo = campo === 'descanso' ? 0 : 1;
     carrito[index][campo] = aEntero(valor, minimo, minimo);
 };
@@ -690,7 +718,9 @@ function renderizarCarrito() {
     const badgeTotal = document.getElementById('badge-total-items');
     const btnSubmit = document.getElementById('btn-confirmar-pauta');
 
-    if (badgeTotal) badgeTotal.textContent = `${carrito.length} Ejercicios`;
+    if (badgeTotal) {
+        badgeTotal.textContent = `${carrito.length} ${carrito.length === 1 ? 'Ejercicio' : 'Ejercicios'}`;
+    }
     if (btnSubmit) btnSubmit.disabled = (carrito.length === 0);
     if (!contenedor) return;
 
@@ -707,27 +737,52 @@ function renderizarCarrito() {
     carrito.forEach((item, index) => {
         const div = document.createElement('div');
         div.className = 'carrito-item-card';
+        div.style.cssText = 'padding: 12px; border-radius: 10px; border: 1px solid var(--gris-200); display: flex; flex-direction: column; gap: 10px;';
+
         const nombre = item.ejercicio.nombre || item.ejercicio.titulo || 'Ejercicio';
+        const esTiempo = item.unidad_medida === 'SEG';
+        const etiquetaCantidad = esTiempo ? 'Duración (seg)' : 'Repeticiones';
 
         div.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <strong style="font-size: 0.85rem; color: var(--azul-900);">${esc(nombre)}</strong>
-                <button type="button" onclick="eliminarDelCarrito(${index})" style="background: none; border: none; color: var(--rojo-500); cursor: pointer;" title="Quitar">
-                    <i class='bx bx-trash'></i>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                <strong style="font-size: 0.86rem; color: var(--azul-900); line-height: 1.3; flex: 1;">
+                    ${index + 1}. ${esc(nombre)}
+                </strong>
+                <button type="button" onclick="eliminarDelCarrito(${index})"
+                    style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 2px 4px; flex-shrink: 0;" title="Quitar ejercicio">
+                    <i class='bx bx-trash' style="font-size: 1rem;"></i>
                 </button>
             </div>
-            <div class="carrito-item-inputs">
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                 <div class="field" style="margin: 0;">
-                    <label style="font-size: 0.7rem;">Series</label>
-                    <input type="number" min="1" value="${item.series}" onchange="actualizarDosificacion(${index}, 'series', this.value)" style="padding: 4px 6px; font-size: 0.8rem;">
+                    <label style="font-size: 0.72rem; margin-bottom: 3px; display: block;">Series</label>
+                    <input type="number" min="1" max="20" value="${item.series}"
+                        onchange="actualizarDosificacion(${index}, 'series', this.value)"
+                        style="width: 100%; padding: 6px 8px; font-size: 0.83rem;">
                 </div>
+
                 <div class="field" style="margin: 0;">
-                    <label style="font-size: 0.7rem;">Reps / Seg</label>
-                    <input type="number" min="1" value="${item.repeticiones}" onchange="actualizarDosificacion(${index}, 'repeticiones', this.value)" style="padding: 4px 6px; font-size: 0.8rem;">
+                    <label style="font-size: 0.72rem; margin-bottom: 3px; display: block;">Modalidad</label>
+                    <select onchange="actualizarDosificacion(${index}, 'unidad_medida', this.value)"
+                        style="width: 100%; padding: 6px 8px; font-size: 0.82rem; border-radius: 8px;">
+                        <option value="REPS" ${!esTiempo ? 'selected' : ''}>Repeticiones</option>
+                        <option value="SEG" ${esTiempo ? 'selected' : ''}>Tiempo (seg)</option>
+                    </select>
                 </div>
+
                 <div class="field" style="margin: 0;">
-                    <label style="font-size: 0.7rem;">Descanso(s)</label>
-                    <input type="number" min="0" step="5" value="${item.descanso}" onchange="actualizarDosificacion(${index}, 'descanso', this.value)" style="padding: 4px 6px; font-size: 0.8rem;">
+                    <label style="font-size: 0.72rem; margin-bottom: 3px; display: block;">${etiquetaCantidad}</label>
+                    <input type="number" min="1" max="300" value="${item.repeticiones}"
+                        onchange="actualizarDosificacion(${index}, 'repeticiones', this.value)"
+                        style="width: 100%; padding: 6px 8px; font-size: 0.83rem;">
+                </div>
+
+                <div class="field" style="margin: 0;">
+                    <label style="font-size: 0.72rem; margin-bottom: 3px; display: block;">Descanso (seg)</label>
+                    <input type="number" min="0" max="300" step="5" value="${item.descanso}"
+                        onchange="actualizarDosificacion(${index}, 'descanso', this.value)"
+                        style="width: 100%; padding: 6px 8px; font-size: 0.83rem;">
                 </div>
             </div>
         `;
@@ -745,6 +800,11 @@ function aplicarPautaAlFormulario(pauta) {
     const textarea = obtenerTextareaNotas();
     if (textarea) textarea.value = pauta.notas || '';
 
+    const selectFrec = document.getElementById('pauta-frecuencia');
+    if (selectFrec && pauta.frecuencia_semanal) {
+        selectFrec.value = String(pauta.frecuencia_semanal);
+    }
+
     carrito = [];
     const detalles = Array.isArray(pauta.ejercicios_detalle) ? pauta.ejercicios_detalle : [];
     detalles.forEach(d => {
@@ -754,6 +814,7 @@ function aplicarPautaAlFormulario(pauta) {
         agregarAlCarrito(idEj, {
             series: aEntero(d.series, 3, 1),
             repeticiones: aEntero(d.repeticiones, 12, 1),
+            unidad_medida: d.unidad_medida || 'REPS',
             descanso: aEntero(d.tiempo_descanso_segundos ?? d.descanso_seg, 60, 0)
         });
     });
@@ -863,10 +924,12 @@ function inicializarFormularioPauta() {
 
         const inputNombre = document.getElementById('pauta-nombre');
         const inputDescripcion = document.getElementById('pauta-descripcion') || document.querySelector('textarea');
+        const selectFrecuencia = document.getElementById('pauta-frecuencia');
         const esSoloPlantilla = checkSoloPlantilla ? checkSoloPlantilla.checked : false;
         const pacienteId = selectPaciente ? selectPaciente.value : '';
         const titulo = inputNombre ? inputNombre.value.trim() : '';
         const textoNotas = inputDescripcion ? inputDescripcion.value.trim() : '';
+        const frecuenciaSemanal = selectFrecuencia ? aEntero(selectFrecuencia.value, 3, 1) : 3;
 
         if (!esSoloPlantilla && !pacienteId) {
             mostrarToast('Por favor, selecciona un paciente en el menú superior o marca la casilla para guardar como Plantilla.', 'warning');
@@ -889,12 +952,14 @@ function inicializarFormularioPauta() {
             paciente: esSoloPlantilla ? null : parseInt(pacienteId, 10),
             titulo: esSoloPlantilla && !titulo.toLowerCase().includes('protocolo') ? `[Protocolo] ${titulo}` : titulo,
             notas: textoNotas,
+            frecuencia_semanal: frecuenciaSemanal,
             es_plantilla: esSoloPlantilla,
             guardar_como_plantilla: false,
             ejercicios_detalle: carrito.map(item => ({
                 ejercicio: item.ejercicio.id,
                 series: parseInt(item.series, 10) || 3,
                 repeticiones: parseInt(item.repeticiones, 10) || 10,
+                unidad_medida: item.unidad_medida || 'REPS',
                 tiempo_descanso_segundos: parseInt(item.descanso, 10) || 60
             }))
         };

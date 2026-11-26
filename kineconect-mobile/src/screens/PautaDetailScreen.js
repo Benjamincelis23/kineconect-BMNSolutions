@@ -165,7 +165,7 @@ function VideoMedia({ uri }) {
 }
 
 export default function PautaDetailScreen({ route, navigation }) {
-  const { id, soloConsulta: soloConsultaParam = false } = route.params;
+  const { id, soloConsulta: soloConsultaParam = false, bloqueadaHoy: bloqueadaHoyParam = false } = route.params;
   const theme = useTheme();
   const isDark = theme.dark;
   const insets = useSafeAreaInsets();
@@ -182,6 +182,8 @@ export default function PautaDetailScreen({ route, navigation }) {
     primary: isDark ? '#38BDF8' : '#0284C7',
     success: '#10B981',
     successBg: isDark ? '#064E3B' : '#D1FAE5',
+    warning: '#F59E0B',
+    warningBg: isDark ? '#451A03' : '#FEF3C7',
     danger: isDark ? '#FCA5A5' : '#DC2626',
     dangerBg: isDark ? '#7F1D1D' : '#FEE2E2',
     dangerBorder: isDark ? '#EF4444' : '#FCA5A5',
@@ -192,6 +194,7 @@ export default function PautaDetailScreen({ route, navigation }) {
   const [respuestasPauta, setRespuestasPauta] = useState([]);
   const [error, setError] = useState(false);
   const [metaCumplidaApi, setMetaCumplidaApi] = useState(Boolean(soloConsultaParam));
+  const [completadaHoyApi, setCompletadaHoyApi] = useState(Boolean(bloqueadaHoyParam));
 
   const [seriesHechas, setSeriesHechas] = useState({});
   const [modoGuiado, setModoGuiado] = useState(false);
@@ -229,9 +232,14 @@ export default function PautaDetailScreen({ route, navigation }) {
       setRespuestasPauta(filtradas);
       cacheSet(`pauta_feedback_${id}`, filtradas);
 
-      if (resPauta?.data && resPauta.data.sesiones_semana != null) {
-        const metaP = Math.max(1, Number(resPauta.data.meta_semanal || 3));
-        setMetaCumplidaApi(Number(resPauta.data.sesiones_semana) >= metaP);
+      if (resPauta?.data) {
+        if (resPauta.data.completada_hoy != null) {
+          setCompletadaHoyApi(Boolean(resPauta.data.completada_hoy));
+        }
+        if (resPauta.data.sesiones_semana != null) {
+          const metaP = Math.max(1, Number(resPauta.data.frecuencia_semanal || resPauta.data.meta_semanal || 3));
+          setMetaCumplidaApi(Number(resPauta.data.sesiones_semana) >= metaP);
+        }
       } else if (resMe?.data) {
         const meta = Math.max(1, Number(resMe.data.meta_semanal || 3));
         const sem = Number(resMe.data.sesiones_semana || 0);
@@ -258,8 +266,12 @@ export default function PautaDetailScreen({ route, navigation }) {
       ]);
       if (cachedMap) setCatalogoMap(cachedMap);
       if (Array.isArray(cachedFb)) setRespuestasPauta(ordenarRespuestasRecientes(cachedFb));
-      if (cachedPauta) setPauta(cachedPauta);
-      else setError(true);
+      if (cachedPauta) {
+        setPauta(cachedPauta);
+        if (cachedPauta.completada_hoy) setCompletadaHoyApi(true);
+      } else {
+        setError(true);
+      }
     }
   }, [id]);
 
@@ -286,6 +298,7 @@ export default function PautaDetailScreen({ route, navigation }) {
 
       const series = Math.max(1, Number(item.series || 3));
       const repeticiones = Math.max(1, Number(item.repeticiones || 10));
+      const unidad = String(item.unidad_medida || 'REPS').toUpperCase() === 'SEG' ? 'SEG' : 'REPS';
       const zona = item.zona_cuerpo || item.zona || ejObj.zona_cuerpo || extra.zona_cuerpo || 'General';
       const descripcion = item.descripcion || ejObj.descripcion || extra.descripcion || '';
       const mediaUrl = resolverMediaUrl(item, extra);
@@ -296,6 +309,7 @@ export default function PautaDetailScreen({ route, navigation }) {
         nombre,
         series,
         repeticiones,
+        unidad,
         zona,
         pasos: parsearPasosClinicos(descripcion),
         mediaUrl,
@@ -329,7 +343,9 @@ export default function PautaDetailScreen({ route, navigation }) {
     );
   }
 
-  const esSoloConsulta = Boolean(soloConsultaParam) || metaCumplidaApi;
+  const bloqueadaHastaManana = Boolean(bloqueadaHoyParam) || completadaHoyApi;
+  const metaSemanalPauta = Math.max(1, Number(pauta?.frecuencia_semanal || pauta?.meta_semanal || 3));
+  const esSoloConsulta = Boolean(soloConsultaParam) || metaCumplidaApi || bloqueadaHastaManana;
 
   const totalEjercicios = ejercicios.length;
   const totalSeries = ejercicios.reduce((acc, ej) => acc + ej.series, 0);
@@ -397,6 +413,10 @@ export default function PautaDetailScreen({ route, navigation }) {
       });
 
       setEvaOpen(false);
+      if (rutinaCompleta) {
+        setCompletadaHoyApi(true);
+        cacheSet(`pauta_${id}`, { ...pauta, completada_hoy: true });
+      }
 
       const estadoEnvioTexto =
         estado === 'enviado'
@@ -422,13 +442,14 @@ export default function PautaDetailScreen({ route, navigation }) {
         Alert.alert(
           '¡Sesión registrada!',
           estado === 'enviado'
-            ? 'Tu kinesiólogo ya puede ver tu avance y nivel de dolor.'
+            ? 'Tu sesión diaria quedó completada. Se desbloqueará nuevamente a las 00:00 hrs.'
             : 'Sin conexión: se enviará automáticamente cuando recuperes señal.',
           [{ text: 'Listo', onPress: () => navigation.goBack() }]
         );
       }
-    } catch {
-      Alert.alert('Error', 'No se pudo registrar el feedback.');
+    } catch (err) {
+      const msgApi = err?.response?.data?.detail || err?.response?.data?.[0];
+      Alert.alert('Aviso', typeof msgApi === 'string' ? msgApi : 'No se pudo registrar el feedback.');
     } finally {
       setSending(false);
     }
@@ -436,12 +457,29 @@ export default function PautaDetailScreen({ route, navigation }) {
 
   const renderBannerSoloConsulta = () => {
     if (!esSoloConsulta) return null;
+
+    if (bloqueadaHastaManana && !metaCumplidaApi) {
+      return (
+        <View style={[styles.readOnlyBanner, { backgroundColor: c.warningBg, borderColor: c.warning }]}>
+          <MaterialCommunityIcons name="clock-check-outline" size={21} color={c.warning} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: c.warning, fontSize: 12.5, fontWeight: '800' }}>
+              Sesión diaria completada • Se desbloquea a las 00:00 hrs
+            </Text>
+            <Text style={{ color: c.textSub, fontSize: 11.5, marginTop: 2, lineHeight: 16 }}>
+              Por hoy ya cumpliste tu entrenamiento de esta pauta (meta: {metaSemanalPauta} {metaSemanalPauta === 1 ? 'vez' : 'veces'}/semana). Puedes repasar los videos cuando quieras.
+            </Text>
+          </View>
+        </View>
+      );
+    }
+
     return (
       <View style={[styles.readOnlyBanner, { backgroundColor: c.successBg, borderColor: c.success }]}>
         <MaterialCommunityIcons name="eye-check-outline" size={20} color={c.success} />
         <View style={{ flex: 1 }}>
           <Text style={{ color: c.success, fontSize: 12.5, fontWeight: '800' }}>
-            Modo Solo Consulta • Meta semanal cumplida
+            Modo Solo Consulta • Meta semanal cumplida ({metaSemanalPauta}/{metaSemanalPauta})
           </Text>
           <Text style={{ color: c.textSub, fontSize: 11.5, marginTop: 2, lineHeight: 16 }}>
             Puedes revisar los videos y la técnica postural, pero el registro de sesiones está pausado hasta tu próximo ciclo.
@@ -455,6 +493,8 @@ export default function PautaDetailScreen({ route, navigation }) {
     const ej = ejercicios[indiceActual] || ejercicios[0];
     const hechas = seriesHechas[ej.key] || [];
     const ejTerminado = hechas.length >= ej.series;
+    const etiquetaUnidad = ej.unidad === 'SEG' ? 'Segundos' : 'Repeticiones';
+    const sufijoUnidad = ej.unidad === 'SEG' ? 'seg' : 'reps';
 
     return (
       <View style={[styles.screen, { backgroundColor: c.bg }]}>
@@ -563,7 +603,7 @@ export default function PautaDetailScreen({ route, navigation }) {
                 <View style={[styles.metricDivider, { backgroundColor: c.border }]} />
                 <View style={styles.metricCol}>
                   <Text style={{ color: c.primary, fontSize: 18, fontWeight: '800' }}>{ej.repeticiones}</Text>
-                  <Text style={{ color: c.textSub, fontSize: 11, fontWeight: '600' }}>Repeticiones</Text>
+                  <Text style={{ color: c.textSub, fontSize: 11, fontWeight: '600' }}>{etiquetaUnidad}</Text>
                 </View>
                 <View style={[styles.metricDivider, { backgroundColor: c.border }]} />
                 <View style={styles.metricCol}>
@@ -627,7 +667,7 @@ export default function PautaDetailScreen({ route, navigation }) {
                       style={{ borderRadius: 14 }}
                       contentStyle={{ paddingVertical: 6 }}
                     >
-                      Completar Serie {hechas.length + 1} de {ej.series} ({ej.repeticiones} reps)
+                      Completar Serie {hechas.length + 1} de {ej.series} ({ej.repeticiones} {sufijoUnidad})
                     </Button>
                   ) : (
                     <View style={[styles.doneBox, { backgroundColor: c.successBg }]}>
@@ -797,6 +837,7 @@ export default function PautaDetailScreen({ route, navigation }) {
         {ejercicios.map((ej, index) => {
           const hechas = seriesHechas[ej.key]?.length || 0;
           const listo = !esSoloConsulta && hechas >= ej.series;
+          const sufijo = ej.unidad === 'SEG' ? 'seg' : 'reps';
           return (
             <TouchableOpacity
               key={ej.key}
@@ -815,7 +856,7 @@ export default function PautaDetailScreen({ route, navigation }) {
                   {index + 1}. {ej.nombre}
                 </Text>
                 <Text style={{ color: c.textSub, fontSize: 12.5, marginTop: 3 }}>
-                  {ej.series} {ej.series === 1 ? 'serie' : 'series'} × {ej.repeticiones} reps • Descanso {ej.descanso}s • {ej.zona}
+                  {ej.series} {ej.series === 1 ? 'serie' : 'series'} × {ej.repeticiones} {sufijo} • Descanso {ej.descanso}s • {ej.zona}
                 </Text>
               </View>
 

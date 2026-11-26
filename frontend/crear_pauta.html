@@ -408,7 +408,24 @@
                                 <textarea id="pauta-descripcion" rows="2"
                                     placeholder="Indicaciones para el paciente..."></textarea>
                             </div>
-
+<div class="field" style="margin-bottom: 12px;">
+                                <label for="pauta-frecuencia" style="display: flex; align-items: center; gap: 6px;">
+                                    <i class='bx bx-calendar-week' style="color: #0284c7;"></i> Frecuencia Semanal *
+                                </label>
+                                <select id="pauta-frecuencia"
+                                    style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--gris-200); font-size: 0.85rem; font-weight: 600;">
+                                    <option value="1">1 vez por semana (cada 7 días)</option>
+                                    <option value="2">2 veces por semana (cada 3–4 días)</option>
+                                    <option value="3" selected>3 veces por semana (Estándar - día por medio)</option>
+                                    <option value="4">4 veces por semana</option>
+                                    <option value="5">5 veces por semana (Lunes a Viernes)</option>
+                                    <option value="6">6 veces por semana</option>
+                                    <option value="7">7 veces por semana (Todos los días)</option>
+                                </select>
+                                <small style="display: block; font-size: 0.73rem; color: var(--gris-500); margin-top: 3px;">
+                                    Máximo 1 sesión diaria; tras completarla se bloquea hasta las 00:00 hrs.
+                                </small>
+                            </div>
                             <!-- Lista de Ítems en el Carrito con Dosificación -->
                             <div class="field">
                                 <label>Ejercicios Seleccionados</label>
