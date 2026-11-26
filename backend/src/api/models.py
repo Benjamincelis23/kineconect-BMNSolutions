@@ -127,7 +127,6 @@ class PautaEjercicio(models.Model):
     def __str__(self):
         return f"{self.ejercicio.nombre} ({self.series}x{self.repeticiones})"
 
-
 class RegistroFeedback(models.Model):
     pauta = models.ForeignKey(Pauta, on_delete=models.CASCADE, related_name='feedbacks')
     completado = models.BooleanField(default=False)
@@ -136,8 +135,10 @@ class RegistroFeedback(models.Model):
     )
     comentario = models.TextField(blank=True, null=True)
     fecha_ejecucion = models.DateTimeField(auto_now_add=True)
+    revisado = models.BooleanField(default=False)
     respuesta_kinesiologo = models.TextField(blank=True, null=True)
     fecha_respuesta = models.DateTimeField(blank=True, null=True)
+
     def __str__(self):
         usuario = self.pauta.paciente.username if self.pauta.paciente else "Anónimo"
         return f"Feedback de {usuario} - Dolor: {self.nivel_dolor}"
