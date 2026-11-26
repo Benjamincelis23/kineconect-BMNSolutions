@@ -95,7 +95,6 @@ function combinarRespuestasKine(listaFeedback = [], listaPautas = []) {
           });
         }
       }
-      // Si la pauta tiene indicaciones clínicas escritas, las incluimos para no contradecir el estado
       if (p?.notas && String(p.notas).trim().length > 0) {
         const keyNota = `nota_${p.id}_${p.actualizado_en || p.creado_en || ''}`;
         if (!mapa.has(keyNota)) {
@@ -255,11 +254,16 @@ export default function HomeScreen({ navigation }) {
     await cacheSet(CACHE_KEY_OCULTAS, nuevasOcultas);
   };
 
-  const saludo = useMemo(() => {
-    const hora = new Date().getHours();
-    if (hora < 12) return 'Buenos días';
-    if (hora < 20) return 'Buenas tardes';
-    return 'Buenas noches';
+  const mensajeMotivacional = useMemo(() => {
+    const mensajes = [
+      { texto: '¡Cada repetición cuenta en tu recuperación!', emoji: '💪' },
+      { texto: 'Un día más de progreso para sentirte mejor.', emoji: '🚀' },
+      { texto: 'La constancia es la clave de tu bienestar.', emoji: '✨' },
+      { texto: 'Tu cuerpo te va a agradecer este esfuerzo.', emoji: '🙌' },
+      { texto: 'Paso a paso vuelves a tu mejor versión.', emoji: '🔥' },
+      { texto: 'Hoy es un gran día para avanzar en tu pauta.', emoji: '🏃‍♂️' },
+    ];
+    return mensajes[Math.floor(Math.random() * mensajes.length)];
   }, []);
 
   if (error) {
@@ -374,12 +378,15 @@ export default function HomeScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl onRefresh={onRefresh} refreshing={refreshing} tintColor={c.primary} />}
       >
-        {/* Cabecera superior limpia */}
+        {/* Cabecera superior con saludo y mensaje motivacional */}
         <View style={styles.header}>
           <View style={styles.headerTextContainer}>
             <Text style={[styles.subGreeting, { color: c.primary }]}>MI REHABILITACIÓN</Text>
             <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.greeting, { color: c.textMain }]}>
-              {saludo}, {nombrePaciente}
+              ¡Hola, {nombrePaciente}!
+            </Text>
+            <Text style={{ color: c.textSub, fontSize: 13.5, fontWeight: '600', marginTop: 3, lineHeight: 19 }}>
+              {mensajeMotivacional.emoji} {mensajeMotivacional.texto}
             </Text>
 
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
@@ -429,7 +436,7 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* Tarjeta de Adherencia Semanal (sin duplicar acciones de las pautas) */}
+        {/* Tarjeta de Adherencia Semanal */}
         <View style={[styles.heroCard, { backgroundColor: c.surface, borderColor: c.border }]}>
           <View style={styles.statsHeader}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

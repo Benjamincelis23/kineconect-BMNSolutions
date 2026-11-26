@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Button, ProgressBar, Text, useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,6 +12,8 @@ import Skeleton from '../components/Skeleton';
 import { API_URL } from '../constants/config';
 import api from '../services/api';
 import { cacheGet, cacheSet, enviarFeedback } from '../services/offline';
+
+/* ───────────── Helpers ───────────── */
 
 function norm(txt) {
   return String(txt ?? '')
@@ -33,7 +35,6 @@ function humanizarLenguajePaciente(texto) {
     .replace(/\bdecúbito prono\b/gi, 'acostado boca abajo')
     .replace(/\bdecúbito lateral\b/gi, 'acostado de lado')
     .replace(/\besternocleidomastoideo\b/gi, 'músculos laterales del cuello')
-    .replace(/\bpronosupinación\b/gi, 'giro de palma hacia arriba y abajo')
     .replace(/\bmetacarpofalángica\b/gi, 'de los nudillos');
 }
 
@@ -62,10 +63,7 @@ function capitalizarNombre(texto) {
 
 function resolverAutorKinesiologo(pauta, respuestaItem = null) {
   const nombrePaciente = norm(pauta?.paciente_nombre);
-  const candidatos = [
-    respuestaItem?.kinesiologo_nombre,
-    pauta?.kinesiologo_nombre,
-  ];
+  const candidatos = [respuestaItem?.kinesiologo_nombre, pauta?.kinesiologo_nombre];
   for (const cand of candidatos) {
     const limpio = capitalizarNombre(cand);
     if (limpio && norm(limpio) !== 'kineconnect' && (!nombrePaciente || norm(limpio) !== nombrePaciente)) {
@@ -143,6 +141,23 @@ function parsearPasosClinicos(descripcion) {
   return bloques;
 }
 
+function iconoPaso(titulo) {
+  const t = norm(titulo);
+  if (t.includes('posicion')) return 'human-handsdown';
+  if (t.includes('ejecucion')) return 'play-circle-outline';
+  if (t.includes('ritmo')) return 'lungs';
+  if (t.includes('precaucion')) return 'alert-outline';
+  return 'information-outline';
+}
+
+function minutosEstimados(ejercicios) {
+  const segs = ejercicios.reduce((acc, ej) => {
+    const porSerie = ej.unidad === 'SEG' ? ej.repeticiones : ej.repeticiones * 3;
+    return acc + ej.series * porSerie + Math.max(0, ej.series - 1) * ej.descanso;
+  }, 0);
+  return Math.max(1, Math.round(segs / 60));
+}
+
 async function fetchTodosLosEjercicios() {
   const rutas = ['/api/ejercicios/', '/api/v1/ejercicios/'];
   for (const ruta of rutas) {
@@ -175,9 +190,13 @@ async function fetchTodosLosEjercicios() {
 }
 
 function VideoMedia({ uri }) {
-  const player = useVideoPlayer(uri, (p) => { p.loop = true; });
+  const player = useVideoPlayer(uri, (p) => {
+    p.loop = true;
+  });
   return <VideoView player={player} style={styles.media} nativeControls contentFit="contain" />;
 }
+
+/* ───────────── Pantalla ───────────── */
 
 export default function PautaDetailScreen({ route, navigation }) {
   const {
@@ -192,22 +211,32 @@ export default function PautaDetailScreen({ route, navigation }) {
 
   const c = {
     bg: isDark ? '#0F172A' : '#F8FAFC',
-    surface: isDark ? '#1E293B' : '#FFFFFF',
+    surface: isDark ? '#172033' : '#FFFFFF',
     surfaceSoft: isDark ? '#0B1220' : '#F1F5F9',
-    border: isDark ? '#334155' : '#E2E8F0',
+    border: isDark ? '#2A3A52' : '#E2E8F0',
     textMain: isDark ? '#F8FAFC' : '#0F172A',
     textSub: isDark ? '#94A3B8' : '#64748B',
-    accentBg: isDark ? '#082F49' : '#E0F2FE',
-    accentText: isDark ? '#38BDF8' : '#0369A1',
+    accentBg: isDark ? 'rgba(56, 189, 248, 0.12)' : '#E0F2FE',
+    accentText: isDark ? '#BAE6FD' : '#0369A1',
     primary: isDark ? '#38BDF8' : '#0284C7',
     success: '#10B981',
-    successBg: isDark ? '#064E3B' : '#D1FAE5',
+    successBg: isDark ? 'rgba(16, 185, 129, 0.16)' : '#D1FAE5',
     warning: '#F59E0B',
-    warningBg: isDark ? '#451A03' : '#FEF3C7',
+    warningBg: isDark ? 'rgba(245, 158, 11, 0.14)' : '#FEF3C7',
     danger: isDark ? '#FCA5A5' : '#DC2626',
-    dangerBg: isDark ? '#7F1D1D' : '#FEE2E2',
-    dangerBorder: isDark ? '#EF4444' : '#FCA5A5',
+    dangerBg: isDark ? 'rgba(239, 68, 68, 0.14)' : '#FEE2E2',
+    dangerBorder: isDark ? 'rgba(239, 68, 68, 0.6)' : '#FCA5A5',
   };
+
+  const sombra = {
+    shadowColor: '#000',
+    shadowOpacity: isDark ? 0.35 : 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  };
+
+  const scrollRef = useRef(null);
 
   const [pauta, setPauta] = useState(pautaInicial);
   const [catalogoMap, setCatalogoMap] = useState({});
@@ -215,13 +244,14 @@ export default function PautaDetailScreen({ route, navigation }) {
   const [error, setError] = useState(false);
   const [metaCumplidaApi, setMetaCumplidaApi] = useState(Boolean(soloConsultaParam));
   const [completadaHoyApi, setCompletadaHoyApi] = useState(
-    Boolean(bloqueadaHoyParam) || Boolean(pautaInicial?.completada_hoy)
+    Boolean(bloqueadaHoyParam) || Boolean(pautaInicial?.completada_hoy),
   );
 
   const [seriesHechas, setSeriesHechas] = useState({});
   const [modoGuiado, setModoGuiado] = useState(false);
   const [indiceActual, setIndiceActual] = useState(0);
   const [descansoRestante, setDescansoRestante] = useState(null);
+  const [descansoTotal, setDescansoTotal] = useState(0);
 
   const [evaOpen, setEvaOpen] = useState(false);
   const [sending, setSending] = useState(false);
@@ -242,13 +272,13 @@ export default function PautaDetailScreen({ route, navigation }) {
       const rawFb = resFb?.data?.results ?? resFb?.data ?? [];
       const filtradas = Array.isArray(rawFb)
         ? ordenarRespuestasRecientes(
-          rawFb.filter(
-            (item) =>
-              Number(item?.pauta) === Number(id) &&
-              item?.respuesta_kinesiologo &&
-              String(item.respuesta_kinesiologo).trim().length > 0
+            rawFb.filter(
+              (item) =>
+                Number(item?.pauta) === Number(id) &&
+                item?.respuesta_kinesiologo &&
+                String(item.respuesta_kinesiologo).trim().length > 0,
+            ),
           )
-        )
         : [];
       setRespuestasPauta(filtradas);
       cacheSet(`pauta_feedback_${id}`, filtradas);
@@ -303,7 +333,9 @@ export default function PautaDetailScreen({ route, navigation }) {
     }
   }, [id, pautaInicial]);
 
-  useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => {
+    cargar();
+  }, [cargar]);
 
   useEffect(() => {
     if (descansoRestante === null) return;
@@ -316,14 +348,17 @@ export default function PautaDetailScreen({ route, navigation }) {
     return () => clearTimeout(timer);
   }, [descansoRestante]);
 
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [indiceActual, modoGuiado]);
+
   const ejercicios = useMemo(() => {
     const rawList = pauta?.ejercicios_detalle || pauta?.ejercicios || [];
     return rawList.map((item, idx) => {
       const ejObj = item.ejercicio && typeof item.ejercicio === 'object' ? item.ejercicio : {};
-      const ejId = typeof item.ejercicio === 'number' ? item.ejercicio : (item.ejercicio_id || ejObj.id);
-      const nombre = humanizarLenguajePaciente(
-        item.nombre || item.ejercicio_nombre || ejObj.nombre || 'Ejercicio terapéutico'
-      );
+      const ejId = typeof item.ejercicio === 'number' ? item.ejercicio : item.ejercicio_id || ejObj.id;
+      const nombre = item.nombre || item.ejercicio_nombre || ejObj.nombre || 'Ejercicio terapéutico';
+
       const extra = (ejId && catalogoMap[`id_${ejId}`]) || catalogoMap[`nom_${norm(nombre)}`] || {};
 
       const series = Math.max(1, Number(item.series || 3));
@@ -384,6 +419,11 @@ export default function PautaDetailScreen({ route, navigation }) {
   const rutinaCompleta = totalEjercicios > 0 && ejerciciosCompletados === totalEjercicios;
   const progresoGlobal = totalSeries > 0 ? seriesCompletadas / totalSeries : 0;
 
+  const iniciarDescanso = (seg) => {
+    setDescansoTotal(seg);
+    setDescansoRestante(seg);
+  };
+
   const completarSiguienteSerie = (ej) => {
     if (esSoloConsulta) return;
     const actuales = seriesHechas[ej.key] || [];
@@ -396,7 +436,7 @@ export default function PautaDetailScreen({ route, navigation }) {
 
     const esUltimaSerieFinal = nuevas.length >= ej.series && indiceActual === totalEjercicios - 1;
     if (!esUltimaSerieFinal && ej.descanso > 0) {
-      setDescansoRestante(ej.descanso);
+      iniciarDescanso(ej.descanso);
     }
     if (nuevas.length >= ej.series && indiceActual < totalEjercicios - 1) {
       setTimeout(() => {
@@ -416,7 +456,7 @@ export default function PautaDetailScreen({ route, navigation }) {
     if (seriesCompletadas === 0) {
       Alert.alert(
         'Aún no registras series',
-        'Completa al menos una serie antes de finalizar la sesión, o usa el botón inferior si sentiste dolor agudo.'
+        'Completa al menos una serie antes de finalizar la sesión, o usa el botón inferior si sentiste dolor agudo.',
       );
       return;
     }
@@ -428,7 +468,7 @@ export default function PautaDetailScreen({ route, navigation }) {
         [
           { text: 'Seguir entrenando', style: 'cancel' },
           { text: 'Finalizar igual', onPress: abrirEvaluacionDolor },
-        ]
+        ],
       );
       return;
     }
@@ -465,14 +505,14 @@ export default function PautaDetailScreen({ route, navigation }) {
         Alert.alert(
           `Alerta de Dolor Severo (EVA ${evaNivel}/10)`,
           `Se activó una alerta clínica prioritaria. ${estadoEnvioTexto}\n\nPor seguridad, suspende los ejercicios por hoy, mantén reposo relativo y espera la indicación de tu kinesiólogo.`,
-          [{ text: 'Entendido', onPress: () => navigation.goBack() }]
+          [{ text: 'Entendido', onPress: () => navigation.goBack() }],
         );
       } else if (evaNivel >= 6) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         Alert.alert(
           `Dolor Elevado Registrado (EVA ${evaNivel}/10)`,
           `Se envió una alerta clínica para revisar la carga de tu pauta. ${estadoEnvioTexto}\n\nEvita forzar repeticiones adicionales hoy si persiste la molestia.`,
-          [{ text: 'Entendido', onPress: () => navigation.goBack() }]
+          [{ text: 'Entendido', onPress: () => navigation.goBack() }],
         );
       } else {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -481,7 +521,7 @@ export default function PautaDetailScreen({ route, navigation }) {
           estado === 'enviado'
             ? 'Tu sesión diaria quedó completada. Podrás realizar la siguiente sesión mañana.'
             : 'Sin conexión: se enviará automáticamente cuando recuperes señal.',
-          [{ text: 'Listo', onPress: () => navigation.goBack() }]
+          [{ text: 'Listo', onPress: () => navigation.goBack() }],
         );
       }
     } catch (err) {
@@ -513,11 +553,12 @@ export default function PautaDetailScreen({ route, navigation }) {
         <View style={[styles.readOnlyBanner, { backgroundColor: c.warningBg, borderColor: c.warning }]}>
           <MaterialCommunityIcons name="calendar-check-outline" size={21} color={c.warning} />
           <View style={{ flex: 1 }}>
-            <Text style={{ color: c.warning, fontSize: 12.5, fontWeight: '800' }}>
-              Sesión diaria completada • Disponible mañana
+            <Text style={{ color: c.warning, fontSize: 13, fontWeight: '800' }}>
+              Sesión de hoy completada · Disponible mañana
             </Text>
-            <Text style={{ color: c.textSub, fontSize: 11.5, marginTop: 2, lineHeight: 16 }}>
-              Por hoy ya cumpliste tu entrenamiento de esta pauta (meta: {metaSemanalPauta} {metaSemanalPauta === 1 ? 'vez' : 'veces'}/semana). Puedes repasar la técnica cuando quieras.
+            <Text style={{ color: c.textSub, fontSize: 12, marginTop: 2, lineHeight: 17 }}>
+              Ya cumpliste tu entrenamiento de hoy (meta: {metaSemanalPauta}{' '}
+              {metaSemanalPauta === 1 ? 'vez' : 'veces'} por semana). Puedes repasar la técnica cuando quieras.
             </Text>
           </View>
         </View>
@@ -528,32 +569,37 @@ export default function PautaDetailScreen({ route, navigation }) {
       <View style={[styles.readOnlyBanner, { backgroundColor: c.successBg, borderColor: c.success }]}>
         <MaterialCommunityIcons name="eye-check-outline" size={20} color={c.success} />
         <View style={{ flex: 1 }}>
-          <Text style={{ color: c.success, fontSize: 12.5, fontWeight: '800' }}>
-            Modo Repaso • Meta semanal cumplida ({metaSemanalPauta}/{metaSemanalPauta})
+          <Text style={{ color: c.success, fontSize: 13, fontWeight: '800' }}>
+            Modo repaso · Meta semanal cumplida ({metaSemanalPauta}/{metaSemanalPauta})
           </Text>
-          <Text style={{ color: c.textSub, fontSize: 11.5, marginTop: 2, lineHeight: 16 }}>
-            Puedes revisar las indicaciones y la técnica postural, mientras el registro de nuevas sesiones queda pausado hasta tu próximo ciclo.
+          <Text style={{ color: c.textSub, fontSize: 12, marginTop: 2, lineHeight: 17 }}>
+            Puedes revisar las indicaciones y la técnica. El registro de nuevas sesiones queda pausado hasta tu próximo
+            ciclo.
           </Text>
         </View>
       </View>
     );
   };
 
-  // ================= VISTA GUIADA DE EJERCICIO (JERARQUÍA CLÍNICA + HEADER STICKY) =================
+  /* ═════════ VISTA GUIADA (Orden original: Título/Dosificación → Instrucciones arriba → Series abajo) ═════════ */
   if (modoGuiado && totalEjercicios > 0) {
     const ej = ejercicios[indiceActual] || ejercicios[0];
     const hechas = seriesHechas[ej.key] || [];
     const ejTerminado = hechas.length >= ej.series;
     const etiquetaUnidad = ej.unidad === 'SEG' ? 'Segundos' : 'Repeticiones';
     const sufijoUnidad = ej.unidad === 'SEG' ? 'seg' : 'reps';
+    const textoBoton = isDark ? '#0F172A' : '#FFFFFF';
 
     return (
       <View style={[styles.screen, { backgroundColor: c.bg }]}>
-        {/* Header Sticky fijo arriba */}
+        {/* Header sticky fijo arriba */}
         <View style={[styles.stickyHeader, { backgroundColor: c.surface, borderBottomColor: c.border }]}>
           <View style={styles.topRow}>
             <TouchableOpacity
-              onPress={() => { setDescansoRestante(null); setModoGuiado(false); }}
+              onPress={() => {
+                setDescansoRestante(null);
+                setModoGuiado(false);
+              }}
               style={[styles.pillBtn, { backgroundColor: c.surfaceSoft, borderColor: c.border }]}
             >
               <MaterialCommunityIcons name="format-list-bulleted" size={16} color={c.primary} />
@@ -578,20 +624,28 @@ export default function PautaDetailScreen({ route, navigation }) {
           )}
         </View>
 
-        <ScrollView contentContainerStyle={[styles.container, { paddingBottom: Math.max(56, insets.bottom + 32) }]}>
+        <ScrollView
+          ref={scrollRef}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[styles.container, { paddingBottom: Math.max(56, insets.bottom + 32) }]}
+        >
           {renderBannerSoloConsulta()}
 
-          <View style={[styles.mainCard, { backgroundColor: c.surface, borderColor: c.border }]}>
-            {/* 1. PRIMERO: Qué ejercicio es y cuántas series son */}
+          <View style={[styles.mainCard, sombra, { backgroundColor: c.surface, borderColor: c.border }]}>
+            {/* 1. Título y dosificación */}
             <View style={{ padding: 18, paddingBottom: 14 }}>
-              <Text style={{ color: c.primary, fontSize: 12, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
-                {ej.zona} • Nivel {ej.dificultad}
-              </Text>
-              <Text style={{ color: c.textMain, fontSize: 21, fontWeight: '800', marginBottom: 14, lineHeight: 27 }}>
+              <View style={[styles.zonaChip, { backgroundColor: c.accentBg }]}>
+                <MaterialCommunityIcons name="human" size={13} color={c.primary} />
+                <Text style={{ color: c.primary, fontSize: 12, fontWeight: '700' }}>
+                  {ej.zona} · Nivel {ej.dificultad}
+                </Text>
+              </View>
+
+              <Text style={{ color: c.textMain, fontSize: 21, fontWeight: '800', marginTop: 10, lineHeight: 27 }}>
                 {ej.nombre}
               </Text>
 
-              <View style={[styles.metricsStrip, { backgroundColor: c.surfaceSoft, borderColor: c.border, marginBottom: esSoloConsulta ? 0 : 14 }]}>
+              <View style={[styles.metricsStrip, { backgroundColor: c.surfaceSoft, borderColor: c.border }]}>
                 <View style={styles.metricCol}>
                   <Text style={{ color: c.primary, fontSize: 19, fontWeight: '900' }}>{ej.series}</Text>
                   <Text style={{ color: c.textSub, fontSize: 11.5, fontWeight: '600' }}>Series</Text>
@@ -607,124 +661,161 @@ export default function PautaDetailScreen({ route, navigation }) {
                   <Text style={{ color: c.textSub, fontSize: 11.5, fontWeight: '600' }}>Descanso</Text>
                 </View>
               </View>
+            </View>
 
-              {/* Controles de series: indicadores pasivos S1..Sn + un solo botón de acción */}
-              {!esSoloConsulta && (
-                <>
-                  <View style={styles.seriesDotsRow}>
-                    {Array.from({ length: ej.series }).map((_, sIdx) => {
-                      const done = hechas.includes(sIdx);
-                      return (
-                        <View
-                          key={sIdx}
-                          style={[
-                            styles.serieDot,
-                            {
-                              backgroundColor: done ? c.successBg : c.surfaceSoft,
-                              borderColor: done ? c.success : c.border,
-                            },
-                          ]}
+            {/* 2. Video (solo si existe URL real) */}
+            {!!ej.mediaUrl && <VideoMedia uri={ej.mediaUrl} />}
+
+            {/* 3. Instrucciones arriba (antes de registrar las series) */}
+            <View style={[styles.stepsContainer, { borderTopWidth: 1, borderTopColor: c.border }]}>
+              <Text style={{ color: c.textMain, fontWeight: '800', fontSize: 15, marginBottom: 2 }}>
+                Cómo realizar este ejercicio
+              </Text>
+              {ej.pasos.length > 0 ? (
+                ej.pasos.map((p, i) => {
+                  const esPrecaucion = norm(p.titulo).includes('precaucion');
+                  return (
+                    <View
+                      key={i}
+                      style={[
+                        styles.stepRow,
+                        esPrecaucion && {
+                          backgroundColor: c.warningBg,
+                          borderRadius: 12,
+                          padding: 10,
+                          marginHorizontal: -4,
+                        },
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.stepIcon,
+                          { backgroundColor: esPrecaucion ? 'rgba(245, 158, 11, 0.2)' : c.accentBg },
+                        ]}
+                      >
+                        <MaterialCommunityIcons
+                          name={iconoPaso(p.titulo)}
+                          size={16}
+                          color={esPrecaucion ? c.warning : c.primary}
+                        />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={{
+                            color: esPrecaucion ? c.warning : c.textMain,
+                            fontWeight: '800',
+                            fontSize: 13.5,
+                            marginBottom: 2,
+                          }}
                         >
-                          <MaterialCommunityIcons
-                            name={done ? 'check-circle' : 'circle-outline'}
-                            size={15}
-                            color={done ? c.success : c.textSub}
-                          />
-                          <Text style={{ color: done ? c.success : c.textSub, fontWeight: '700', fontSize: 12.5 }}>
-                            Serie {sIdx + 1}
-                          </Text>
-                        </View>
-                      );
-                    })}
-                  </View>
+                          {p.titulo}
+                        </Text>
+                        <Text style={{ color: c.textMain, fontSize: 14, lineHeight: 21 }}>{p.contenido}</Text>
+                      </View>
+                    </View>
+                  );
+                })
+              ) : (
+                <Text style={{ color: c.textSub, fontSize: 13.5, lineHeight: 20 }}>
+                  Ejecuta el movimiento de forma lenta y controlada, sin dolor agudo.
+                </Text>
+              )}
+            </View>
 
-                  {descansoRestante !== null ? (
-                    <View style={[styles.restActionBox, { backgroundColor: c.accentBg, borderColor: c.primary }]}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <MaterialCommunityIcons name="timer-sand" size={22} color={c.primary} />
-                        <View>
-                          <Text style={{ color: c.textMain, fontWeight: '800', fontSize: 16 }}>
-                            Descanso: {descansoRestante}s
-                          </Text>
-                          <Text style={{ color: c.textSub, fontSize: 11.5 }}>
-                            Respira profundo antes de la siguiente serie
-                          </Text>
-                        </View>
+            {/* 4. Registro de series abajo */}
+            {!esSoloConsulta && (
+              <View style={[styles.seriesBlock, { backgroundColor: c.surfaceSoft, borderTopColor: c.border }]}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                  <Text style={{ color: c.textMain, fontWeight: '800', fontSize: 15 }}>Tus series</Text>
+                  <Text style={{ color: ejTerminado ? c.success : c.primary, fontWeight: '800', fontSize: 13 }}>
+                    {hechas.length} de {ej.series}
+                  </Text>
+                </View>
+
+                <View style={styles.seriesDotsRow}>
+                  {Array.from({ length: ej.series }).map((_, sIdx) => {
+                    const done = hechas.includes(sIdx);
+                    return (
+                      <View
+                        key={sIdx}
+                        style={[
+                          styles.serieDot,
+                          {
+                            backgroundColor: done ? c.successBg : c.surface,
+                            borderColor: done ? c.success : c.border,
+                          },
+                        ]}
+                      >
+                        <MaterialCommunityIcons
+                          name={done ? 'check-circle' : 'circle-outline'}
+                          size={15}
+                          color={done ? c.success : c.textSub}
+                        />
+                        <Text style={{ color: done ? c.success : c.textSub, fontWeight: '700', fontSize: 12.5 }}>
+                          Serie {sIdx + 1}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+
+                {descansoRestante !== null ? (
+                  <View style={[styles.restActionBox, { backgroundColor: c.accentBg, borderColor: c.primary }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      <MaterialCommunityIcons name="timer-sand" size={24} color={c.primary} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: c.textMain, fontWeight: '800', fontSize: 16 }}>
+                          Descanso · {descansoRestante}s
+                        </Text>
+                        <Text style={{ color: c.textSub, fontSize: 12, lineHeight: 16 }}>
+                          Respira profundo antes de la siguiente serie
+                        </Text>
                       </View>
                       <TouchableOpacity
                         onPress={() => setDescansoRestante(null)}
                         style={[styles.skipRestBtn, { backgroundColor: c.surface, borderColor: c.primary }]}
                       >
-                        <Text style={{ color: c.primary, fontWeight: '800', fontSize: 12.5 }}>Saltar →</Text>
+                        <Text style={{ color: c.primary, fontWeight: '800', fontSize: 12.5 }}>Saltar</Text>
                       </TouchableOpacity>
                     </View>
-                  ) : !ejTerminado ? (
-                    <Button
-                      mode="contained"
-                      icon="check"
-                      onPress={() => completarSiguienteSerie(ej)}
-                      buttonColor={c.primary}
-                      textColor={isDark ? '#0F172A' : '#FFFFFF'}
-                      style={{ borderRadius: 14 }}
-                      contentStyle={{ paddingVertical: 6 }}
-                    >
-                      Completar Serie {hechas.length + 1} de {ej.series} ({ej.repeticiones} {sufijoUnidad})
-                    </Button>
-                  ) : (
-                    <View style={[styles.doneBox, { backgroundColor: c.successBg }]}>
-                      <MaterialCommunityIcons name="check-circle" size={20} color={c.success} />
-                      <Text style={{ color: c.success, fontWeight: '700', fontSize: 14 }}>
-                        ¡Ejercicio completado!
-                      </Text>
-                    </View>
-                  )}
-                </>
-              )}
-            </View>
-
-            {/* 2. SEGUNDO: Video demostrativo si existe, o tarjeta visual honesta sin prometer videos */}
-            {ej.mediaUrl ? (
-              <VideoMedia uri={ej.mediaUrl} />
-            ) : (
-              <View style={[styles.noVideoBanner, { backgroundColor: c.surfaceSoft, borderTopColor: c.border, borderBottomColor: c.border }]}>
-                <MaterialCommunityIcons name="human-handsup" size={22} color={c.primary} />
-                <Text style={{ flex: 1, color: c.textSub, fontSize: 12.5, fontWeight: '600' }}>
-                  Guía paso a paso • Sigue las indicaciones posturales de abajo
-                </Text>
+                    <ProgressBar
+                      progress={descansoTotal > 0 ? descansoRestante / descansoTotal : 0}
+                      color={c.primary}
+                      style={{ height: 5, borderRadius: 3, backgroundColor: c.border }}
+                    />
+                  </View>
+                ) : !ejTerminado ? (
+                  <Button
+                    mode="contained"
+                    icon="check"
+                    onPress={() => completarSiguienteSerie(ej)}
+                    buttonColor={c.primary}
+                    textColor={textoBoton}
+                    style={{ borderRadius: 14 }}
+                    contentStyle={{ paddingVertical: 6 }}
+                    labelStyle={{ fontWeight: '800' }}
+                  >
+                    Completar serie {hechas.length + 1} ({ej.repeticiones} {sufijoUnidad})
+                  </Button>
+                ) : (
+                  <View style={[styles.doneBox, { backgroundColor: c.successBg, borderColor: c.success }]}>
+                    <MaterialCommunityIcons name="check-circle" size={20} color={c.success} />
+                    <Text style={{ color: c.success, fontWeight: '800', fontSize: 14 }}>¡Ejercicio completado!</Text>
+                  </View>
+                )}
               </View>
             )}
-
-            {/* 3. TERCERO: Instrucciones claras en español humano */}
-            <View style={[styles.stepsContainer, { backgroundColor: c.surfaceSoft }]}>
-              <Text style={{ color: c.primary, fontWeight: '800', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
-                Cómo realizar este ejercicio
-              </Text>
-              {ej.pasos.length > 0 ? (
-                ej.pasos.map((p, i) => (
-                  <View key={i} style={styles.stepRow}>
-                    <View style={[styles.stepNumber, { backgroundColor: c.accentBg }]}>
-                      <Text style={{ color: c.accentText, fontWeight: '800', fontSize: 11 }}>{i + 1}</Text>
-                    </View>
-                    <Text style={{ flex: 1, color: c.textMain, fontSize: 13.5, lineHeight: 20 }}>
-                      <Text style={{ fontWeight: '700', color: c.textMain }}>{p.titulo}: </Text>
-                      {p.contenido}
-                    </Text>
-                  </View>
-                ))
-              ) : (
-                <Text style={{ color: c.textSub, fontSize: 13 }}>
-                  Ejecuta el movimiento de forma lenta y controlada sin dolor agudo.
-                </Text>
-              )}
-            </View>
           </View>
 
-          {/* Navegación entre ejercicios (sin trampa visual en Finalizar Rutina) */}
+          {/* Navegación entre ejercicios */}
           <View style={styles.footerNav}>
             <Button
               mode="outlined"
               disabled={indiceActual === 0}
-              onPress={() => { setDescansoRestante(null); setIndiceActual((p) => Math.max(0, p - 1)); }}
+              onPress={() => {
+                setDescansoRestante(null);
+                setIndiceActual((p) => Math.max(0, p - 1));
+              }}
               style={{ flex: 1, borderRadius: 12, borderColor: c.border }}
               textColor={c.textMain}
             >
@@ -734,22 +825,25 @@ export default function PautaDetailScreen({ route, navigation }) {
             {indiceActual < totalEjercicios - 1 ? (
               <Button
                 mode={ejTerminado || esSoloConsulta ? 'contained' : 'outlined'}
-                onPress={() => { setDescansoRestante(null); setIndiceActual((p) => Math.min(totalEjercicios - 1, p + 1)); }}
+                onPress={() => {
+                  setDescansoRestante(null);
+                  setIndiceActual((p) => Math.min(totalEjercicios - 1, p + 1));
+                }}
                 buttonColor={ejTerminado || esSoloConsulta ? c.primary : undefined}
-                textColor={ejTerminado || esSoloConsulta ? (isDark ? '#0F172A' : '#FFFFFF') : c.textMain}
+                textColor={ejTerminado || esSoloConsulta ? textoBoton : c.textMain}
                 style={{ flex: 1, borderRadius: 12, borderColor: c.border }}
               >
-                Siguiente →
+                Siguiente
               </Button>
             ) : esSoloConsulta ? (
               <Button
                 mode="contained"
                 onPress={() => setModoGuiado(false)}
                 buttonColor={c.primary}
-                textColor={isDark ? '#0F172A' : '#FFFFFF'}
+                textColor={textoBoton}
                 style={{ flex: 1, borderRadius: 12 }}
               >
-                Volver a la Lista
+                Volver a la lista
               </Button>
             ) : (
               <Button
@@ -760,7 +854,7 @@ export default function PautaDetailScreen({ route, navigation }) {
                 textColor={rutinaCompleta ? '#FFFFFF' : c.textSub}
                 style={{ flex: 1, borderRadius: 12, borderColor: c.border }}
               >
-                Finalizar Rutina
+                Finalizar rutina
               </Button>
             )}
           </View>
@@ -769,10 +863,7 @@ export default function PautaDetailScreen({ route, navigation }) {
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={abrirEvaluacionDolor}
-              style={[
-                styles.painStopBtn,
-                { backgroundColor: c.dangerBg, borderColor: c.dangerBorder },
-              ]}
+              style={[styles.painStopBtn, { backgroundColor: c.dangerBg, borderColor: c.dangerBorder }]}
             >
               <MaterialCommunityIcons name="alert-octagon" size={20} color={c.danger} />
               <Text style={{ color: c.danger, fontWeight: '800', fontSize: 13 }}>
@@ -782,39 +873,53 @@ export default function PautaDetailScreen({ route, navigation }) {
           )}
         </ScrollView>
 
-        <EvaModal
-          visible={evaOpen}
-          onDismiss={() => setEvaOpen(false)}
-          onSubmit={enviar}
-          sending={sending}
-        />
+        <EvaModal visible={evaOpen} onDismiss={() => setEvaOpen(false)} onSubmit={enviar} sending={sending} />
       </View>
     );
   }
 
-  // ================= VISTA RESUMEN DE PAUTA =================
+  /* ═════════ VISTA RESUMEN DE PAUTA ═════════ */
   const autorRespuestaPauta = resolverAutorKinesiologo(pauta, respuestasPauta[0]);
   const autorIndicacionPauta = resolverAutorKinesiologo(pauta);
+  const textoBotonPrincipal = isDark ? '#0F172A' : '#FFFFFF';
 
   return (
     <View style={[styles.screen, { backgroundColor: c.bg }]}>
-      <ScrollView contentContainerStyle={[styles.container, { paddingTop: 16, paddingBottom: Math.max(56, insets.bottom + 32) }]}>
-        <Text style={{ color: c.textMain, fontSize: 22, fontWeight: '800' }}>
-          {pauta.titulo || 'Tu Sesión'}
-        </Text>
+      <ScrollView
+        ref={scrollRef}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.container, { paddingTop: 16, paddingBottom: Math.max(56, insets.bottom + 32) }]}
+      >
+        <View>
+          <Text style={{ color: c.textMain, fontSize: 24, fontWeight: '800' }}>{pauta.titulo || 'Tu sesión'}</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+            <View style={[styles.metaChip, { backgroundColor: c.surface, borderColor: c.border }]}>
+              <MaterialCommunityIcons name="dumbbell" size={14} color={c.primary} />
+              <Text style={{ color: c.textSub, fontSize: 12, fontWeight: '700' }}>
+                {totalEjercicios} {totalEjercicios === 1 ? 'ejercicio' : 'ejercicios'}
+              </Text>
+            </View>
+            <View style={[styles.metaChip, { backgroundColor: c.surface, borderColor: c.border }]}>
+              <MaterialCommunityIcons name="layers-outline" size={14} color={c.primary} />
+              <Text style={{ color: c.textSub, fontSize: 12, fontWeight: '700' }}>{totalSeries} series</Text>
+            </View>
+            {totalEjercicios > 0 && (
+              <View style={[styles.metaChip, { backgroundColor: c.surface, borderColor: c.border }]}>
+                <MaterialCommunityIcons name="clock-outline" size={14} color={c.primary} />
+                <Text style={{ color: c.textSub, fontSize: 12, fontWeight: '700' }}>
+                  ≈ {minutosEstimados(ejercicios)} min
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
 
-        {/* Indicaciones clínicas ARRIBA del todo para que el paciente las lea antes de empezar */}
         {!!pauta.notas && (
-          <View
-            style={[
-              styles.indicacionBox,
-              { backgroundColor: c.accentBg, borderColor: c.primary },
-            ]}
-          >
+          <View style={[styles.indicacionBox, { backgroundColor: c.accentBg, borderColor: c.primary }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
                 <MaterialCommunityIcons name="stethoscope" size={17} color={c.primary} />
-                <Text style={{ color: c.accentText, fontSize: 12.5, fontWeight: '800' }}>
+                <Text numberOfLines={1} style={{ color: c.primary, fontSize: 12.5, fontWeight: '800', flex: 1 }}>
                   Indicación de {autorIndicacionPauta}
                 </Text>
               </View>
@@ -824,18 +929,16 @@ export default function PautaDetailScreen({ route, navigation }) {
                 </Text>
               )}
             </View>
-            <Text style={{ color: c.textMain, fontSize: 13.5, lineHeight: 19 }}>
-              {pauta.notas}
-            </Text>
+            <Text style={{ color: c.textMain, fontSize: 14, lineHeight: 20 }}>{pauta.notas}</Text>
           </View>
         )}
 
         {respuestasPauta.length > 0 && (
-          <View style={[styles.kineReplyBox, { backgroundColor: c.surfaceSoft, borderColor: c.primary }]}>
+          <View style={[styles.kineReplyBox, { backgroundColor: c.surface, borderColor: c.border }]}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
-                <MaterialCommunityIcons name="doctor" size={17} color={c.primary} />
-                <Text style={{ color: c.primary, fontSize: 12.5, fontWeight: '800' }}>
+                <MaterialCommunityIcons name="message-text-outline" size={17} color={c.primary} />
+                <Text numberOfLines={1} style={{ color: c.primary, fontSize: 12.5, fontWeight: '800', flex: 1 }}>
                   Comentario reciente de {autorRespuestaPauta}
                 </Text>
               </View>
@@ -845,7 +948,7 @@ export default function PautaDetailScreen({ route, navigation }) {
                 </Text>
               )}
             </View>
-            <Text style={{ color: c.textMain, fontSize: 13.5, lineHeight: 19 }}>
+            <Text style={{ color: c.textMain, fontSize: 14, lineHeight: 20 }}>
               {String(respuestasPauta[0].respuesta_kinesiologo).trim()}
             </Text>
           </View>
@@ -853,43 +956,46 @@ export default function PautaDetailScreen({ route, navigation }) {
 
         {renderBannerSoloConsulta()}
 
-        {/* Progreso solo si la sesión está activa */}
         {!esSoloConsulta && (
-          <View style={[styles.summaryBox, { backgroundColor: c.surface, borderColor: c.border }]}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+          <View style={[styles.summaryBox, sombra, { backgroundColor: c.surface, borderColor: c.border }]}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
               <Text style={{ color: c.textMain, fontWeight: '700', fontSize: 14 }}>Progreso de hoy</Text>
-              <Text style={{ color: c.primary, fontWeight: '700', fontSize: 13 }}>
+              <Text style={{ color: rutinaCompleta ? c.success : c.primary, fontWeight: '800', fontSize: 13 }}>
                 {seriesCompletadas}/{totalSeries} series
               </Text>
             </View>
             <ProgressBar
               progress={progresoGlobal}
               color={rutinaCompleta ? c.success : c.primary}
-              style={{ height: 8, borderRadius: 4, backgroundColor: c.border }}
+              style={{ height: 8, borderRadius: 4, backgroundColor: c.surfaceSoft }}
             />
           </View>
         )}
 
-        {/* Botón principal directo (sin caja envolvente extra) */}
         <Button
           mode="contained"
-          icon={esSoloConsulta ? 'book-open-variant-outline' : 'play'}
+          icon={esSoloConsulta ? 'book-open-variant' : 'play'}
           onPress={() => {
             const pendiente = ejercicios.findIndex((ej) => (seriesHechas[ej.key]?.length || 0) < ej.series);
             setIndiceActual(!esSoloConsulta && pendiente >= 0 ? pendiente : 0);
             setModoGuiado(true);
           }}
           buttonColor={c.primary}
-          textColor={isDark ? '#0F172A' : '#FFFFFF'}
+          textColor={textoBotonPrincipal}
           style={{ borderRadius: 14, marginTop: 2 }}
           contentStyle={{ paddingVertical: 6 }}
+          labelStyle={{ fontWeight: '800', fontSize: 15 }}
         >
           {esSoloConsulta
-            ? 'Repasar Rutina y Técnica'
+            ? 'Repasar rutina y técnica'
             : seriesCompletadas > 0
-              ? 'Continuar Sesión'
-              : 'Comenzar Sesión Guiada'}
+              ? 'Continuar sesión'
+              : 'Comenzar sesión guiada'}
         </Button>
+
+        {totalEjercicios > 0 && (
+          <Text style={{ color: c.textMain, fontSize: 16, fontWeight: '800', marginTop: 6 }}>Ejercicios</Text>
+        )}
 
         {ejercicios.map((ej, index) => {
           const hechas = seriesHechas[ej.key]?.length || 0;
@@ -899,28 +1005,47 @@ export default function PautaDetailScreen({ route, navigation }) {
             <TouchableOpacity
               key={ej.key}
               activeOpacity={0.75}
-              onPress={() => { setIndiceActual(index); setModoGuiado(true); }}
+              onPress={() => {
+                setIndiceActual(index);
+                setModoGuiado(true);
+              }}
               style={[
                 styles.listCard,
-                {
-                  backgroundColor: c.surface,
-                  borderColor: listo ? c.success : c.border,
-                },
+                sombra,
+                { backgroundColor: c.surface, borderColor: listo ? c.success : c.border },
               ]}
             >
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: c.textMain, fontWeight: '700', fontSize: 15 }}>
-                  {index + 1}. {ej.nombre}
-                </Text>
-                <Text style={{ color: c.textSub, fontSize: 12.5, marginTop: 3 }}>
-                  {ej.series} {ej.series === 1 ? 'serie' : 'series'} × {ej.repeticiones} {sufijo} • Descanso {ej.descanso}s • {ej.zona}
-                </Text>
+              <View
+                style={[
+                  styles.listNumber,
+                  { backgroundColor: listo ? c.successBg : c.accentBg },
+                ]}
+              >
+                {listo ? (
+                  <MaterialCommunityIcons name="check" size={18} color={c.success} />
+                ) : (
+                  <Text style={{ color: c.primary, fontWeight: '800', fontSize: 14 }}>{index + 1}</Text>
+                )}
               </View>
 
-              <View style={[styles.badgeStatus, { backgroundColor: listo ? c.successBg : c.accentBg }]}>
-                <Text style={{ color: listo ? c.success : c.accentText, fontWeight: '700', fontSize: 12 }}>
-                  {esSoloConsulta ? 'Ver guía' : listo ? 'Listo' : `${hechas}/${ej.series}`}
+              <View style={{ flex: 1 }}>
+                <Text numberOfLines={2} style={{ color: c.textMain, fontWeight: '700', fontSize: 15 }}>
+                  {ej.nombre}
                 </Text>
+                <Text style={{ color: c.textSub, fontSize: 12.5, marginTop: 3 }}>
+                  {ej.series} {ej.series === 1 ? 'serie' : 'series'} × {ej.repeticiones} {sufijo} · {ej.descanso}s
+                  descanso
+                </Text>
+                <Text style={{ color: c.textSub, fontSize: 11.5, marginTop: 1, opacity: 0.8 }}>{ej.zona}</Text>
+              </View>
+
+              <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                <View style={[styles.badgeStatus, { backgroundColor: listo ? c.successBg : c.accentBg }]}>
+                  <Text style={{ color: listo ? c.success : c.accentText, fontWeight: '700', fontSize: 12 }}>
+                    {esSoloConsulta ? 'Ver guía' : listo ? 'Listo' : `${hechas}/${ej.series}`}
+                  </Text>
+                </View>
+                <MaterialCommunityIcons name="chevron-right" size={18} color={c.textSub} />
               </View>
             </TouchableOpacity>
           );
@@ -940,12 +1065,7 @@ export default function PautaDetailScreen({ route, navigation }) {
         )}
       </ScrollView>
 
-      <EvaModal
-        visible={evaOpen}
-        onDismiss={() => setEvaOpen(false)}
-        onSubmit={enviar}
-        sending={sending}
-      />
+      <EvaModal visible={evaOpen} onDismiss={() => setEvaOpen(false)} onSubmit={enviar} sending={sending} />
     </View>
   );
 }
@@ -958,9 +1078,17 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottomWidth: 1,
   },
-  container: { padding: 16, gap: 10, paddingBottom: 56 },
+  container: { padding: 16, gap: 12, paddingBottom: 56 },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  pillBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderWidth: 1 },
+  pillBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
   readOnlyBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -976,29 +1104,81 @@ const styles = StyleSheet.create({
     padding: 13,
     gap: 6,
   },
-  mainCard: { borderRadius: 20, borderWidth: 1, overflow: 'hidden' },
-  media: { width: '100%', height: 200, backgroundColor: '#000' },
-  noVideoBanner: {
+  metaChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 11,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+    borderWidth: 1,
   },
-  stepsContainer: { padding: 16, gap: 10 },
-  stepRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  stepNumber: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
-  metricsStrip: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1, paddingVertical: 10, marginBottom: 14 },
+  mainCard: { borderRadius: 20, borderWidth: 1, overflow: 'hidden' },
+  zonaChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  media: { width: '100%', height: 210, backgroundColor: '#000' },
+  stepsContainer: { padding: 18, gap: 14 },
+  stepRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  stepIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  metricsStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingVertical: 11,
+    marginTop: 14,
+  },
   metricCol: { flex: 1, alignItems: 'center' },
-  metricDivider: { width: 1, height: 26 },
-  seriesDotsRow: { flexDirection: 'row', gap: 8, marginBottom: 14, flexWrap: 'wrap' },
-  serieDot: { flex: 1, minWidth: 64, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 8, borderRadius: 10, borderWidth: 1.5 },
-  restActionBox: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 12, borderRadius: 14, borderWidth: 1.5 },
+  metricDivider: { width: 1, height: 28 },
+  seriesBlock: {
+    padding: 18,
+    gap: 12,
+    borderTopWidth: 1,
+  },
+  seriesDotsRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  serieDot: {
+    flex: 1,
+    minWidth: 64,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    paddingVertical: 9,
+    borderRadius: 10,
+    borderWidth: 1.5,
+  },
+  restActionBox: {
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1.5,
+  },
   skipRestBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, borderWidth: 1 },
-  doneBox: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 14 },
-  footerNav: { flexDirection: 'row', gap: 10, marginTop: 6 },
+  doneBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 13,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  footerNav: { flexDirection: 'row', gap: 10, marginTop: 2 },
   painStopBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1008,16 +1188,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 12,
     borderWidth: 1.5,
-    marginTop: 6,
   },
   summaryBox: { padding: 14, borderRadius: 16, borderWidth: 1 },
-  listCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 16, borderWidth: 1.5 },
+  listCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1.5,
+  },
+  listNumber: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   badgeStatus: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
   kineReplyBox: {
     padding: 14,
     borderRadius: 16,
-    borderWidth: 1.5,
-    borderLeftWidth: 4,
+    borderWidth: 1,
     gap: 6,
   },
 });

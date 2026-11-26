@@ -3,10 +3,12 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import HomeScreen from '../screens/HomeScreen';
 import PautaDetailScreen from '../screens/PautaDetailScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import ProgresoScreen from '../screens/ProgresoScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -18,8 +20,10 @@ const icon = (name) => ({ color, size }) => (
 function Tabs() {
   const theme = useTheme();
   const isDark = theme.dark;
+  const insets = useSafeAreaInsets();
 
   const colors = {
+    bg: isDark ? '#0F172A' : '#F8FAFC',
     tabBg: isDark ? '#1E293B' : '#FFFFFF',
     tabBorder: isDark ? '#334155' : '#E2E8F0',
     activeTint: isDark ? '#38BDF8' : '#0284C7',
@@ -28,19 +32,20 @@ function Tabs() {
 
   return (
     <Tab.Navigator
+      detachInactiveScreens={false}
       screenOptions={{
         headerShown: false,
+        animation: 'none',
+        sceneStyle: {
+          backgroundColor: colors.bg,
+        },
         tabBarStyle: {
           backgroundColor: colors.tabBg,
           borderTopColor: colors.tabBorder,
           borderTopWidth: 1,
-          elevation: 12,
-          shadowColor: '#000000',
-          shadowOpacity: isDark ? 0.35 : 0.06,
-          shadowOffset: { width: 0, height: -4 },
-          shadowRadius: 16,
-          height: 64,
-          paddingBottom: 10,
+          elevation: 8,
+          height: 64 + insets.bottom,
+          paddingBottom: Math.max(8, insets.bottom),
           paddingTop: 8,
         },
         tabBarActiveTintColor: colors.activeTint,
@@ -55,6 +60,11 @@ function Tabs() {
         name="Inicio"
         component={HomeScreen}
         options={{ tabBarIcon: icon('home-outline') }}
+      />
+      <Tab.Screen
+        name="Progreso"
+        component={ProgresoScreen}
+        options={{ tabBarIcon: icon('chart-line') }}
       />
       <Tab.Screen
         name="Perfil"
