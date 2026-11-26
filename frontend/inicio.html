@@ -2,7 +2,6 @@
 <html lang="es">
 
 <head>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Principal - KineConnect</title>
@@ -150,7 +149,9 @@
 </head>
 
 <body>
-    <div class="content">
+    <div class="app-shell">
+        <main class="main">
+            <div class="content">
 
                 <!-- ENCABEZADO -->
                 <div class="page-header" style="flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
@@ -706,8 +707,8 @@
 
             let adherenciaTexto = '0%';
             if (pautasActivas.length > 0) {
-                const totalMeta = pautasActivas.reduce((acc, p) => acc + Math.max(1, Number(p.meta_semanal || 3)), 0);
-                const totalCompletadas = pautasActivas.reduce((acc, p) => acc + Math.min(Number(p.sesiones_semana || 0), Math.max(1, Number(p.meta_semanal || 3))), 0);
+                const totalMeta = pautasActivas.reduce((acc, p) => acc + Math.max(1, Number(p.frecuencia_semanal || p.meta_semanal || 3)), 0);
+                const totalCompletadas = pautasActivas.reduce((acc, p) => acc + Math.min(Number(p.sesiones_semana || 0), Math.max(1, Number(p.frecuencia_semanal || p.meta_semanal || 3))), 0);
                 adherenciaTexto = `${Math.round((totalCompletadas / totalMeta) * 100)}%`;
             } else if (reportes.length > 0) {
                 const completas = reportes.filter(r => Boolean(r.completado)).length;
