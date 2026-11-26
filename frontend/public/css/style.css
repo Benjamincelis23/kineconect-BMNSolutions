@@ -1514,3 +1514,92 @@ html[data-theme="dark"] .empty-text {
         display: none;
     }
 }
+/* ==========================================================================
+   CORRECCIÓN GLOBAL MODO OSCURO: PÍLDORAS ACTIVAS, INPUTS, SELECTS Y BADGES
+   ========================================================================== */
+
+/* 1. Píldoras de filtro activas (Zona y Área Clínica) */
+.filtro-biomecanico-pill.activo-todos,
+.filtro-biomecanico-pill.active {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+    border-color: #0284c7 !important;
+    font-weight: 700 !important;
+    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35) !important;
+}
+
+[data-theme="dark"] .filtro-biomecanico-pill {
+    background: #1e293b !important;
+    color: #cbd5e1 !important;
+    border-color: #334155 !important;
+}
+
+[data-theme="dark"] .filtro-biomecanico-pill:hover {
+    border-color: #38bdf8 !important;
+    color: #f8fafc !important;
+}
+
+[data-theme="dark"] .filtro-biomecanico-pill.activo-todos,
+[data-theme="dark"] .filtro-biomecanico-pill.active {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+    border-color: #38bdf8 !important;
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25) !important;
+}
+
+/* 2. Inputs, buscadores, textareas y selects en Modo Oscuro (corrige cajas blancas) */
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="number"],
+[data-theme="dark"] input[type="email"],
+[data-theme="dark"] input[type="password"],
+[data-theme="dark"] input[type="search"],
+[data-theme="dark"] textarea,
+[data-theme="dark"] select,
+[data-theme="dark"] #input-buscar-catalogo,
+[data-theme="dark"] #select-orden-catalogo {
+    background: #0f1929 !important;
+    color: #f8fafc !important;
+    border-color: #334155 !important;
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+    color: #64748b !important;
+}
+
+[data-theme="dark"] select option {
+    background: #162236 !important;
+    color: #f8fafc !important;
+}
+
+/* 3. Badges de Áreas Clínicas y botones "+X más" en Modo Oscuro */
+[data-theme="dark"] .card span[style*="#e0f2fe"],
+[data-theme="dark"] .ejercicio-item-card span[style*="#e0f2fe"] {
+    background: rgba(14, 165, 233, 0.16) !important;
+    color: #7dd3fc !important;
+    border-color: rgba(56, 189, 248, 0.35) !important;
+}
+
+[data-theme="dark"] .card button[style*="#f1f5f9"],
+[data-theme="dark"] .ejercicio-item-card button[style*="#f1f5f9"] {
+    background: #1e293b !important;
+    color: #cbd5e1 !important;
+    border-color: #334155 !important;
+}
+
+/* 4. Encabezados de grupo en lista de ejercicios (crear_pautas.js) */
+[data-theme="dark"] #lista-ejercicios-disponibles > div[style*="#f1f5f9"] {
+    background: #0f1929 !important;
+    border-left-color: #38bdf8 !important;
+}
+
+/* 5. Cajita "Guardar exclusivamente como Plantilla Maestra" en crear_pauta.html */
+[data-theme="dark"] .field[style*="#f0f9ff"] {
+    background: rgba(14, 165, 233, 0.12) !important;
+    border-color: rgba(56, 189, 248, 0.32) !important;
+}
+
+[data-theme="dark"] .field[style*="#f0f9ff"] label,
+[data-theme="dark"] .field[style*="#f0f9ff"] small {
+    color: #7dd3fc !important;
+}
