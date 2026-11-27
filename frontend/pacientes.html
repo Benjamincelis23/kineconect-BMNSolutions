@@ -835,6 +835,7 @@
             const noData = document.getElementById('no-pacientes');
             const contador = document.getElementById('contador-pacientes');
             const mapDiag = obtenerMapaDiagnosticos();
+        
 
             if (contador) contador.textContent = `${lista.length} ${lista.length === 1 ? 'paciente' : 'pacientes'}`;
             tbody.innerHTML = '';
@@ -882,9 +883,15 @@
                     seguimientoHtml = `${evaBadge}${fechaTxt}`;
                 }
 
-                tr.innerHTML = `
+               tr.innerHTML = `
                     <td>
-                        <strong>${escaparHtml(nombre)}</strong>
+                        <button type="button" onclick="abrirInformePaciente('${escaparHtml(userId)}')"
+                            style="background: none; border: none; padding: 0; text-align: left; cursor: pointer; font-family: inherit;"
+                            title="Abrir Ficha Clínica 360° del paciente">
+                            <strong style="color: var(--azul-900); text-decoration: underline; text-underline-offset: 3px;">
+                                ${escaparHtml(nombre)}
+                            </strong>
+                        </button>
                         ${correo ? `<span style="display: block; font-size: 0.75rem; color: var(--gris-500);">${escaparHtml(correo)}</span>` : ''}
                     </td>
                     <td style="white-space: nowrap; font-variant-numeric: tabular-nums;">${escaparHtml(idVisual)}</td>
