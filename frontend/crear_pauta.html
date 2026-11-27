@@ -27,7 +27,35 @@
 
         .carrito-card {
             min-width: 0;
+            max-height: calc(100vh - 104px);
+            display: flex;
+            flex-direction: column;
+            padding: 18px 18px 0 18px !important;
             overflow: hidden;
+        }
+
+        #form-guardar-pauta {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding-right: 2px;
+        }
+
+        .resumen-sticky-footer {
+            position: sticky;
+            bottom: 0;
+            background: #ffffff;
+            padding: 10px 0 16px 0;
+            margin-top: auto;
+            border-top: 1px solid var(--gris-200);
+            z-index: 5;
+        }
+
+        [data-theme="dark"] .resumen-sticky-footer {
+            background: #131d31;
+            border-top-color: #1e293b;
         }
 
         #carrito-items-container {
@@ -42,68 +70,70 @@
             max-width: 100% !important;
             min-width: 0 !important;
             box-sizing: border-box !important;
-            overflow: hidden !important;
+        }
+
+        .toolbar-compact-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .toolbar-pills-scroll {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            flex: 1;
+            min-width: 0;
         }
     </style>
 </head>
 
 <body>
+    <div id="kc-toast-container"
+        style="position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; max-width: 380px; pointer-events: none;">
+    </div>
+
     <div class="app-shell">
         <main class="main">
-            <div class="content">
-                <!-- Encabezado -->
+            <div class="content" style="padding-top: 22px; padding-bottom: 24px;">
+                <!-- Encabezado compacto -->
                 <div class="page-header"
-                    style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                    style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
                     <div>
-                        <h2 id="titulo-pagina-pauta">Prescribir Pauta Terapéutica</h2>
-                        <p id="subtitulo-pagina-pauta">Selecciona la región anatómica, filtra por área clínica y arma la pauta del paciente.</p>
+                        <h2 id="titulo-pagina-pauta" style="margin-bottom: 2px;">Prescribir Pauta Terapéutica</h2>
+                        <p id="subtitulo-pagina-pauta" style="font-size: 0.88rem;">Selecciona la región anatómica, filtra por área clínica y arma la pauta del paciente.</p>
                     </div>
                     <a id="btn-volver-pautas" href="pautas.html" class="btn btn-secondary is-hidden">
                         <i class='bx bx-arrow-back'></i> Volver a Pautas
                     </a>
                 </div>
 
-                <!-- Barra Superior: Área Clínica y Protocolo Rápido -->
-                <div class="card biomecanico-toolbar">
-                    <div class="biomecanico-toolbar-inner">
-                        <div class="biomecanico-group-wrapper" style="flex: 1; min-width: 300px;">
-                            <span class="biomecanico-label">
-                                <i class='bx bx-plus-medical'></i> Área Clínica:
+                <!-- Barra Superior Compacta sin líneas huérfanas -->
+                <div class="card biomecanico-toolbar" style="padding: 12px 16px; margin-bottom: 18px;">
+                    <div class="toolbar-compact-row">
+                        <div class="toolbar-pills-scroll">
+                            <span class="biomecanico-label" style="margin-right: 2px; white-space: nowrap;">
+                                <i class='bx bx-plus-medical'></i> Área:
                             </span>
-                            <div class="biomecanico-pills-list">
-                                <button type="button" class="filtro-biomecanico-pill activo-todos" data-area="todos">
-                                    Todas
-                                </button>
-                                <button type="button" class="filtro-biomecanico-pill" data-area="general">
-                                    Rehabilitación General
-                                </button>
-                                <button type="button" class="filtro-biomecanico-pill" data-area="traumatologia">
-                                    Traumatología
-                                </button>
-                                <button type="button" class="filtro-biomecanico-pill" data-area="neurorehabilitacion">
-                                    Neurorehabilitación
-                                </button>
-                                <button type="button" class="filtro-biomecanico-pill" data-area="post-operatorio">
-                                    Post-Operatorio
-                                </button>
-                                <button type="button" class="filtro-biomecanico-pill" data-area="cardiorrespiratorio">
-                                    Cardiorrespiratorio
-                                </button>
-                                <button type="button" class="filtro-biomecanico-pill" data-area="geriatria">
-                                    Adulto Mayor
-                                </button>
-                                <button type="button" class="filtro-biomecanico-pill" data-area="inmunologia">
-                                    Inmunología / VIH-SIDA
-                                </button>
-                            </div>
+                            <button type="button" class="filtro-biomecanico-pill activo-todos" data-area="todos">Todas</button>
+                            <button type="button" class="filtro-biomecanico-pill" data-area="general">General</button>
+                            <button type="button" class="filtro-biomecanico-pill" data-area="traumatologia">Traumatología</button>
+                            <button type="button" class="filtro-biomecanico-pill" data-area="neurorehabilitacion">Neurorehab.</button>
+                            <button type="button" class="filtro-biomecanico-pill" data-area="post-operatorio">Post-Operatorio</button>
+                            <button type="button" class="filtro-biomecanico-pill" data-area="cardiorrespiratorio">Cardiorresp.</button>
+                            <button type="button" class="filtro-biomecanico-pill" data-area="geriatria">Adulto Mayor</button>
+                            <button type="button" class="filtro-biomecanico-pill" data-area="inmunologia">Inmunología / VIH</button>
                         </div>
 
-                        <div class="field" style="margin: 0; min-width: 260px;">
-                            <label for="select-plantilla-predefinida" style="font-size: 0.8rem; font-weight: 700;">
-                                <i class='bx bx-bookmark-alt'></i> Cargar Plantilla Maestra:
+                        <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                            <label for="select-plantilla-predefinida" style="font-size: 0.78rem; font-weight: 700; color: var(--gris-600); white-space: nowrap;">
+                                <i class='bx bx-bookmark-alt'></i> Plantilla:
                             </label>
-                            <select id="select-plantilla-predefinida">
-                                <option value="">-- Sin plantilla (Prescripción manual) --</option>
+                            <select id="select-plantilla-predefinida" style="padding: 6px 10px; border-radius: 8px; font-size: 0.82rem; min-width: 210px;">
+                                <option value="">-- Prescripción manual --</option>
                             </select>
                         </div>
                     </div>
@@ -112,8 +142,8 @@
                 <!-- Grid Principal de 3 Columnas: Mapa Anatómico | Catálogo | Resumen de Pauta -->
                 <div class="pauta-builder-grid">
 
-                    <!-- Columna 1: Mapa Anatómico SVG -->
-                    <div class="card mapa-card">
+                    <!-- Columna 1: Mapa Anatómico Orgánico -->
+                    <div class="card mapa-card" style="padding: 16px;">
                         <div class="vista-segmented-control">
                             <button type="button" class="btn-vista-toggle activo" id="btn-vista-frontal"
                                 onclick="cambiarVistaAnatomica('frontal')">
@@ -125,7 +155,7 @@
                             </button>
                         </div>
 
-                        <div class="anatomico-indicador">
+                        <div class="anatomico-indicador" style="padding: 8px 10px; margin-bottom: 10px;">
                             <span class="anatomico-indicador-sub">Región Seleccionada</span>
                             <div class="anatomico-indicador-main">
                                 <span class="label-zona-activa-txt" id="txt-zona-seleccionada">Cuerpo Completo</span>
@@ -136,154 +166,153 @@
                             </div>
                         </div>
 
-                        <div class="mapa-svg-container" id="svg-map-wrapper">
-                            <svg viewBox="0 0 200 360" id="svg-anatomia"
-                                style="width: 100%; max-height: 380px; display: block;">
+                        <div class="mapa-svg-container" id="svg-map-wrapper" style="min-height: 360px; padding: 10px 8px;">
+                            <svg viewBox="0 0 220 380" id="svg-anatomia"
+                                style="width: 100%; max-height: 355px; display: block;">
 
-                                <!-- ==================== VISTA FRONTAL ==================== -->
+                                <!-- ==================== VISTA FRONTAL ORGÁNICA ==================== -->
                                 <g id="grupo-frontal">
-                                    <!-- Cabeza y Cuello agrupados para iluminación conjunta -->
+                                    <!-- Cabeza y Cuello (Cráneo ovalado + trapecios cervicales) -->
                                     <g id="zona-cuello-grupo-f" data-zona="cuello" data-titulo="Cabeza y Cuello"
                                         data-detalle="Región suboccipital, ECM y flexores cervicales profundos"
                                         data-enfoque="Control motor cervical" class="anatomia-zona">
-                                        <circle cx="100" cy="24" r="15" class="anatomia-pieza" />
-                                        <rect x="92" y="40" width="16" height="13" rx="3" class="anatomia-pieza" />
+                                        <path class="anatomia-pieza"
+                                            d="M110,12 C121,12 128,20 128,31 C128,41 122,49 116,51 L117,59 C121,61 126,63 130,65 L90,65 C94,63 99,61 103,59 L104,51 C98,49 92,41 92,31 C92,20 99,12 110,12 Z" />
                                     </g>
 
-                                    <!-- Hombros -->
+                                    <!-- Hombros (Deltoides anatómicos redondeados) -->
                                     <path id="zona-hombros" data-zona="hombros" data-titulo="Hombros (Deltoides)"
                                         data-detalle="Deltoides anterior/medio y manguito rotador"
                                         data-enfoque="Estabilidad escapulohumeral" class="anatomia-zona"
-                                        d="M72,54 C61,56 56,64 56,74 L68,74 C70,66 76,62 78,58 Z M128,54 C139,56 144,64 144,74 L132,74 C130,66 124,62 122,58 Z" />
+                                        d="M88,65 C74,66 64,74 62,88 C61,95 65,100 72,99 C76,91 81,82 87,76 Z M132,65 C146,66 156,74 158,88 C159,95 155,100 148,99 C144,91 139,82 133,76 Z" />
 
-                                    <!-- Pecho -->
+                                    <!-- Pecho (Pectoral mayor bilateral esculpido) -->
                                     <path id="zona-pecho" data-zona="pecho" data-titulo="Pectoral y Tórax"
                                         data-detalle="Pectoral mayor, menor y serrato anterior"
                                         data-enfoque="Movilidad torácica y empuje" class="anatomia-zona"
-                                        d="M74,60 L126,60 L120,94 L100,97 L80,94 Z" />
+                                        d="M89,67 L109,69 L109,105 C101,107 90,105 83,99 C81,91 83,79 89,67 Z M131,67 L111,69 L111,105 C119,107 130,105 137,99 C139,91 137,79 131,67 Z" />
 
-                                    <!-- Brazos y Antebrazos -->
+                                    <!-- Brazos y Antebrazos (Contorno bíceps + antebrazo ahusado) -->
                                     <path id="zona-brazos" data-zona="brazos" data-titulo="Brazos y Antebrazos"
                                         data-detalle="Bíceps braquial, braquial y flexo-extensores de antebrazo"
                                         data-enfoque="Fuerza y pronosupinación" class="anatomia-zona"
-                                        d="M56,76 L51,123 L64,123 L68,76 Z M132,76 L136,123 L149,123 L144,76 Z" />
+                                        d="M62,100 C58,110 57,121 60,130 C56,140 54,151 55,160 L66,161 C69,151 71,140 70,130 C74,121 75,110 73,101 Z M158,100 C162,110 163,121 160,130 C164,140 166,151 165,160 L154,161 C151,151 149,140 150,130 C146,121 145,110 147,101 Z" />
 
                                     <!-- Muñecas y Manos -->
                                     <path id="zona-manos-f" data-zona="manos" data-titulo="Muñecas y Manos"
                                         data-detalle="Articulación radiocarpiana, túnel carpiano y dedos"
                                         data-enfoque="Prensión y destreza fina" class="anatomia-zona"
-                                        d="M50,125 L64,125 L65,141 C65,144 50,144 49,141 Z M136,125 L150,125 L151,141 C150,144 135,144 135,141 Z" />
+                                        d="M55,163 L66,163 C68,171 67,181 62,184 C57,186 52,181 52,174 C52,169 54,166 55,163 Z M165,163 L154,163 C152,171 153,181 158,184 C163,186 168,181 168,174 C168,169 166,166 165,163 Z" />
 
-                                    <!-- Core / Abdomen -->
+                                    <!-- Core / Abdomen (Cintura anatómica y recto abdominal) -->
                                     <path id="zona-core" data-zona="core" data-titulo="Core y Abdomen"
                                         data-detalle="Recto abdominal, oblicuos y transverso del abdomen"
                                         data-enfoque="Estabilidad lumbo-pélvica" class="anatomia-zona"
-                                        d="M82,99 L118,99 L114,141 L86,141 Z" />
+                                        d="M85,107 C95,109 105,109 110,109 C115,109 125,109 135,107 C133,122 131,137 133,152 C119,155 101,155 87,152 C89,137 87,122 85,107 Z" />
 
                                     <!-- Cadera / Pelvis -->
                                     <path id="zona-cadera" data-zona="cadera" data-titulo="Cadera y Pelvis"
                                         data-detalle="Flexores de cadera, psoas ilíaco y abductores"
                                         data-enfoque="Movilidad y control pélvico" class="anatomia-zona"
-                                        d="M80,143 L120,143 L124,167 L76,167 Z" />
+                                        d="M86,154 C101,157 119,157 134,154 C138,165 139,175 137,184 L113,187 L110,181 L107,187 L83,184 C81,175 82,165 86,154 Z" />
 
-                                    <!-- Cuádriceps / Muslo -->
+                                    <!-- Muslo y Rodilla (Cuádriceps anatómico) -->
                                     <path id="zona-cuadriceps" data-zona="cuadriceps" data-titulo="Muslo y Rodilla"
-                                        data-detalle="Cuádriceps femoral, sartorio, aductores y articulación patelofemoral"
+                                        data-detalle="Cuádriceps femoral, sartorio, aductores y rodilla"
                                         data-enfoque="Cadena cinética inferior" class="anatomia-zona"
-                                        d="M76,170 L97,170 L95,244 L74,244 Z M103,170 L124,170 L126,244 L105,244 Z" />
+                                        d="M83,187 L107,189 C108,212 105,236 102,258 L86,258 C81,236 79,212 83,187 Z M137,187 L113,189 C112,212 115,236 118,258 L134,258 C139,236 141,212 137,187 Z" />
 
-                                    <!-- Pierna / Tibial -->
+                                    <!-- Pierna / Tibial (Gastrocnemio/Tibial curvo) -->
                                     <path id="zona-pantorrillas" data-zona="pantorrillas"
                                         data-titulo="Pierna y Tibial Anterior"
                                         data-detalle="Tibial anterior, peroneos y estabilizadores de pierna"
                                         data-enfoque="Dorsiflexión y equilibrio" class="anatomia-zona"
-                                        d="M75,248 L94,248 L91,322 L78,322 Z M106,248 L125,248 L122,322 L109,322 Z" />
+                                        d="M86,261 L102,261 C105,278 103,305 99,334 L89,334 C84,305 82,278 86,261 Z M134,261 L118,261 C115,278 117,305 121,334 L131,334 C136,305 138,278 134,261 Z" />
 
                                     <!-- Tobillos y Pies -->
                                     <path id="zona-pies-f" data-zona="tobillo" data-titulo="Tobillos y Pies"
                                         data-detalle="Articulación tibiotarsiana, arco plantar y propiocepción"
                                         data-enfoque="Propiocepción y marcha" class="anatomia-zona"
-                                        d="M77,325 L91,325 L93,344 L71,344 C71,338 75,332 77,325 Z M109,325 L123,325 C125,332 129,338 129,344 L107,344 Z" />
+                                        d="M89,336 L99,336 L102,354 C96,358 84,358 79,353 C78,348 85,342 89,336 Z M131,336 L121,336 L118,354 C124,358 136,358 141,353 C142,348 135,342 131,336 Z" />
                                 </g>
 
-                                <!-- ==================== VISTA POSTERIOR (DORSAL) ==================== -->
+                                <!-- ==================== VISTA POSTERIOR ORGÁNICA ==================== -->
                                 <g id="grupo-dorsal" style="display: none;">
                                     <g id="zona-cuello-grupo-d" data-zona="cuello" data-titulo="Nuca y Columna Cervical"
                                         data-detalle="Musculatura suboccipital, esplenio y trapecio superior"
                                         data-enfoque="Control motor cervical" class="anatomia-zona">
-                                        <circle cx="100" cy="24" r="15" class="anatomia-pieza" />
-                                        <rect x="92" y="40" width="16" height="13" rx="3" class="anatomia-pieza" />
+                                        <path class="anatomia-pieza"
+                                            d="M110,12 C121,12 128,20 128,31 C128,41 122,49 116,51 L117,59 C121,61 126,63 130,65 L90,65 C94,63 99,61 103,59 L104,51 C98,49 92,41 92,31 C92,20 99,12 110,12 Z" />
                                     </g>
 
                                     <path id="zona-hombros-d" data-zona="hombros" data-titulo="Deltoides Posterior"
                                         data-detalle="Deltoides posterior, infraespinoso y redondo menor"
                                         data-enfoque="Rotación externa y cintura escapular" class="anatomia-zona"
-                                        d="M72,54 C61,56 56,64 56,74 L68,74 C70,66 76,62 78,58 Z M128,54 C139,56 144,64 144,74 L132,74 C130,66 124,62 122,58 Z" />
+                                        d="M88,65 C74,66 64,74 62,88 C61,95 65,100 72,99 C76,91 81,82 87,76 Z M132,65 C146,66 156,74 158,88 C159,95 155,100 148,99 C144,91 139,82 133,76 Z" />
 
                                     <path id="zona-espalda" data-zona="espalda" data-titulo="Espalda Alta y Dorsal"
                                         data-detalle="Dorsal ancho, romboides y trapecio medio/inferior"
                                         data-enfoque="Retracción escapular y postura" class="anatomia-zona"
-                                        d="M74,58 L126,58 L120,108 L100,114 L80,108 Z" />
+                                        d="M89,67 L131,67 C137,82 138,101 131,120 L110,125 L89,120 C82,101 83,82 89,67 Z" />
 
                                     <path id="zona-triceps" data-zona="triceps" data-titulo="Tríceps y Brazo Posterior"
                                         data-detalle="Tríceps braquial y extensores de antebrazo"
                                         data-enfoque="Extensión de codo" class="anatomia-zona"
-                                        d="M56,76 L51,123 L64,123 L68,76 Z M132,76 L136,123 L149,123 L144,76 Z" />
+                                        d="M62,100 C58,110 57,121 60,130 C56,140 54,151 55,160 L66,161 C69,151 71,140 70,130 C74,121 75,110 73,101 Z M158,100 C162,110 163,121 160,130 C164,140 166,151 165,160 L154,161 C151,151 149,140 150,130 C146,121 145,110 147,101 Z" />
 
                                     <path id="zona-manos-d" data-zona="manos" data-titulo="Muñecas y Dorso de Mano"
                                         data-detalle="Extensores de muñeca y articulación radiocarpiana"
                                         data-enfoque="Movilidad de muñeca" class="anatomia-zona"
-                                        d="M50,125 L64,125 L65,141 C65,144 50,144 49,141 Z M136,125 L150,125 L151,141 C150,144 135,144 135,141 Z" />
+                                        d="M55,163 L66,163 C68,171 67,181 62,184 C57,186 52,181 52,174 C52,169 54,166 55,163 Z M165,163 L154,163 C152,171 153,181 158,184 C163,186 168,181 168,174 C168,169 166,166 165,163 Z" />
 
                                     <path id="zona-lumbar" data-zona="lumbar" data-titulo="Zona Lumbar"
                                         data-detalle="Erectores espinales, cuadrado lumbar y multífidos"
                                         data-enfoque="Estabilidad lumbo-pélvica" class="anatomia-zona"
-                                        d="M82,116 L118,116 L114,144 L86,144 Z" />
+                                        d="M90,122 L110,127 L130,122 L133,152 C118,155 102,155 87,152 Z" />
 
                                     <path id="zona-gluteos" data-zona="gluteos" data-titulo="Glúteos"
                                         data-detalle="Glúteo mayor, glúteo medio y pelvitrocantéreos"
                                         data-enfoque="Estabilidad pélvica y extensión" class="anatomia-zona"
-                                        d="M78,146 L122,146 L126,174 L74,174 Z" />
+                                        d="M86,154 L109,156 L109,187 C98,189 87,187 82,181 C80,172 82,162 86,154 Z M134,154 L111,156 L111,187 C122,189 133,187 138,181 C140,172 138,162 134,154 Z" />
 
                                     <path id="zona-isquiotibiales" data-zona="isquiotibiales"
                                         data-titulo="Isquiotibiales"
                                         data-detalle="Bíceps femoral, semitendinoso y semimembranoso"
                                         data-enfoque="Control excéntrico posterior" class="anatomia-zona"
-                                        d="M76,178 L97,178 L94,246 L73,246 Z M103,178 L124,178 L127,246 L106,246 Z" />
+                                        d="M83,188 L107,190 C108,213 105,237 102,258 L86,258 C81,236 79,212 83,188 Z M137,188 L113,190 C112,213 115,237 118,258 L134,258 C139,236 141,212 137,188 Z" />
 
                                     <path id="zona-gemelos" data-zona="gemelos"
                                         data-titulo="Pantorrillas (Gemelos y Sóleo)"
                                         data-detalle="Gastrocnemio, sóleo y tendón de Aquiles"
                                         data-enfoque="Flexión plantar y propulsión" class="anatomia-zona"
-                                        d="M74,250 L94,250 L90,322 L77,322 Z M106,250 L126,250 L123,322 L110,322 Z" />
+                                        d="M86,261 L102,261 C106,279 104,305 99,334 L89,334 C83,305 81,279 86,261 Z M134,261 L118,261 C114,279 116,305 121,334 L131,334 C137,305 139,279 134,261 Z" />
 
                                     <path id="zona-pies-d" data-zona="tobillo" data-titulo="Talones y Tobillos"
                                         data-detalle="Tendón calcáneo (Aquiles), retropié y planta"
                                         data-enfoque="Propiocepción de tobillo" class="anatomia-zona"
-                                        d="M77,325 L91,325 L92,343 L76,343 Z M109,325 L123,325 L124,343 L108,343 Z" />
+                                        d="M89,336 L99,336 L101,354 L85,354 C85,348 87,342 89,336 Z M131,336 L121,336 L119,354 L135,354 C135,348 133,342 131,336 Z" />
                                 </g>
                             </svg>
                         </div>
 
-                        <!-- Panel fijo de detalle anatómico (nunca tapa botones ni el SVG) -->
-                        <div class="anatomia-info-panel" id="panel-info-anatomico">
+                        <div class="anatomia-info-panel" id="panel-info-anatomico" style="margin-top: 10px; padding: 8px 10px; min-height: 54px;">
                             <span style="font-size: 0.78rem; font-weight: 700; color: var(--azul-900);">Explorador Anatómico</span>
-                            <span style="font-size: 0.74rem; color: var(--gris-600); margin-top: 2px;">
+                            <span style="font-size: 0.73rem; color: var(--gris-600); margin-top: 2px;">
                                 Pasa el cursor o haz clic sobre una región muscular para filtrar ejercicios.
                             </span>
                         </div>
                     </div>
 
                     <!-- Columna 2: Catálogo de Ejercicios -->
-                    <div class="card">
-                        <div class="page-header" style="margin-bottom: 14px;">
+                    <div class="card" style="padding: 18px;">
+                        <div class="page-header" style="margin-bottom: 12px;">
                             <div>
-                                <h3 style="margin: 0; color: var(--azul-900); font-size: 1.12rem;">Catálogo de Ejercicios</h3>
-                                <p style="margin: 0; font-size: 0.83rem; color: var(--gris-600);">Selecciona los ejercicios para incluir en la pauta.</p>
+                                <h3 style="margin: 0; color: var(--azul-900); font-size: 1.1rem;">Catálogo de Ejercicios</h3>
+                                <p style="margin: 0; font-size: 0.82rem; color: var(--gris-600);">Selecciona los ejercicios para incluir en la pauta.</p>
                             </div>
                         </div>
 
-                        <div class="field" style="margin-bottom: 12px;">
+                        <div class="field" style="margin-bottom: 10px;">
                             <input type="text" id="input-buscar-ejercicio"
                                 placeholder="Buscar ejercicio por nombre o músculo..." />
                         </div>
@@ -305,74 +334,77 @@
                         </div>
                     </div>
 
-                    <!-- Columna 3: Resumen de Pauta (Formulario único integrado) -->
+                    <!-- Columna 3: Resumen de Pauta con layout compacto y footer fijo -->
                     <div class="card carrito-card">
-                        <h3 class="carrito-header">
+                        <h3 class="carrito-header" style="margin-bottom: 10px; padding-bottom: 8px; flex-shrink: 0;">
                             <span><i class='bx bx-clipboard'></i> Resumen de Pauta</span>
                             <span class="badge badge-ok" id="badge-total-items">0 Ejercicios</span>
                         </h3>
 
-                        <form id="form-guardar-pauta" style="margin-top: 14px;">
-                            <div class="field" style="margin-bottom: 11px;">
-                                <label for="select-paciente-pauta">Asignar a Paciente *</label>
-                                <select id="select-paciente-pauta">
+                        <form id="form-guardar-pauta">
+                            <div class="field" style="margin-bottom: 9px;">
+                                <label for="select-paciente-pauta" style="font-size: 0.78rem;">Asignar a Paciente *</label>
+                                <select id="select-paciente-pauta" style="padding: 8px 10px; font-size: 0.84rem;">
                                     <option value="">-- Seleccionar Paciente --</option>
                                 </select>
                             </div>
 
-                            <div class="field" style="margin-bottom: 11px;">
-                                <label for="pauta-nombre">Nombre de la Pauta *</label>
-                                <input type="text" id="pauta-nombre" required
-                                    placeholder="Ej: Rehabilitación Cervical Fase 1" />
+                            <!-- Nombre y Frecuencia en 2 columnas para ahorrar altura -->
+                            <div style="display: grid; grid-template-columns: 1.35fr 1fr; gap: 8px; margin-bottom: 9px;">
+                                <div class="field" style="margin: 0;">
+                                    <label for="pauta-nombre" style="font-size: 0.78rem;">Nombre de la Pauta *</label>
+                                    <input type="text" id="pauta-nombre" required
+                                        placeholder="Ej: Rehab. Cervical" style="padding: 8px 10px; font-size: 0.84rem;" />
+                                </div>
+
+                                <div class="field" style="margin: 0;">
+                                    <label for="pauta-frecuencia" style="font-size: 0.78rem;">Frecuencia *</label>
+                                    <select id="pauta-frecuencia" style="padding: 8px 8px; font-size: 0.82rem;">
+                                        <option value="1">1x / sem</option>
+                                        <option value="2">2x / sem</option>
+                                        <option value="3" selected>3x / sem</option>
+                                        <option value="4">4x / sem</option>
+                                        <option value="5">5x / sem</option>
+                                        <option value="6">6x / sem</option>
+                                        <option value="7">7x / sem</option>
+                                    </select>
+                                </div>
                             </div>
 
-                            <div class="field" style="margin-bottom: 11px;">
-                                <label for="pauta-frecuencia">Frecuencia Semanal *</label>
-                                <select id="pauta-frecuencia" style="font-size: 0.84rem; padding: 9px 10px;">
-                                    <option value="1">1x / semana (cada 7 días)</option>
-                                    <option value="2">2x / semana (cada 3–4 días)</option>
-                                    <option value="3" selected>3x / semana (Estándar)</option>
-                                    <option value="4">4x / semana</option>
-                                    <option value="5">5x / semana (Lunes a Viernes)</option>
-                                    <option value="6">6x / semana</option>
-                                    <option value="7">7x / semana (Diario)</option>
-                                </select>
+                            <div class="field" style="margin-bottom: 10px;">
+                                <label for="pauta-descripcion" style="font-size: 0.78rem;">Indicaciones Clínicas</label>
+                                <textarea id="pauta-descripcion" rows="1"
+                                    placeholder="Indicaciones posturales o progresión..."
+                                    style="padding: 7px 10px; font-size: 0.83rem; resize: vertical;"></textarea>
                             </div>
 
-                            <div class="field" style="margin-bottom: 12px;">
-                                <label for="pauta-descripcion">Indicaciones Clínicas</label>
-                                <textarea id="pauta-descripcion" rows="2"
-                                    placeholder="Recomendaciones posturales o progresión para el paciente..."></textarea>
-                            </div>
-
-                            <div class="field">
-                                <label>Ejercicios Seleccionados</label>
+                            <div class="field" style="flex: 1; min-height: 90px; margin-bottom: 10px;">
+                                <label style="font-size: 0.78rem;">Ejercicios Seleccionados</label>
                                 <div id="carrito-items-container"
-                                    style="display: flex; flex-direction: column; gap: 8px; max-height: 240px; overflow-y: auto; margin-bottom: 12px;">
-                                    <div class="empty-state" id="carrito-vacio-msg" style="padding: 16px;">
-                                        <p style="margin: 0; font-size: 0.85rem;">Aún no has agregado ejercicios. Selecciónalos desde el catálogo central.</p>
+                                    style="display: flex; flex-direction: column; gap: 7px; max-height: 220px; overflow-y: auto;">
+                                    <div class="empty-state" id="carrito-vacio-msg" style="padding: 14px;">
+                                        <p style="margin: 0; font-size: 0.82rem;">Selecciona ejercicios desde el catálogo central.</p>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="field plantilla-box-check"
-                                style="margin-bottom: 14px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 10px; padding: 10px 12px;">
-                                <label
-                                    style="display: flex; align-items: center; gap: 9px; cursor: pointer; margin: 0; font-size: 0.84rem; color: #0369a1; font-weight: 700;">
-                                    <input type="checkbox" id="check-solo-plantilla"
-                                        style="width: 16px; height: 16px; margin: 0; flex-shrink: 0; cursor: pointer; accent-color: #0284c7;">
-                                    <span>Guardar solo como Plantilla Maestra</span>
-                                </label>
-                                <small
-                                    style="display: block; color: #0284c7; opacity: 0.85; font-size: 0.74rem; margin-top: 4px; padding-left: 25px;">
-                                    Queda disponible en tus protocolos reutilizables sin asignarla a un paciente.
-                                </small>
-                            </div>
+                            <!-- Footer fijo siempre visible en pantalla completa -->
+                            <div class="resumen-sticky-footer">
+                                <div class="field plantilla-box-check"
+                                    style="margin-bottom: 10px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 9px; padding: 8px 10px;">
+                                    <label
+                                        style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0; font-size: 0.81rem; color: #0369a1; font-weight: 700;">
+                                        <input type="checkbox" id="check-solo-plantilla"
+                                            style="width: 15px; height: 15px; margin: 0; flex-shrink: 0; cursor: pointer; accent-color: #0284c7;">
+                                        <span>Guardar solo como Plantilla Maestra</span>
+                                    </label>
+                                </div>
 
-                            <button type="submit" class="btn btn-primary" id="btn-confirmar-pauta" style="width: 100%;"
-                                disabled>
-                                <i class='bx bx-sliders-alt'></i> Dosificar y Confirmar (0)
-                            </button>
+                                <button type="submit" class="btn btn-primary" id="btn-confirmar-pauta" style="width: 100%;"
+                                    disabled>
+                                    <i class='bx bx-sliders-alt'></i> Dosificar y Confirmar (0)
+                                </button>
+                            </div>
                         </form>
                     </div>
 
@@ -381,7 +413,6 @@
         </main>
     </div>
 
-    <!-- Scripts Esenciales -->
     <script src="js/api.js"></script>
     <script src="js/layout.js"></script>
     <script src="js/crear_pautas.js"></script>

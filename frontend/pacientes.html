@@ -42,6 +42,36 @@
             background: #0f1929;
             border-color: #24344d;
         }
+        .btn-prescribir-row {
+            background: #e0f2fe !important;
+            border: 1px solid #7dd3fc !important;
+            color: #0369a1 !important;
+            font-weight: 700 !important;
+        }
+        .btn-prescribir-row:hover {
+            background: #bae6fd !important;
+            color: #0c4a6e !important;
+        }
+        [data-theme="dark"] .btn-prescribir-row {
+            background: rgba(14, 165, 233, 0.18) !important;
+            border-color: rgba(56, 189, 248, 0.45) !important;
+            color: #7dd3fc !important;
+        }
+        .btn-disabled-link {
+            opacity: 0.42 !important;
+            pointer-events: none !important;
+            cursor: not-allowed !important;
+        }
+        .badge-eva-moderado {
+            background: #fef3c7;
+            color: #b45309;
+            border: 1px solid #fde68a;
+        }
+        [data-theme="dark"] .badge-eva-moderado {
+            background: rgba(245, 158, 11, 0.18);
+            color: #fbbf24;
+            border-color: rgba(245, 158, 11, 0.35);
+        }
     </style>
 </head>
 
@@ -54,18 +84,18 @@
                 <div class="page-header header-pacientes">
                     <div>
                         <h2>Gestión de Pacientes</h2>
-                        <p>Directorio clínico priorizado por alertas EVA, actividad reciente y fichas PDF.</p>
+                        <p>Directorio clínico priorizado por alertas EVA, diagnóstico, actividad y fichas PDF.</p>
                     </div>
                     <button type="button" class="btn btn-primary" id="btn-toggle-form" onclick="toggleFormulario()">
                         <i class='bx bx-user-plus'></i> Registrar Nuevo Paciente
                     </button>
                 </div>
 
-                <!-- FORMULARIO DE REGISTRO (Ocultable) -->
+                <!-- FORMULARIO DE REGISTRO -->
                 <div id="seccion-registro" class="card seccion-registro-card is-hidden" style="display: none; margin-bottom: 24px;">
                     <div class="registro-card-header">
                         <h3 class="titulo-nuevo-paciente">Registrar Nuevo Paciente</h3>
-                        <p class="subtitulo-nuevo-paciente">Ingresa los datos personales. Se generará un usuario y clave temporal automáticamente.</p>
+                        <p class="subtitulo-nuevo-paciente">Ingresa los datos personales y diagnóstico inicial. Se generará un usuario y clave temporal automáticamente.</p>
                     </div>
 
                     <ul class="messages is-hidden" id="registro-messages">
@@ -94,7 +124,11 @@
                             <div class="field">
                                 <label for="email">Correo Electrónico</label>
                                 <input type="email" id="email" placeholder="paciente@correo.cl" autocomplete="off">
-                                <span class="help-text">Se intentará enviar por correo y además se mostrarán aquí en pantalla.</span>
+                            </div>
+
+                            <div class="field full">
+                                <label for="diagnostico_inicial">Diagnóstico / Lesión Principal</label>
+                                <input type="text" id="diagnostico_inicial" placeholder="ej: Lumbago mecánico, Tendinopatía manguito rotador, Post-op LCA..." autocomplete="off">
                             </div>
 
                             <div class="form-actions-full">
@@ -114,7 +148,7 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
                         <div style="position: relative; flex: 1 1 280px; max-width: 420px;">
                             <i class='bx bx-search' style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--gris-400); pointer-events: none;"></i>
-                            <input type="text" id="input-buscar-paciente" placeholder="Buscar por nombre, RUT o correo..."
+                            <input type="text" id="input-buscar-paciente" placeholder="Buscar por nombre, RUT, diagnóstico o correo..."
                                 oninput="filtrarTablaPacientes()"
                                 style="width: 100%; box-sizing: border-box; padding: 8px 12px 8px 34px; border-radius: 8px; border: 1px solid var(--gris-200); font-size: 0.86rem;">
                         </div>
@@ -132,7 +166,7 @@
                                 <tr>
                                     <th>Nombre Completo</th>
                                     <th>RUT</th>
-                                    <th>Correo Electrónico</th>
+                                    <th>Diagnóstico / Motivo</th>
                                     <th>Seguimiento Clínico</th>
                                     <th>Acciones</th>
                                 </tr>
@@ -154,6 +188,56 @@
 
             </div>
         </main>
+    </div>
+
+    <!-- MODAL EDITAR PACIENTE -->
+    <div id="modal-editar-paciente" class="modal-overlay" style="display: none;"
+        onclick="if(event.target === this) cerrarModalEditarPaciente()">
+        <div class="modal-card" style="max-width: 500px; width: 92%; padding: 22px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <h3 style="margin: 0; color: var(--azul-900); font-size: 1.12rem;">
+                    <i class='bx bx-edit' style="color: #0284c7;"></i> Editar Ficha del Paciente
+                </h3>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="cerrarModalEditarPaciente()">
+                    <i class='bx bx-x' style="font-size: 1.4rem;"></i>
+                </button>
+            </div>
+
+            <form id="form-editar-paciente" style="display: flex; flex-direction: column; gap: 12px;">
+                <input type="hidden" id="edit-pac-userid">
+                <input type="hidden" id="edit-pac-perfilid">
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="field">
+                        <label for="edit-first-name">Nombre *</label>
+                        <input type="text" id="edit-first-name" required>
+                    </div>
+                    <div class="field">
+                        <label for="edit-last-name">Apellido *</label>
+                        <input type="text" id="edit-last-name" required>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="edit-email">Correo Electrónico</label>
+                    <input type="email" id="edit-email" placeholder="paciente@correo.cl">
+                </div>
+
+                <div class="field">
+                    <label for="edit-diagnostico">Diagnóstico / Lesión Principal</label>
+                    <input type="text" id="edit-diagnostico" placeholder="ej: Lumbago mecánico, Cervicalgia...">
+                </div>
+
+                <div id="edit-pac-feedback" style="display: none; font-size: 0.82rem; font-weight: 600;"></div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px;">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="cerrarModalEditarPaciente()">Cancelar</button>
+                    <button type="submit" id="btn-guardar-edicion-pac" class="btn btn-primary btn-sm">
+                        <i class='bx bx-save'></i> Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- MODAL DE CREDENCIALES GENERADAS -->
@@ -231,9 +315,29 @@
     <script src="js/layout.js"></script>
 
     <script>
+        const STORAGE_DIAGNOSTICOS = 'kc_diagnosticos_pacientes_v1';
         let listaPacientesCache = [];
         let seguimientoPorPaciente = {};
         let textoCredencialesCopiar = '';
+
+        function obtenerMapaDiagnosticos() {
+            try {
+                return JSON.parse(localStorage.getItem(STORAGE_DIAGNOSTICOS) || '{}');
+            } catch {
+                return {};
+            }
+        }
+
+        function guardarDiagnosticoLocal(clave, texto) {
+            if (!clave) return;
+            const mapa = obtenerMapaDiagnosticos();
+            if (texto && texto.trim()) {
+                mapa[String(clave)] = texto.trim();
+            } else {
+                delete mapa[String(clave)];
+            }
+            localStorage.setItem(STORAGE_DIAGNOSTICOS, JSON.stringify(mapa));
+        }
 
         function escaparHtml(txt) {
             return String(txt ?? '').replace(/[&<>"']/g, c => ({
@@ -333,12 +437,11 @@
             });
         }
 
-        function describirNivelEva(dolor) {
-            if (dolor === 0) return 'Sin dolor';
-            if (dolor <= 3) return 'Leve';
-            if (dolor <= 5) return 'Moderado';
-            if (dolor <= 7) return 'Fuerte';
-            return 'Severo';
+        function claseBadgeEva(dolor) {
+            const d = Number(dolor ?? 0);
+            if (d >= 6) return 'badge-alerta';
+            if (d >= 4) return 'badge-eva-moderado';
+            return 'badge-ok';
         }
 
         function toggleFormulario() {
@@ -353,6 +456,36 @@
                 sec.classList.add('is-hidden');
                 sec.style.display = 'none';
             }
+        }
+
+        function abrirModalEditarPaciente(userId) {
+            const pac = listaPacientesCache.find(p => {
+                const uid = p.user_id || ((p.user && typeof p.user === 'object') ? p.user.id : (p.user || p.id));
+                return String(uid) === String(userId);
+            });
+            if (!pac) return;
+
+            const u = pac.user && typeof pac.user === 'object' ? pac.user : {};
+            const nombreFull = capitalizarNombre(pac.nombre_completo || `${u.first_name || ''} ${u.last_name || ''}`.trim());
+            const partes = nombreFull.split(' ');
+            const firstName = pac.first_name || u.first_name || partes[0] || '';
+            const lastName = pac.last_name || u.last_name || partes.slice(1).join(' ') || '';
+            const correo = pac.email || u.email || '';
+            const mapDiag = obtenerMapaDiagnosticos();
+            const diag = pac.diagnostico || mapDiag[String(userId)] || mapDiag[limpiarRut(pac.rut)] || '';
+
+            document.getElementById('edit-pac-userid').value = String(userId);
+            document.getElementById('edit-pac-perfilid').value = String(pac.id || '');
+            document.getElementById('edit-first-name').value = firstName;
+            document.getElementById('edit-last-name').value = lastName;
+            document.getElementById('edit-email').value = correo;
+            document.getElementById('edit-diagnostico').value = diag;
+            document.getElementById('edit-pac-feedback').style.display = 'none';
+            document.getElementById('modal-editar-paciente').style.display = 'flex';
+        }
+
+        function cerrarModalEditarPaciente() {
+            document.getElementById('modal-editar-paciente').style.display = 'none';
         }
 
         function abrirModalCredenciales(nombreCompleto, username, passwordTemporal, correo) {
@@ -392,6 +525,7 @@
             if (e.key === 'Escape') {
                 cerrarModalCredenciales();
                 cerrarModalInformePaciente();
+                cerrarModalEditarPaciente();
             }
         });
 
@@ -405,230 +539,12 @@
             }
         }
 
-        function obtenerNombreKinesiologoReal() {
-            const userKine = (typeof api !== 'undefined' && api.getUser) ? api.getUser() : null;
-            if (!userKine) return 'Kinesiólogo Tratante';
-            const full = `${userKine.first_name || ''} ${userKine.last_name || ''}`.trim();
-            const candidato = (userKine.nombre_completo || full || userKine.username || '').trim();
-            if (!candidato || candidato.toLowerCase() === 'kineconnect') return 'Kinesiólogo Tratante';
-            return capitalizarNombre(candidato);
-        }
-
-        async function abrirInformePaciente(userId) {
-            const pac = listaPacientesCache.find(p => {
-                const uid = p.user_id || ((p.user && typeof p.user === 'object') ? p.user.id : (p.user || p.id));
-                return String(uid) === String(userId);
-            });
-
-            const nombreMostrar = capitalizarNombre(
-                pac?.nombre_completo ||
-                (pac?.user && typeof pac.user === 'object' ? `${pac.user.first_name} ${pac.user.last_name}`.trim() : '') ||
-                'Paciente'
-            );
-            const rutMostrar = formatearRutVisual(pac?.rut || 'N/A') || 'N/A';
-            const emailMostrar = pac?.email || (pac?.user && typeof pac.user === 'object' ? pac.user.email : '') || 'No registrado';
-
-            const modal = document.getElementById('modal-informe-paciente');
-            const previewEl = document.getElementById('contenedor-preview-informe');
-            document.getElementById('subtitulo-informe-paciente').textContent = `${nombreMostrar} • RUT ${rutMostrar}`;
-            previewEl.innerHTML = `<div style="text-align: center; padding: 36px; color: #64748b;">Generando ficha clínica...</div>`;
-            modal.style.display = 'flex';
-
-            try {
-                const [pautasResp, feedsResp] = await Promise.all([
-                    api.getPautas(),
-                    api.getReportesDolor().catch(() => [])
-                ]);
-
-                const todasPautas = Array.isArray(pautasResp) ? pautasResp : (pautasResp?.results || []);
-                const todosFeeds = Array.isArray(feedsResp) ? feedsResp : (feedsResp?.results || []);
-
-                const mapaPautas = {};
-                todasPautas.forEach(p => { mapaPautas[p.id] = p; });
-
-                const pautasPaciente = todasPautas.filter(p => {
-                    if (p.es_plantilla) return false;
-                    const pUserId = typeof p.paciente === 'object' && p.paciente !== null ? p.paciente.id : p.paciente;
-                    return String(pUserId) === String(userId) || String(p.paciente_user_id) === String(userId);
-                });
-
-                const idsPautas = new Set(pautasPaciente.map(p => String(p.id)));
-                const sesionesPaciente = todosFeeds.filter(f => {
-                    const pid = typeof f.pauta === 'object' && f.pauta !== null ? f.pauta.id : f.pauta;
-                    return idsPautas.has(String(pid));
-                });
-
-                const totalSesiones = sesionesPaciente.length;
-                const completas = sesionesPaciente.filter(s => Boolean(s.completado)).length;
-                const promedioEva = totalSesiones > 0
-                    ? (sesionesPaciente.reduce((acc, s) => acc + Number(s.nivel_dolor ?? s.escala_dolor ?? 0), 0) / totalSesiones).toFixed(1)
-                    : '0.0';
-
-                const nombreKine = obtenerNombreKinesiologoReal();
-                const fechaEmision = new Date().toLocaleString('es-CL', {
-                    timeZone: 'America/Santiago',
-                    dateStyle: 'long',
-                    timeStyle: 'short'
-                });
-
-                const pautasHtml = pautasPaciente.length === 0
-                    ? `<p style="color: #64748b; font-size: 0.86rem;">Sin pautas prescritas registradas.</p>`
-                    : pautasPaciente.map(p => {
-                        const detalles = Array.isArray(p.ejercicios_detalle) ? p.ejercicios_detalle : [];
-                        const ejerciciosTxt = detalles.map(d => {
-                            const nom = d.ejercicio_nombre || d.nombre || `Ejercicio #${d.ejercicio}`;
-                            return `${escaparHtml(nom)} (${d.series ?? 3}x${d.repeticiones ?? 12}, desc. ${d.tiempo_descanso_segundos ?? 60}s)`;
-                        }).join(' • ');
-
-                        return `
-                            <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; background: #f8fafc;">
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <strong style="color: #0f172a; font-size: 0.92rem;">${escaparHtml(p.titulo)}</strong>
-                                    <span style="font-size: 0.75rem; font-weight: 700; color: ${p.activo !== false ? '#059669' : '#64748b'};">
-                                        ${p.activo !== false ? 'ACTIVA' : 'ARCHIVADA'}
-                                    </span>
-                                </div>
-                                ${p.notas ? `<div style="font-size: 0.8rem; color: #475569; margin-top: 3px;">Indicación: ${escaparHtml(p.notas)}</div>` : ''}
-                                <div style="font-size: 0.8rem; color: #0369a1; margin-top: 4px;">
-                                    ${ejerciciosTxt || 'Sin ejercicios detallados'}
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
-
-                const filasSesionesHtml = sesionesPaciente.length === 0
-                    ? `<tr><td colspan="4" style="text-align: center; color: #64748b; padding: 12px;">El paciente aún no registra ejecuciones en la app móvil.</td></tr>`
-                    : sesionesPaciente.map(s => {
-                        const pid = typeof s.pauta === 'object' && s.pauta !== null ? s.pauta.id : s.pauta;
-                        const tituloP = mapaPautas[pid]?.titulo || `Pauta #${pid}`;
-                        const eva = Number(s.nivel_dolor ?? s.escala_dolor ?? 0);
-                        const fechaS = formatearFechaChile(s.fecha_ejecucion) || 'N/A';
-                        return `
-                            <tr>
-                                <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 0.82rem;">${fechaS}</td>
-                                <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 0.82rem;"><strong>${escaparHtml(tituloP)}</strong></td>
-                                <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 0.82rem; font-weight: 700; color: ${eva >= 6 ? '#dc2626' : '#059669'};">
-                                    EVA ${eva}/10 (${describirNivelEva(eva)})
-                                </td>
-                                <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 0.8rem; color: #334155;">
-                                    ${escaparHtml(s.comentario || (s.completado ? 'Rutina completada' : 'Sesión parcial'))}
-                                </td>
-                            </tr>
-                        `;
-                    }).join('');
-
-                previewEl.innerHTML = `
-                    <div id="documento-clinico-imprimible" style="font-family: Arial, Helvetica, sans-serif; color: #0f172a; line-height: 1.45;">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0284c7; padding-bottom: 12px; margin-bottom: 16px;">
-                            <div>
-                                <div style="font-size: 1.25rem; font-weight: 800; color: #0369a1;">KineConnect • Ficha de Evolución Clínica</div>
-                                <div style="font-size: 0.8rem; color: #475569;">Historial de adherencia terapéutica y dolor (Escala EVA)</div>
-                            </div>
-                            <div style="text-align: right; font-size: 0.78rem; color: #475569;">
-                                <div><strong>Emitido:</strong> ${escaparHtml(fechaEmision)}</div>
-                                <div><strong>Profesional:</strong> ${escaparHtml(nombreKine)}</div>
-                            </div>
-                        </div>
-
-                        <div style="background: #f1f5f9; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; font-size: 0.85rem;">
-                            <div><strong>Paciente:</strong> ${escaparHtml(nombreMostrar)}</div>
-                            <div><strong>RUT:</strong> ${escaparHtml(rutMostrar)}</div>
-                            <div><strong>Contacto:</strong> ${escaparHtml(emailMostrar)}</div>
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; text-align: center;">
-                            <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px;">
-                                <div style="font-size: 1.25rem; font-weight: 800; color: #0284c7;">${pautasPaciente.length}</div>
-                                <div style="font-size: 0.74rem; color: #475569;">Pautas Asignadas</div>
-                            </div>
-                            <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px;">
-                                <div style="font-size: 1.25rem; font-weight: 800; color: #0f172a;">${totalSesiones}</div>
-                                <div style="font-size: 0.74rem; color: #475569;">Reportes Totales</div>
-                            </div>
-                            <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px;">
-                                <div style="font-size: 1.25rem; font-weight: 800; color: #059669;">${completas}</div>
-                                <div style="font-size: 0.74rem; color: #475569;">Sesiones Completas</div>
-                            </div>
-                            <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px;">
-                                <div style="font-size: 1.25rem; font-weight: 800; color: #d97706;">${promedioEva} / 10</div>
-                                <div style="font-size: 0.74rem; color: #475569;">EVA Promedio</div>
-                            </div>
-                        </div>
-
-                        <h4 style="margin: 0 0 8px; font-size: 0.95rem; color: #0369a1; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
-                            1. Pautas Terapéuticas Prescritas
-                        </h4>
-                        <div style="margin-bottom: 18px;">${pautasHtml}</div>
-
-                        <h4 style="margin: 0 0 8px; font-size: 0.95rem; color: #0369a1; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
-                            2. Registro Cronológico de Ejecución y Dolor
-                        </h4>
-                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 28px;">
-                            <thead>
-                                <tr style="background: #f8fafc; text-align: left;">
-                                    <th style="padding: 8px; border-bottom: 2px solid #cbd5e1; font-size: 0.78rem;">Fecha</th>
-                                    <th style="padding: 8px; border-bottom: 2px solid #cbd5e1; font-size: 0.78rem;">Rutina</th>
-                                    <th style="padding: 8px; border-bottom: 2px solid #cbd5e1; font-size: 0.78rem;">Dolor (EVA)</th>
-                                    <th style="padding: 8px; border-bottom: 2px solid #cbd5e1; font-size: 0.78rem;">Detalle y Observaciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>${filasSesionesHtml}</tbody>
-                        </table>
-
-                        <div style="margin-top: 34px; display: flex; justify-content: flex-end;">
-                            <div style="width: 240px; text-align: center; border-top: 1px solid #475569; padding-top: 6px; font-size: 0.8rem; color: #334155;">
-                                <strong>${escaparHtml(nombreKine)}</strong><br>
-                                Kinesiólogo/a • Plataforma KineConnect
-                            </div>
-                        </div>
-                    </div>
-                `;
-            } catch (err) {
-                previewEl.innerHTML = `<div style="text-align: center; padding: 28px; color: #dc2626;">No se pudo generar el informe: ${escaparHtml(err.message)}</div>`;
-            }
-        }
-
-        function imprimirInformeClinico() {
-            const docEl = document.getElementById('documento-clinico-imprimible');
-            if (!docEl) return;
-
-            const ventanaPrint = window.open('', '_blank', 'width=900,height=700');
-            if (!ventanaPrint) {
-                alert('Habilita las ventanas emergentes para descargar el PDF.');
-                return;
-            }
-
-            ventanaPrint.document.write(`
-                <!DOCTYPE html>
-                <html lang="es">
-                <head>
-                    <meta charset="UTF-8">
-                    <title>Informe Clínico - KineConnect</title>
-                    <style>
-                        body { margin: 24px; background: #fff; color: #0f172a; }
-                        @media print {
-                            body { margin: 12mm; }
-                        }
-                    </style>
-                </head>
-                <body>
-                    ${docEl.outerHTML}
-                    <script>
-                        window.onload = function() {
-                            window.print();
-                        };
-                    <\/script>
-                </body>
-                </html>
-            `);
-            ventanaPrint.document.close();
-        }
-
         function renderizarTablaPacientes(lista) {
             const tabla = document.getElementById('tabla-pacientes');
             const tbody = document.getElementById('tbody-pacientes');
             const noData = document.getElementById('no-pacientes');
             const contador = document.getElementById('contador-pacientes');
+            const mapDiag = obtenerMapaDiagnosticos();
 
             if (contador) contador.textContent = `${lista.length} ${lista.length === 1 ? 'paciente' : 'pacientes'}`;
             tbody.innerHTML = '';
@@ -659,8 +575,9 @@
                 const tr = document.createElement('tr');
                 const nombre = capitalizarNombre(p.nombre_completo || (p.user && typeof p.user === 'object' ? `${p.user.first_name} ${p.user.last_name}`.trim() : '') || 'Paciente');
                 const rutFormateado = formatearRutVisual(p.rut || 'N/A') || 'N/A';
-                const correo = p.email || (p.user && typeof p.user === 'object' ? p.user.email : '') || 'Sin correo';
+                const correo = p.email || (p.user && typeof p.user === 'object' ? p.user.email : '') || '';
                 const userId = p.user_id || ((p.user && typeof p.user === 'object') ? p.user.id : (p.user || p.id));
+                const diag = p.diagnostico || mapDiag[String(userId)] || mapDiag[limpiarRut(p.rut)] || '';
 
                 const seg = seguimientoPorPaciente[String(userId)];
                 const tieneHistorial = Boolean(seg && (seg.pautasActivas > 0 || seg.ultimoEva != null));
@@ -668,7 +585,7 @@
                 let seguimientoHtml = `<span class="badge badge-neutro">Sin pautas activas</span>`;
                 if (seg) {
                     const evaBadge = seg.ultimoEva != null
-                        ? `<span class="badge ${seg.ultimoEva >= 6 ? 'badge-alerta' : 'badge-ok'}">Último EVA ${seg.ultimoEva}/10</span>`
+                        ? `<span class="badge ${claseBadgeEva(seg.ultimoEva)}">Último EVA ${seg.ultimoEva}/10</span>`
                         : `<span class="badge badge-neutro">Sin sesiones aún</span>`;
                     const fechaTxt = seg.ultimaFecha
                         ? `<span style="display: block; font-size: 0.74rem; color: var(--gris-500); margin-top: 3px;">Última: ${seg.ultimaFecha} • ${seg.pautasActivas} ${seg.pautasActivas === 1 ? 'pauta' : 'pautas'}</span>`
@@ -677,22 +594,34 @@
                 }
 
                 tr.innerHTML = `
-                    <td><strong>${escaparHtml(nombre)}</strong></td>
+                    <td>
+                        <strong>${escaparHtml(nombre)}</strong>
+                        ${correo ? `<span style="display: block; font-size: 0.75rem; color: var(--gris-500);">${escaparHtml(correo)}</span>` : ''}
+                    </td>
                     <td style="white-space: nowrap; font-variant-numeric: tabular-nums;">${escaparHtml(rutFormateado)}</td>
-                    <td>${escaparHtml(correo)}</td>
+                    <td>
+                        ${diag
+                            ? `<span style="font-size: 0.84rem; font-weight: 600; color: var(--azul-900);">${escaparHtml(diag)}</span>`
+                            : `<span style="font-size: 0.78rem; color: var(--gris-400); font-style: italic;">Sin diagnóstico registrado</span>`}
+                    </td>
                     <td>${seguimientoHtml}</td>
                     <td>
-                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                            <a href="crear_pauta.html?paciente=${encodeURIComponent(userId)}" class="btn btn-secondary btn-sm" style="border-color: #0284c7; color: #38bdf8;" title="Prescribir nueva pauta">
+                        <div style="display: flex; gap: 6px; flex-wrap: nowrap; align-items: center;">
+                            <a href="crear_pauta.html?paciente=${encodeURIComponent(userId)}" class="btn btn-sm btn-prescribir-row" title="Prescribir nueva pauta">
                                 <i class='bx bx-plus-circle'></i> Prescribir
                             </a>
-                            <a href="pautas.html?paciente=${encodeURIComponent(userId)}&nombre=${encodeURIComponent(nombre)}" class="btn btn-secondary btn-sm" title="Ver pautas asignadas">
+                            <a href="pautas.html?paciente=${encodeURIComponent(userId)}&nombre=${encodeURIComponent(nombre)}"
+                                class="btn btn-secondary btn-sm ${tieneHistorial ? '' : 'btn-disabled-link'}"
+                                title="${tieneHistorial ? 'Ver pautas asignadas' : 'El paciente aún no tiene pautas asignadas'}">
                                 <i class='bx bx-clipboard'></i> Pautas
                             </a>
                             <button type="button" class="btn btn-secondary btn-sm"
                                 ${tieneHistorial ? `onclick="abrirInformePaciente('${escaparHtml(userId)}')"` : 'disabled'}
                                 title="${tieneHistorial ? 'Generar Informe Clínico PDF' : 'Disponible cuando el paciente tenga pautas o sesiones'}">
                                 <i class='bx bxs-file-pdf' style="color: ${tieneHistorial ? '#ef4444' : 'inherit'};"></i> Informe PDF
+                            </button>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="abrirModalEditarPaciente('${escaparHtml(userId)}')" title="Editar datos y diagnóstico">
+                                <i class='bx bx-edit'></i>
                             </button>
                         </div>
                     </td>
@@ -707,12 +636,15 @@
                 renderizarTablaPacientes(listaPacientesCache);
                 return;
             }
+            const mapDiag = obtenerMapaDiagnosticos();
             const filtrados = listaPacientesCache.filter(p => {
+                const uid = String(p.user_id || ((p.user && typeof p.user === 'object') ? p.user.id : (p.user || p.id)));
                 const nombre = (p.nombre_completo || '').toLowerCase();
                 const rut = (p.rut || '').toLowerCase();
                 const rutFmt = formatearRutVisual(p.rut || '').toLowerCase();
                 const correo = (p.email || '').toLowerCase();
-                return nombre.includes(q) || rut.includes(q) || rutFmt.includes(q) || correo.includes(q);
+                const diag = (p.diagnostico || mapDiag[uid] || '').toLowerCase();
+                return nombre.includes(q) || rut.includes(q) || rutFmt.includes(q) || correo.includes(q) || diag.includes(q);
             });
             renderizarTablaPacientes(filtrados);
         }
@@ -793,6 +725,63 @@
 
             cargarPacientes();
 
+            const formEditar = document.getElementById('form-editar-paciente');
+            if (formEditar) {
+                formEditar.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const userId = document.getElementById('edit-pac-userid').value;
+                    const perfilId = document.getElementById('edit-pac-perfilid').value;
+                    const firstName = capitalizarNombre(document.getElementById('edit-first-name').value);
+                    const lastName = capitalizarNombre(document.getElementById('edit-last-name').value);
+                    const email = document.getElementById('edit-email').value.trim();
+                    const diagnostico = document.getElementById('edit-diagnostico').value.trim();
+                    const fbEl = document.getElementById('edit-pac-feedback');
+                    const btn = document.getElementById('btn-guardar-edicion-pac');
+
+                    btn.disabled = true;
+                    btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
+
+                    try {
+                        const pac = listaPacientesCache.find(p => {
+                            const uid = p.user_id || ((p.user && typeof p.user === 'object') ? p.user.id : (p.user || p.id));
+                            return String(uid) === String(userId);
+                        });
+                        if (pac) {
+                            guardarDiagnosticoLocal(userId, diagnostico);
+                            if (pac.rut) guardarDiagnosticoLocal(limpiarRut(pac.rut), diagnostico);
+                        }
+
+                        if (perfilId && typeof api.fetchConSesion === 'function') {
+                            await api.fetchConSesion(`/api/v1/perfiles/${perfilId}/`, {
+                                method: 'PATCH',
+                                body: JSON.stringify({
+                                    first_name: firstName,
+                                    last_name: lastName,
+                                    email,
+                                    diagnostico
+                                })
+                            }).catch(() => null);
+                        }
+
+                        if (pac) {
+                            pac.nombre_completo = `${firstName} ${lastName}`.trim();
+                            pac.email = email;
+                            pac.diagnostico = diagnostico;
+                        }
+
+                        cerrarModalEditarPaciente();
+                        renderizarTablaPacientes(listaPacientesCache);
+                    } catch (err) {
+                        fbEl.style.color = '#ef4444';
+                        fbEl.textContent = err.message || 'No se pudieron guardar los cambios.';
+                        fbEl.style.display = 'block';
+                    } finally {
+                        btn.disabled = false;
+                        btn.innerHTML = "<i class='bx bx-save'></i> Guardar Cambios";
+                    }
+                });
+            }
+
             const formRegistro = document.getElementById('form-registrar-paciente');
             const msgBox = document.getElementById('registro-messages');
             const msgItem = document.getElementById('registro-msg-item');
@@ -818,6 +807,7 @@
                     const firstName = capitalizarNombre(document.getElementById('first_name').value);
                     const lastName = capitalizarNombre(document.getElementById('last_name').value);
                     const correo = document.getElementById('email').value.trim();
+                    const diagnostico = document.getElementById('diagnostico_inicial').value.trim();
 
                     const payload = { first_name: firstName, last_name: lastName, rut: rutApi, email: correo };
 
@@ -827,6 +817,11 @@
 
                     try {
                         const res = await api.registrarPaciente(payload);
+                        if (diagnostico) {
+                            guardarDiagnosticoLocal(limpio, diagnostico);
+                            if (res?.user_id || res?.id) guardarDiagnosticoLocal(res.user_id || res.id, diagnostico);
+                        }
+
                         formRegistro.reset();
                         rutInput.classList.remove('input-rut-ok', 'input-rut-error');
                         const msgRut = document.getElementById('rut-validacion-msg');

@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catálogo Muscular y Ejercicios - KineConnect</title>
-    <!-- Estilos unificados y Boxicons -->
     <link rel="stylesheet" href="public/css/style.css">
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
     <style>
@@ -58,13 +57,26 @@
             border-color: #0284c7;
             color: #ffffff;
         }
+        .btn-prescribir-card {
+            background: #e0f2fe !important;
+            border: 1px solid #7dd3fc !important;
+            color: #0369a1 !important;
+            font-weight: 700 !important;
+        }
+        .btn-prescribir-card:hover {
+            background: #bae6fd !important;
+            color: #0c4a6e !important;
+        }
+        [data-theme="dark"] .btn-prescribir-card {
+            background: rgba(14, 165, 233, 0.16) !important;
+            border-color: rgba(56, 189, 248, 0.4) !important;
+            color: #7dd3fc !important;
+        }
     </style>
 </head>
 
 <body>
     <div class="app-shell">
-
-        <!-- Contenido Principal -->
         <main class="main">
             <div class="content">
 
@@ -75,7 +87,7 @@
                         <p>Consulta, filtra y gestiona la biblioteca biomecánica y clínica de ejercicios terapéuticos.</p>
                     </div>
                     <a href="crear_pauta.html" class="btn btn-primary">
-                        <i class='bx bx-body'></i> Ir a Prescribir Pauta
+                        <i class='bx bx-plus'></i> Prescribir Pauta
                     </a>
                 </div>
 
@@ -141,11 +153,11 @@
                             <button type="button" class="filtro-biomecanico-pill activo-todos" onclick="filtrarPorArea('todos', this)">Todas</button>
                             <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorArea('general', this)">Rehabilitación General</button>
                             <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorArea('traumatologia', this)">Traumatología</button>
-                            <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorArea('inmunologia', this)">Inmunología / VIH-SIDA</button>
                             <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorArea('neurologia', this)">Neurorehabilitación</button>
-                            <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorArea('post_operatorio', this)">Post-Operatorio</button>
+                            <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorArea('post operatorio', this)">Post-Operatorio</button>
                             <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorArea('cardiorrespiratorio', this)">Cardiorrespiratorio</button>
                             <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorArea('geriatria', this)">Adulto Mayor</button>
+                            <button type="button" class="filtro-biomecanico-pill" onclick="filtrarPorArea('inmunologia', this)">Inmunología / VIH-SIDA</button>
                         </div>
                     </div>
 
@@ -264,7 +276,22 @@
                 .normalize('NFD')
                 .replace(/[\u0300-\u036f]/g, '')
                 .replace(/[-_]+/g, ' ')
+                .replace(/\s+/g, ' ')
                 .trim();
+        }
+
+        function normalizarEtiquetaArea(raw) {
+            const limpia = String(raw || '').trim();
+            const clave = normalizarTexto(limpia);
+            if (!clave) return '';
+            if (clave === 'post operatorio') return 'Post-Operatorio';
+            if (clave === 'rehabilitacion general') return 'Rehabilitación General';
+            if (clave === 'traumatologia') return 'Traumatología';
+            if (clave === 'neurorehabilitacion' || clave === 'neurologia') return 'Neurorehabilitación';
+            if (clave === 'cardiorrespiratorio') return 'Cardiorrespiratorio';
+            if (clave === 'geriatria' || clave === 'adulto mayor') return 'Adulto Mayor';
+            if (clave.includes('inmunologia')) return 'Inmunología / VIH-SIDA';
+            return limpia;
         }
 
         function obtenerLetraInicial(item) {
@@ -292,13 +319,25 @@
         }
 
         function obtenerAreasEjercicio(item) {
+            let rawAreas = [];
             if (Array.isArray(item.area_clinica) && item.area_clinica.length > 0) {
-                return item.area_clinica.map(a => (typeof a === 'object' ? (a.nombre || '') : String(a)));
+                rawAreas = item.area_clinica.map(a => (typeof a === 'object' ? (a.nombre || '') : String(a)));
+            } else if (typeof item.area_clinica === 'string' && item.area_clinica.trim()) {
+                rawAreas = [item.area_clinica];
+            } else {
+                rawAreas = ['Rehabilitación General'];
             }
-            if (typeof item.area_clinica === 'string' && item.area_clinica.trim()) {
-                return [item.area_clinica];
-            }
-            return ['Rehabilitación General'];
+
+            // Deduplica variantes como "POST OPERATORIO" y "POST-OPERATORIO"
+            const unicas = new Map();
+            rawAreas.forEach(a => {
+                const normalizada = normalizarEtiquetaArea(a);
+                const clave = normalizarTexto(normalizada);
+                if (clave && !unicas.has(clave)) {
+                    unicas.set(clave, normalizada);
+                }
+            });
+            return unicas.size > 0 ? Array.from(unicas.values()) : ['Rehabilitación General'];
         }
 
         function toggleAreasExtra(btn) {
@@ -442,6 +481,10 @@
                 `;
             }
 
+            const mediaChip = videoUrl
+                ? `<span class="badge badge-ok" style="white-space: nowrap; flex-shrink: 0; font-size: 0.7rem;"><i class='bx bx-video'></i> Con Video</span>`
+                : `<span class="badge badge-neutro" style="white-space: nowrap; flex-shrink: 0; font-size: 0.68rem; opacity: 0.78;"><i class='bx bx-file-blank'></i> Solo guía</span>`;
+
             const card = document.createElement('div');
             card.className = 'card';
             card.style.cssText = 'padding: 18px; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--gris-200);';
@@ -450,7 +493,7 @@
                 <div>
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 12px;">
                         <h3 style="margin: 0; font-size: 1rem; color: var(--azul-900); font-weight: 700; flex: 1; min-width: 0; line-height: 1.35;">${escaparHtml(nombre)}</h3>
-                        ${videoUrl ? `<span class="badge badge-ok" style="white-space: nowrap; flex-shrink: 0;">Con Video</span>` : ''}
+                        ${mediaChip}
                     </div>
                     <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px;">
                         <span class="badge badge-neutro"><i class='bx bx-body'></i> ${escaparHtml(zona)}</span>
@@ -460,13 +503,13 @@
                 <div style="margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--gris-100); display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px;">
                     <div style="display: flex; flex-wrap: wrap; gap: 6px;">
                         <button type="button" class="btn btn-secondary btn-sm" onclick="abrirModalInfo(${indexGlobal})">
-                            <i class='bx bx-info-circle'></i> Información
+                            <i class='bx bx-info-circle'></i> Ficha
                         </button>
                         ${videoUrl
-                            ? `<button type="button" class="btn btn-secondary btn-sm" data-nombre="${escaparHtml(nombre)}" data-video="${escaparHtml(videoUrl)}" onclick="abrirModalVideo(this)"><i class='bx bx-video'></i> Video</button>`
+                            ? `<button type="button" class="btn btn-secondary btn-sm" data-nombre="${escaparHtml(nombre)}" data-video="${escaparHtml(videoUrl)}" onclick="abrirModalVideo(this)"><i class='bx bx-play-circle'></i> Ver Video</button>`
                             : ''}
                     </div>
-                    <a href="crear_pauta.html" class="btn btn-primary btn-sm">
+                    <a href="crear_pauta.html" class="btn btn-secondary btn-sm btn-prescribir-card">
                         <i class='bx bx-plus-circle'></i> Prescribir
                     </a>
                 </div>
@@ -659,7 +702,6 @@
             noData.style.display = 'none';
             contenedor.style.display = 'block';
 
-            // 1. Modo Alfabético A-Z agrupado por letra desplegable
             if (ordenActual === 'alfabetico') {
                 if (btnSecciones) btnSecciones.style.display = 'inline-flex';
                 const listaOrdenada = ordenarEjercicios(lista, false);
@@ -676,7 +718,6 @@
                 return;
             }
 
-            // 2. Modo Agrupado por Zona Anatómica
             const modoAgrupadoZona = ordenActual === 'zona' && zonaFiltroActual === 'todos' && !hayBusquedaTexto;
             if (btnSecciones) btnSecciones.style.display = modoAgrupadoZona ? 'inline-flex' : 'none';
 
@@ -700,7 +741,6 @@
                 return;
             }
 
-            // 3. Vista plana (Con Video primero o filtro de zona específico)
             const listaOrdenada = ordenarEjercicios(lista, ordenActual === 'video' || ordenActual === 'zona');
             const gridPlano = document.createElement('div');
             gridPlano.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px;';

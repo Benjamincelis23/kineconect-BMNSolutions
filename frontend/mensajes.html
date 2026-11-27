@@ -2,34 +2,29 @@
 <html lang="es">
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bandeja de Reportes - KineConnect</title>
+    <link rel="stylesheet" href="public/css/style.css">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
     <style>
-        body.dark-mode #select-filtro-paciente,
-        html.dark-mode #select-filtro-paciente,
-        [data-theme="dark"] #select-filtro-paciente,
-        body.dark #select-filtro-paciente {
+        [data-theme="dark"] #select-filtro-paciente {
             background-color: #162236 !important;
             color: #f8fafc !important;
             border-color: #24344d !important;
         }
 
-        body.dark-mode #select-filtro-paciente option,
-        html.dark-mode #select-filtro-paciente option,
-        [data-theme="dark"] #select-filtro-paciente option,
-        body.dark #select-filtro-paciente option {
+        [data-theme="dark"] #select-filtro-paciente option {
             background-color: #162236;
             color: #f8fafc;
         }
 
-        body.dark-mode #modal-responder-feedback .modal-card,
-        html.dark-mode #modal-responder-feedback .modal-card,
         [data-theme="dark"] #modal-responder-feedback .modal-card {
             background-color: #162236 !important;
             color: #f8fafc !important;
             border: 1px solid #24344d !important;
         }
 
-        body.dark-mode #modal-responder-feedback textarea,
-        html.dark-mode #modal-responder-feedback textarea,
         [data-theme="dark"] #modal-responder-feedback textarea {
             background-color: #0f172a !important;
             color: #f8fafc !important;
@@ -48,7 +43,7 @@
             position: relative;
             overflow: hidden;
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 350px;
+            grid-template-columns: minmax(0, 1fr) 295px;
             align-items: stretch;
             width: 100%;
             box-sizing: border-box;
@@ -72,29 +67,20 @@
             box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
         }
 
-        .inbox-card.sev-alta::before {
-            background: #ef4444;
-        }
-
+        .inbox-card.sev-alta::before { background: #ef4444; }
         .inbox-card.sev-alta {
             background: linear-gradient(90deg, rgba(239, 68, 68, 0.04) 0%, var(--blanco, #ffffff) 24%);
         }
+        .inbox-card.sev-media::before { background: #f59e0b; }
+        .inbox-card.sev-baja::before { background: #10b981; }
 
-        .inbox-card.sev-media::before {
-            background: #f59e0b;
-        }
-
-        .inbox-card.sev-baja::before {
-            background: #10b981;
-        }
-
-        /* ===== BLOQUE PRINCIPAL (IZQUIERDA): DATOS CLÍNICOS DEL PACIENTE ===== */
+        /* ===== BLOQUE PRINCIPAL (IZQUIERDA) ===== */
         .inbox-patient-panel {
             display: flex;
             flex-direction: column;
             justify-content: center;
-            gap: 12px;
-            padding: 18px 22px 18px 24px;
+            gap: 11px;
+            padding: 16px 20px 16px 22px;
             min-width: 0;
         }
 
@@ -103,7 +89,7 @@
             justify-content: space-between;
             align-items: baseline;
             flex-wrap: wrap;
-            gap: 8px 14px;
+            gap: 6px 14px;
         }
 
         .inbox-patient-identity {
@@ -116,7 +102,7 @@
 
         .inbox-patient-name {
             color: var(--azul-900, #0f172a);
-            font-size: 1.04rem;
+            font-size: 1.03rem;
             font-weight: 800;
             line-height: 1.2;
         }
@@ -128,7 +114,7 @@
         }
 
         .inbox-patient-date {
-            font-size: 0.8rem;
+            font-size: 0.79rem;
             font-weight: 500;
             color: var(--gris-500, #64748b);
             display: inline-flex;
@@ -137,10 +123,9 @@
             white-space: nowrap;
         }
 
-        /* Cuadros de métricas clínicas amplios */
         .inbox-metrics-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
             gap: 10px;
         }
 
@@ -149,7 +134,7 @@
             flex-direction: column;
             justify-content: center;
             gap: 3px;
-            padding: 10px 13px;
+            padding: 9px 12px;
             border-radius: 10px;
             border: 1px solid #e2e8f0;
             background: #f8fafc;
@@ -157,7 +142,7 @@
         }
 
         .kc-metric-label {
-            font-size: 0.7rem;
+            font-size: 0.69rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.04em;
@@ -169,62 +154,62 @@
         }
 
         .kc-metric-value {
-            font-size: 0.94rem;
+            font-size: 0.92rem;
             font-weight: 800;
             line-height: 1.25;
         }
 
         .kc-metric-sub {
-            font-size: 0.76rem;
+            font-size: 0.75rem;
             font-weight: 600;
             opacity: 0.85;
             line-height: 1.25;
         }
 
-        /* Variantes de color de los cuadros */
-        .kc-metric-box.tone-danger {
-            background: #fef2f2;
-            border-color: #fecaca;
-            color: #b91c1c;
-        }
-
-        .kc-metric-box.tone-warn {
-            background: #fffbeb;
-            border-color: #fde68a;
-            color: #b45309;
-        }
-
-        .kc-metric-box.tone-ok {
-            background: #ecfdf5;
-            border-color: #a7f3d0;
-            color: #047857;
-        }
-
-        .kc-metric-box.tone-neutral {
-            background: #f8fafc;
-            border-color: #e2e8f0;
-            color: #334155;
-        }
+        .kc-metric-box.tone-danger { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+        .kc-metric-box.tone-warn { background: #fffbeb; border-color: #fde68a; color: #b45309; }
+        .kc-metric-box.tone-ok { background: #ecfdf5; border-color: #a7f3d0; color: #047857; }
+        .kc-metric-box.tone-neutral { background: #f8fafc; border-color: #e2e8f0; color: #334155; }
 
         .kc-prev-pill {
-            font-size: 0.69rem;
+            font-size: 0.68rem;
             font-weight: 700;
             padding: 2px 7px;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.78);
+            background: rgba(255, 255, 255, 0.82);
             color: #475569;
             text-transform: none;
             letter-spacing: 0;
             white-space: nowrap;
         }
 
-        /* Fila opcional de síntomas y comentario del paciente */
+        /* Ejercicios incluidos en la sesión */
+        .inbox-ejercicios-strip {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.76rem;
+        }
+
+        .kc-ej-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 9px;
+            border-radius: 7px;
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            color: #334155;
+            font-weight: 600;
+            font-size: 0.74rem;
+        }
+
         .inbox-patient-extra {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
             gap: 8px 10px;
-            padding-top: 2px;
         }
 
         .kc-symptom-tag {
@@ -242,27 +227,20 @@
 
         .inbox-patient-quote {
             margin: 0;
-            font-size: 0.86rem;
+            font-size: 0.85rem;
             line-height: 1.4;
             color: var(--azul-900, #0f172a);
         }
 
-        /* ===== BLOQUE DERECHO (ACOTADO): SEGUIMIENTO Y ACCIONES ===== */
+        /* ===== BLOQUE DERECHO COMPACTO SIN HUECOS ===== */
         .inbox-followup-panel {
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 16px 18px;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px 16px;
             border-left: 1px solid var(--gris-200, #e2e8f0);
             background: rgba(248, 250, 252, 0.65);
-            min-width: 0;
-        }
-
-        .inbox-followup-content {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
             min-width: 0;
         }
 
@@ -277,16 +255,17 @@
             display: inline-flex;
             align-items: center;
             gap: 5px;
-            padding: 4px 10px;
+            padding: 3px 9px;
             border-radius: 999px;
-            font-size: 0.74rem;
+            font-size: 0.72rem;
             font-weight: 700;
             white-space: nowrap;
         }
 
         .kc-status-chip.st-pendiente {
-            background: #e0f2fe;
+            background: rgba(2, 132, 199, 0.12);
             color: #0369a1;
+            border: 1px solid rgba(2, 132, 199, 0.28);
         }
 
         .kc-status-chip.st-revisado {
@@ -294,14 +273,8 @@
             color: #334155;
         }
 
-        .inbox-no-comment-hint {
-            font-size: 0.76rem;
-            color: var(--gris-500, #94a3b8);
-            margin: 0;
-        }
-
         .inbox-reply-box {
-            padding: 9px 12px;
+            padding: 8px 11px;
             border-radius: 9px;
             background: rgba(2, 132, 199, 0.08);
             border: 1px solid rgba(2, 132, 199, 0.18);
@@ -317,7 +290,7 @@
         }
 
         .inbox-reply-title {
-            font-size: 0.73rem;
+            font-size: 0.72rem;
             font-weight: 800;
             color: #0284c7;
             display: inline-flex;
@@ -326,14 +299,14 @@
         }
 
         .inbox-reply-date {
-            font-size: 0.7rem;
+            font-size: 0.69rem;
             color: var(--gris-500, #64748b);
             white-space: nowrap;
         }
 
         .inbox-reply-body {
-            font-size: 0.82rem;
-            line-height: 1.4;
+            font-size: 0.81rem;
+            line-height: 1.38;
             color: var(--azul-900, #0f172a);
             word-break: break-word;
         }
@@ -351,38 +324,21 @@
             justify-content: center;
             gap: 5px;
             font-size: 0.76rem;
-            padding: 7px 9px;
+            padding: 7px 10px;
             white-space: nowrap;
         }
 
-        /* Responsive */
         @media (max-width: 1020px) {
-            .inbox-card {
-                grid-template-columns: 1fr;
-            }
-
+            .inbox-card { grid-template-columns: 1fr; }
             .inbox-followup-panel {
                 border-left: none;
                 border-top: 1px solid var(--gris-200, #e2e8f0);
-                padding: 14px 18px 14px 22px;
+                padding: 12px 18px 14px 22px;
             }
-
-            .inbox-actions-row .btn {
-                flex: 0 1 auto;
-            }
+            .inbox-actions-row .btn { flex: 0 1 auto; }
         }
 
-        @media (max-width: 600px) {
-            .inbox-patient-panel {
-                padding: 14px 16px 14px 20px;
-            }
-
-            .inbox-metrics-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Mejora de contraste y definición en Modo Claro (sin alterar Modo Oscuro) */
+        /* Modo Claro refinado */
         :root:not([data-theme="dark"]) .inbox-card {
             background: #ffffff;
             border-color: #cbd5e1;
@@ -393,125 +349,72 @@
             background: linear-gradient(90deg, #fff5f5 0%, #ffffff 18%);
         }
 
-        :root:not([data-theme="dark"]) .inbox-metric-box {
-            border-width: 1px !important;
-            border-style: solid !important;
-        }
-
-        :root:not([data-theme="dark"]) .inbox-metric-eva-alta {
-            background: #fef2f2 !important;
-            border-color: #fecaca !important;
-        }
-
-        :root:not([data-theme="dark"]) .inbox-metric-borg {
-            background: #fffbeb !important;
-            border-color: #fde68a !important;
-        }
-
-        :root:not([data-theme="dark"]) .inbox-metric-ok {
-            background: #f0fdf4 !important;
-            border-color: #bbf7d0 !important;
-        }
-
-        :root:not([data-theme="dark"]) .inbox-actions-col .btn-secondary {
-            background: #f8fafc;
-            border-color: #cbd5e1;
-            color: #1e293b;
-        }
-
-        :root:not([data-theme="dark"]) .inbox-actions-col .btn-secondary:hover {
-            background: #e2e8f0;
-            border-color: #94a3b8;
-        }
-
         /* Dark Mode */
-        [data-theme="dark"] .inbox-card,
-        body.dark-mode .inbox-card,
-        html.dark-mode .inbox-card {
+        [data-theme="dark"] .inbox-card {
             background: #162236;
             border-color: #24344d;
         }
-
-        [data-theme="dark"] .inbox-card.sev-alta,
-        body.dark-mode .inbox-card.sev-alta,
-        html.dark-mode .inbox-card.sev-alta {
+        [data-theme="dark"] .inbox-card.sev-alta {
             background: linear-gradient(90deg, rgba(239, 68, 68, 0.14) 0%, #162236 28%);
         }
-
         [data-theme="dark"] .inbox-patient-name,
         [data-theme="dark"] .inbox-patient-quote,
-        [data-theme="dark"] .inbox-reply-body,
-        body.dark-mode .inbox-patient-name,
-        body.dark-mode .inbox-patient-quote,
-        body.dark-mode .inbox-reply-body {
+        [data-theme="dark"] .inbox-reply-body {
             color: #f1f5f9;
         }
-
-        [data-theme="dark"] .inbox-followup-panel,
-        body.dark-mode .inbox-followup-panel,
-        html.dark-mode .inbox-followup-panel {
+        [data-theme="dark"] .inbox-followup-panel {
             border-color: #24344d;
             background: rgba(15, 23, 42, 0.35);
         }
-
-        [data-theme="dark"] .kc-metric-box.tone-danger,
-        body.dark-mode .kc-metric-box.tone-danger {
+        [data-theme="dark"] .kc-metric-box.tone-danger {
             background: rgba(239, 68, 68, 0.14);
             border-color: rgba(239, 68, 68, 0.32);
             color: #fca5a5;
         }
-
-        [data-theme="dark"] .kc-metric-box.tone-warn,
-        body.dark-mode .kc-metric-box.tone-warn {
+        [data-theme="dark"] .kc-metric-box.tone-warn {
             background: rgba(245, 158, 11, 0.14);
             border-color: rgba(245, 158, 11, 0.32);
             color: #fcd34d;
         }
-
-        [data-theme="dark"] .kc-metric-box.tone-ok,
-        body.dark-mode .kc-metric-box.tone-ok {
+        [data-theme="dark"] .kc-metric-box.tone-ok {
             background: rgba(16, 185, 129, 0.14);
             border-color: rgba(16, 185, 129, 0.32);
             color: #6ee7b7;
         }
-
-        [data-theme="dark"] .kc-metric-box.tone-neutral,
-        body.dark-mode .kc-metric-box.tone-neutral {
+        [data-theme="dark"] .kc-metric-box.tone-neutral {
             background: #1e293b;
             border-color: #334155;
             color: #e2e8f0;
         }
-
-        [data-theme="dark"] .kc-prev-pill,
-        body.dark-mode .kc-prev-pill {
+        [data-theme="dark"] .kc-ej-chip {
+            background: #1e293b;
+            border-color: #334155;
+            color: #cbd5e1;
+        }
+        [data-theme="dark"] .kc-prev-pill {
             background: rgba(15, 23, 42, 0.65);
             color: #cbd5e1;
         }
-
-        [data-theme="dark"] .kc-symptom-tag,
-        body.dark-mode .kc-symptom-tag {
+        [data-theme="dark"] .kc-symptom-tag {
             background: rgba(56, 189, 248, 0.14);
             color: #7dd3fc;
             border-color: rgba(56, 189, 248, 0.3);
         }
-
-        [data-theme="dark"] .kc-status-chip.st-revisado,
-        body.dark-mode .kc-status-chip.st-revisado {
+        [data-theme="dark"] .kc-status-chip.st-pendiente {
+            background: rgba(56, 189, 248, 0.14);
+            color: #7dd3fc;
+            border-color: rgba(56, 189, 248, 0.32);
+        }
+        [data-theme="dark"] .kc-status-chip.st-revisado {
             background: #1e293b;
             color: #cbd5e1;
         }
-
-        [data-theme="dark"] .inbox-reply-box,
-        body.dark-mode .inbox-reply-box {
+        [data-theme="dark"] .inbox-reply-box {
             background: rgba(56, 189, 248, 0.1);
             border-color: rgba(56, 189, 248, 0.24);
             border-left-color: #38bdf8;
         }
-
-        [data-theme="dark"] .inbox-reply-title,
-        body.dark-mode .inbox-reply-title {
-            color: #38bdf8;
-        }
+        [data-theme="dark"] .inbox-reply-title { color: #38bdf8; }
 
         .btn-sugerencia-kine {
             justify-content: flex-start !important;
@@ -520,39 +423,18 @@
             padding: 7px 10px !important;
             transition: all 0.18s ease !important;
         }
-
         .btn-sugerencia-kine.seleccionada {
             background: rgba(2, 132, 199, 0.16) !important;
             border-color: #0284c7 !important;
             color: #0284c7 !important;
             font-weight: 700 !important;
         }
-
         .btn-sugerencia-kine.sug-preventiva {
             border-color: rgba(239, 68, 68, 0.45) !important;
             color: #dc2626 !important;
             background: rgba(239, 68, 68, 0.06) !important;
         }
-
-        body.dark-mode .btn-sugerencia-kine.seleccionada,
-        html.dark-mode .btn-sugerencia-kine.seleccionada,
-        [data-theme="dark"] .btn-sugerencia-kine.seleccionada {
-            background: rgba(56, 189, 248, 0.18) !important;
-            border-color: #38bdf8 !important;
-            color: #38bdf8 !important;
-        }
-
-        .textarea-flash {
-            border-color: #0284c7 !important;
-            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.25) !important;
-            transition: box-shadow 0.25s ease, border-color 0.25s ease;
-        }
     </style>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bandeja de Reportes - KineConnect</title>
-    <link rel="stylesheet" href="public/css/style.css">
-    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 </head>
 
 <body>
@@ -744,6 +626,7 @@
 
         let todasPautasBase = [];
         let mapaPautas = {};
+        let mapaEjercicios = {};
         let reportesBaseTodos = [];
         let reportesCargados = [];
         let pacientesRegistrados = [];
@@ -803,6 +686,15 @@
                 hour: '2-digit',
                 minute: '2-digit',
             });
+        }
+
+        function obtenerNombresEjerciciosDePauta(pautaId) {
+            const pauta = mapaPautas[pautaId];
+            if (!pauta || !Array.isArray(pauta.ejercicios_detalle)) return [];
+            return pauta.ejercicios_detalle.map(d => {
+                const ejId = d.ejercicio_id || (typeof d.ejercicio === 'object' ? d.ejercicio.id : d.ejercicio);
+                return d.ejercicio_nombre || d.nombre || (typeof d.ejercicio === 'object' ? d.ejercicio.nombre : '') || mapaEjercicios[ejId] || `Ejercicio #${ejId}`;
+            }).filter(Boolean);
         }
 
         function parsearComentarioApp(raw) {
@@ -886,7 +778,7 @@
                     }).catch(() => null);
                 }
             } catch {
-                // Mantiene el marcado local si el endpoint no exige campo extra
+                // Mantiene el marcado local
             }
 
             actualizarKpis(reportesCargados);
@@ -908,7 +800,7 @@
                     }).catch(() => null);
                 }
             } catch {
-                // Ignora si el endpoint no exige campo extra
+                // Ignora
             }
 
             actualizarKpis(reportesCargados);
@@ -1020,7 +912,7 @@
                 <button type="button" class="btn btn-secondary btn-sm btn-sugerencia-kine ${op.preventiva ? 'sug-preventiva' : ''}"
                     data-texto="${escaparHtml(op.texto)}"
                     onclick="aplicarSugerenciaRespuesta('${escaparHtml(op.texto)}')">
-- ${escaparHtml(op.texto)}
+                    • ${escaparHtml(op.texto)}
                 </button>
             `).join('');
         }
@@ -1050,6 +942,7 @@
             const infoPauta = mapaPautas[pautaId] || {};
             const tituloRutina = item.pauta_titulo || infoPauta.titulo || `Pauta #${pautaId || 'N/A'}`;
             const nombrePaciente = capitalizarNombre(item.paciente_nombre || infoPauta.paciente_nombre || 'Paciente');
+            const ejerciciosPauta = obtenerNombresEjerciciosDePauta(pautaId);
 
             document.getElementById('modal-resp-titulo').textContent = item.respuesta_kinesiologo
                 ? 'Editar Respuesta Clínica'
@@ -1060,6 +953,7 @@
 
             document.getElementById('modal-resp-contexto').innerHTML = `
                 <div><strong>Comentario del paciente:</strong> ${escaparHtml(parsed.textoLibre || 'Sin comentario escrito')}</div>
+                ${ejerciciosPauta.length > 0 ? `<div style="margin-top: 4px; font-size: 0.78rem; color: var(--gris-600);"><strong>Ejercicios en la pauta:</strong> ${escaparHtml(ejerciciosPauta.join(', '))}</div>` : ''}
                 <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
                     <span class="badge ${dolor >= 6 ? 'badge-alerta' : 'badge-ok'}" style="font-size: 0.72rem;">EVA ${dolor}/10</span>
                     ${parsed.borgTexto ? `<span class="badge" style="background: #fef3c7; color: #92400e; font-size: 0.72rem;">${escaparHtml(parsed.borgTexto)}</span>` : ''}
@@ -1105,14 +999,6 @@
                     badgeAplicada.style.display = 'none';
                 }, 1800);
             }
-
-            textarea.classList.remove('textarea-flash');
-            void textarea.offsetWidth;
-            textarea.classList.add('textarea-flash');
-            clearTimeout(textarea._flashTimer);
-            textarea._flashTimer = setTimeout(() => {
-                textarea.classList.remove('textarea-flash');
-            }, 650);
 
             textarea.focus();
         }
@@ -1203,6 +1089,7 @@
                 const infoPauta = mapaPautas[pautaId] || {};
                 const nombrePaciente = capitalizarNombre(f.paciente_nombre || infoPauta.paciente_nombre || 'Paciente');
                 const tituloRutina = f.pauta_titulo || infoPauta.titulo || '';
+                const ejerciciosPauta = obtenerNombresEjerciciosDePauta(pautaId);
 
                 const parsed = parsearComentarioApp(f.comentario);
                 const fecha = formatearFechaChile(f.fecha_ejecucion);
@@ -1242,6 +1129,13 @@
                     </div>
                 `;
 
+                const ejerciciosStripHtml = ejerciciosPauta.length > 0
+                    ? `<div class="inbox-ejercicios-strip">
+                           <span style="color: var(--gris-500); font-weight: 700; font-size: 0.72rem; text-transform: uppercase;">Ejercicios:</span>
+                           ${ejerciciosPauta.map(nom => `<span class="kc-ej-chip"><i class='bx bx-dumbbell' style="font-size: 0.8rem; color: #0284c7;"></i>${escaparHtml(nom)}</span>`).join('')}
+                       </div>`
+                    : '';
+
                 const tieneExtrasPaciente = parsed.tags.length > 0 || Boolean(parsed.textoLibre);
                 const extrasPacienteHtml = tieneExtrasPaciente
                     ? `<div class="inbox-patient-extra">
@@ -1270,14 +1164,12 @@
                         <div class="inbox-status-row">
                             <span class="kc-status-chip st-revisado"><i class='bx bx-check-double'></i> Revisado por kinesiólogo</span>
                         </div>
-                        ${!parsed.textoLibre ? `<p class="inbox-no-comment-hint">Sin comentario escrito adicional.</p>` : ''}
                     `;
                 } else {
                     seguimientoHtml = `
                         <div class="inbox-status-row">
                             <span class="kc-status-chip st-pendiente"><i class='bx bx-time-five'></i> Pendiente de revisión</span>
                         </div>
-                        ${!parsed.textoLibre ? `<p class="inbox-no-comment-hint">Sin comentario escrito adicional.</p>` : ''}
                     `;
                 }
 
@@ -1327,13 +1219,12 @@
                             ${cuadroSesionHtml}
                         </div>
 
+                        ${ejerciciosStripHtml}
                         ${extrasPacienteHtml}
                     </div>
 
                     <div class="inbox-followup-panel">
-                        <div class="inbox-followup-content">
-                            ${seguimientoHtml}
-                        </div>
+                        ${seguimientoHtml}
                         <div class="inbox-actions-row">
                             ${accionesHtml}
                         </div>
@@ -1383,10 +1274,17 @@
 
             try {
                 await cargarPacientesFiltro();
-                const [pautas, feeds] = await Promise.all([
+                const [pautas, feeds, ejsResp] = await Promise.all([
                     api.getPautas(),
-                    api.getReportesDolor()
+                    api.getReportesDolor(),
+                    api.getEjercicios().catch(() => [])
                 ]);
+
+                const listaEjs = Array.isArray(ejsResp) ? ejsResp : (ejsResp?.results || []);
+                mapaEjercicios = {};
+                listaEjs.forEach(e => {
+                    mapaEjercicios[e.id] = e.nombre || e.titulo || `Ejercicio #${e.id}`;
+                });
 
                 todasPautasBase = Array.isArray(pautas) ? pautas : (pautas?.results || []);
                 mapaPautas = {};
