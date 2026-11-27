@@ -9,36 +9,6 @@
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 
     <style>
-        .acceso-rapido-card {
-            padding: 13px 15px;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            border: 1px solid var(--gris-200);
-            border-radius: 12px;
-            background: var(--blanco, #ffffff);
-            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
-        }
-
-        .acceso-rapido-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
-            border-color: #0284c7;
-        }
-
-        .acceso-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            flex-shrink: 0;
-        }
-
         .actividad-row {
             display: flex;
             justify-content: space-between;
@@ -81,66 +51,57 @@
             background: rgba(239, 68, 68, 0.06) !important;
         }
 
-        /* Soporte Modo Oscuro */
-        body.dark-mode .acceso-rapido-card,
-        html.dark-mode .acceso-rapido-card,
-        [data-theme="dark"] .acceso-rapido-card,
-        body.dark .acceso-rapido-card {
-            background: #162236 !important;
-            border-color: #24344d !important;
+        .kpi-card {
+            padding: 15px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-left: 4px solid #2563eb;
+            transition: border-color 0.2s ease;
         }
 
-        body.dark-mode .actividad-row,
-        html.dark-mode .actividad-row,
-        [data-theme="dark"] .actividad-row,
-        body.dark .actividad-row {
+        .kpi-icon-box {
+            width: 42px;
+            height: 42px;
+            border-radius: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.28rem;
+            flex-shrink: 0;
+        }
+
+        /* Soporte Modo Oscuro */
+        [data-theme="dark"] .actividad-row {
             background: #0f1929 !important;
             border-color: #24344d !important;
         }
 
-        body.dark-mode .bandeja-card,
-        html.dark-mode .bandeja-card,
-        [data-theme="dark"] .bandeja-card,
-        body.dark .bandeja-card {
+        [data-theme="dark"] .bandeja-card {
             background: rgba(127, 29, 29, 0.25) !important;
             border-color: rgba(248, 113, 113, 0.35) !important;
         }
 
-        body.dark-mode .bandeja-item,
-        html.dark-mode .bandeja-item,
-        [data-theme="dark"] .bandeja-item,
-        body.dark .bandeja-item {
+        [data-theme="dark"] .bandeja-item {
             background: #0f1929 !important;
             border-color: rgba(248, 113, 113, 0.35) !important;
         }
 
-        body.dark-mode .bandeja-title,
-        html.dark-mode .bandeja-title,
-        [data-theme="dark"] .bandeja-title,
-        body.dark .bandeja-title {
+        [data-theme="dark"] .bandeja-title {
             color: #fca5a5 !important;
         }
 
-        body.dark-mode .bandeja-paciente,
-        html.dark-mode .bandeja-paciente,
-        [data-theme="dark"] .bandeja-paciente,
-        body.dark .bandeja-paciente {
+        [data-theme="dark"] .bandeja-paciente {
             color: #f8fafc !important;
         }
 
-        body.dark-mode #modal-responder-bandeja .modal-card,
-        html.dark-mode #modal-responder-bandeja .modal-card,
-        [data-theme="dark"] #modal-responder-bandeja .modal-card,
-        body.dark #modal-responder-bandeja .modal-card {
+        [data-theme="dark"] #modal-responder-bandeja .modal-card {
             background: #162236 !important;
             color: #f8fafc !important;
             border: 1px solid #24344d !important;
         }
 
-        body.dark-mode #modal-responder-bandeja textarea,
-        html.dark-mode #modal-responder-bandeja textarea,
-        [data-theme="dark"] #modal-responder-bandeja textarea,
-        body.dark #modal-responder-bandeja textarea {
+        [data-theme="dark"] #modal-responder-bandeja textarea {
             background: #0f1929 !important;
             color: #f8fafc !important;
             border-color: #334155 !important;
@@ -157,75 +118,66 @@
                 <div class="page-header" style="flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
                     <div>
                         <h2>Centro de Control Clínico</h2>
-                        <p>Monitoreo de adherencia terapéutica, alertas de dolor (EVA) y prescripción biomecánica.</p>
+                        <p>Monitoreo de adherencia terapéutica, alertas de dolor (EVA) y prescripción.</p>
                     </div>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                         <button type="button" class="btn btn-secondary" onclick="cargarDashboard()">
                             <i class='bx bx-refresh'></i> Actualizar
                         </button>
                         <a href="crear_pauta.html" class="btn btn-primary">
-                            <i class='bx bx-plus'></i> Nueva Prescripción
+                            <i class='bx bx-plus'></i> Prescribir Pauta
                         </a>
                     </div>
                 </div>
 
-                <!-- 1. MÉTRICAS RESUMEN CLÍNICO (KPIs) -->
+                <!-- 1. MÉTRICAS RESUMEN CLÍNICO (KPIs CON SEMÁNTICA DINÁMICA) -->
                 <div
-                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(195px, 1fr)); gap: 14px; margin-bottom: 20px;">
-                    <div class="card"
-                        style="padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-left: 4px solid #2563eb;">
-                        <div
-                            style="width: 40px; height: 40px; border-radius: 10px; background: #dbeafe; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 22px;">
+                    <div id="card-kpi-pacientes" class="card kpi-card" style="border-left-color: #2563eb;">
+                        <div id="icon-kpi-pacientes" class="kpi-icon-box" style="background: rgba(37, 99, 235, 0.14); color: #3b82f6;">
                             <i class='bx bx-group'></i>
                         </div>
                         <div>
-                            <span
-                                style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">Pacientes
-                                Activos</span>
-                            <strong id="kpi-pacientes" style="font-size: 1.35rem; color: var(--azul-900);">—</strong>
+                            <span style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">
+                                Pacientes Activos
+                            </span>
+                            <strong id="kpi-pacientes" style="font-size: 1.4rem; color: var(--azul-900);">—</strong>
                         </div>
                     </div>
 
-                    <div class="card"
-                        style="padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-left: 4px solid #ef4444;">
-                        <div
-                            style="width: 40px; height: 40px; border-radius: 10px; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
-                            <i class='bx bx-error-circle'></i>
+                    <div id="card-kpi-alertas" class="card kpi-card" style="border-left-color: #10b981;">
+                        <div id="icon-kpi-alertas" class="kpi-icon-box" style="background: rgba(16, 185, 129, 0.14); color: #10b981;">
+                            <i class='bx bx-check-shield'></i>
                         </div>
                         <div>
-                            <span
-                                style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">Alertas
-                                EVA ≥ 6 Pendientes</span>
-                            <strong id="kpi-alertas-dolor"
-                                style="font-size: 1.35rem; color: var(--azul-900);">—</strong>
+                            <span style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">
+                                Alertas EVA ≥ 6 Pendientes
+                            </span>
+                            <strong id="kpi-alertas-dolor" style="font-size: 1.4rem; color: var(--azul-900);">—</strong>
                         </div>
                     </div>
 
-                    <div class="card"
-                        style="padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-left: 4px solid #10b981;">
-                        <div
-                            style="width: 40px; height: 40px; border-radius: 10px; background: #d1fae5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
-                            <i class='bx bx-trending-up'></i>
+                    <div id="card-kpi-adherencia" class="card kpi-card" style="border-left-color: #64748b;">
+                        <div id="icon-kpi-adherencia" class="kpi-icon-box" style="background: rgba(100, 116, 139, 0.14); color: #94a3b8;">
+                            <i class='bx bx-pulse'></i>
                         </div>
                         <div>
-                            <span
-                                style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">Adherencia
-                                Semanal</span>
-                            <strong id="kpi-adherencia" style="font-size: 1.35rem; color: var(--azul-900);">—</strong>
+                            <span style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">
+                                Adherencia Semanal
+                            </span>
+                            <strong id="kpi-adherencia" style="font-size: 1.4rem; color: var(--azul-900);">—</strong>
                         </div>
                     </div>
 
-                    <div class="card"
-                        style="padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-left: 4px solid #f59e0b;">
-                        <div
-                            style="width: 40px; height: 40px; border-radius: 10px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
+                    <div id="card-kpi-abandono" class="card kpi-card" style="border-left-color: #64748b;">
+                        <div id="icon-kpi-abandono" class="kpi-icon-box" style="background: rgba(100, 116, 139, 0.14); color: #94a3b8;">
                             <i class='bx bx-time-five'></i>
                         </div>
                         <div>
-                            <span
-                                style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">Riesgo
-                                Inactividad (&gt;3d)</span>
-                            <strong id="kpi-abandono" style="font-size: 1.35rem; color: var(--azul-900);">—</strong>
+                            <span style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">
+                                Riesgo Inactividad (&gt;3d)
+                            </span>
+                            <strong id="kpi-abandono" style="font-size: 1.4rem; color: var(--azul-900);">—</strong>
                         </div>
                     </div>
                 </div>
@@ -250,89 +202,9 @@
                     </div>
                 </div>
 
-                <!-- 3. ACCESOS DIRECTOS (ÚNICA FILA COMPACTA ARRIBA) -->
-                <div style="margin-bottom: 22px;">
-                    <div
-                        style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-                        <h3
-                            style="margin: 0; font-size: 0.92rem; color: var(--gris-600); display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
-                            <i class='bx bx-grid-alt' style="color: #0284c7;"></i> Accesos Directos
-                        </h3>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 12px;">
-
-                        <a href="crear_pauta.html" class="acceso-rapido-card" style="border-left: 3px solid #0284c7;">
-                            <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-                                <span class="acceso-icon" style="background: #e0f2fe; color: #0284c7;">
-                                    <i class='bx bx-body'></i>
-                                </span>
-                                <div style="min-width: 0;">
-                                    <strong style="display: block; color: var(--azul-900); font-size: 0.9rem;">Mapa Anatómico</strong>
-                                    <span style="font-size: 0.76rem; color: var(--gris-600);">Prescribir rutina</span>
-                                </div>
-                            </div>
-                            <i class='bx bx-chevron-right' style="color: var(--gris-400); font-size: 1.2rem;"></i>
-                        </a>
-
-                        <a href="mensajes.html" class="acceso-rapido-card" style="border-left: 3px solid #f59e0b;">
-                            <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-                                <span class="acceso-icon" style="background: #fef3c7; color: #d97706;">
-                                    <i class='bx bx-message-square-detail'></i>
-                                </span>
-                                <div style="min-width: 0;">
-                                    <strong style="display: block; color: var(--azul-900); font-size: 0.9rem;">Bandeja de Reportes</strong>
-                                    <span id="badge-mod-reportes" style="font-size: 0.76rem; color: var(--gris-600);">0 pendientes</span>
-                                </div>
-                            </div>
-                            <i class='bx bx-chevron-right' style="color: var(--gris-400); font-size: 1.2rem;"></i>
-                        </a>
-
-                        <a href="pautas.html" class="acceso-rapido-card" style="border-left: 3px solid #0ea5e9;">
-                            <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-                                <span class="acceso-icon" style="background: #e0f2fe; color: #0369a1;">
-                                    <i class='bx bx-clipboard'></i>
-                                </span>
-                                <div style="min-width: 0;">
-                                    <strong style="display: block; color: var(--azul-900); font-size: 0.9rem;">Pautas y Plantillas</strong>
-                                    <span id="badge-mod-pautas" style="font-size: 0.76rem; color: var(--gris-600);">0 activas</span>
-                                </div>
-                            </div>
-                            <i class='bx bx-chevron-right' style="color: var(--gris-400); font-size: 1.2rem;"></i>
-                        </a>
-
-                        <a href="pacientes.html" class="acceso-rapido-card" style="border-left: 3px solid #2563eb;">
-                            <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-                                <span class="acceso-icon" style="background: #dbeafe; color: #2563eb;">
-                                    <i class='bx bx-group'></i>
-                                </span>
-                                <div style="min-width: 0;">
-                                    <strong style="display: block; color: var(--azul-900); font-size: 0.9rem;">Gestión Pacientes</strong>
-                                    <span id="badge-mod-pacientes" style="font-size: 0.76rem; color: var(--gris-600);">0 activos</span>
-                                </div>
-                            </div>
-                            <i class='bx bx-chevron-right' style="color: var(--gris-400); font-size: 1.2rem;"></i>
-                        </a>
-
-                        <a href="ejercicios.html" class="acceso-rapido-card" style="border-left: 3px solid #10b981;">
-                            <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-                                <span class="acceso-icon" style="background: #d1fae5; color: #059669;">
-                                    <i class='bx bx-dumbbell'></i>
-                                </span>
-                                <div style="min-width: 0;">
-                                    <strong style="display: block; color: var(--azul-900); font-size: 0.9rem;">Catálogo Ejercicios</strong>
-                                    <span id="badge-mod-ejercicios" style="font-size: 0.76rem; color: var(--gris-600);">39 ejercicios</span>
-                                </div>
-                            </div>
-                            <i class='bx bx-chevron-right' style="color: var(--gris-400); font-size: 1.2rem;"></i>
-                        </a>
-
-                    </div>
-                </div>
-
-                <!-- 4. ACTIVIDAD RECIENTE (2 COLUMNAS NIVELADAS ABAJO) -->
+                <!-- 3. ACTIVIDAD Y SEGUIMIENTO CLÍNICO (2 COLUMNAS NIVELADAS) -->
                 <div
-                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; align-items: stretch;">
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 18px; align-items: stretch;">
 
                     <!-- Últimos Reportes de Dolor -->
                     <div class="card" style="padding: 18px 20px; display: flex; flex-direction: column;">
@@ -340,7 +212,7 @@
                             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
                             <h3
                                 style="margin: 0; font-size: 1rem; color: var(--azul-900); display: flex; align-items: center; gap: 8px;">
-                                <i class='bx bx-pulse' style="color: #ef4444;"></i> Últimos Reportes EVA (App Móvil)
+                                <i class='bx bx-pulse' style="color: #0284c7;"></i> Últimos Reportes EVA (App Móvil)
                             </h3>
                             <a href="mensajes.html"
                                 style="font-size: 0.82rem; font-weight: 700; color: #0284c7; text-decoration: none;">
@@ -355,17 +227,17 @@
                         </div>
                     </div>
 
-                    <!-- Pacientes Recientes -->
+                    <!-- Pacientes Asignados con Trazabilidad de Inactividad y Último EVA -->
                     <div class="card" style="padding: 18px 20px; display: flex; flex-direction: column;">
                         <div
                             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
                             <h3
                                 style="margin: 0; font-size: 1rem; color: var(--azul-900); display: flex; align-items: center; gap: 8px;">
-                                <i class='bx bx-user-check' style="color: #2563eb;"></i> Pacientes Asignados
+                                <i class='bx bx-user-check' style="color: #2563eb;"></i> Seguimiento de Pacientes
                             </h3>
                             <a href="pacientes.html"
                                 style="font-size: 0.82rem; font-weight: 700; color: #2563eb; text-decoration: none;">
-                                Gestionar →
+                                Gestionar todos →
                             </a>
                         </div>
 
@@ -495,6 +367,24 @@
             });
         }
 
+        function diasDesde(isoStr) {
+            if (!isoStr) return null;
+            const d = new Date(isoStr);
+            if (Number.isNaN(d.getTime())) return null;
+            return Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
+        }
+
+        function aplicarEstiloKpi(cardId, iconId, colorHex, iconClass) {
+            const card = document.getElementById(cardId);
+            const iconBox = document.getElementById(iconId);
+            if (card) card.style.borderLeftColor = colorHex;
+            if (iconBox) {
+                iconBox.style.color = colorHex;
+                iconBox.style.background = `${colorHex}22`;
+                if (iconClass) iconBox.innerHTML = `<i class='bx ${iconClass}'></i>`;
+            }
+        }
+
         function parsearComentarioApp(raw) {
             let texto = String(raw || '').trim();
             let seriesInfo = '';
@@ -545,6 +435,11 @@
 
             if (kpiAlertas) {
                 kpiAlertas.textContent = alertas.length;
+                if (alertas.length > 0) {
+                    aplicarEstiloKpi('card-kpi-alertas', 'icon-kpi-alertas', '#ef4444', 'bx-error-circle');
+                } else {
+                    aplicarEstiloKpi('card-kpi-alertas', 'icon-kpi-alertas', '#10b981', 'bx-check-shield');
+                }
             }
 
             if (alertas.length === 0) {
@@ -676,19 +571,14 @@
         }
 
         async function cargarDashboard() {
-            const [resPacientes, resEjercicios, resPautas, resReportes, resResumen] = await Promise.allSettled([
+            const [resPacientes, resPautas, resReportes, resResumen] = await Promise.allSettled([
                 api.getMisPacientes(),
-                api.getEjercicios(),
                 api.getPautas(),
                 api.getReportesDolor(),
                 typeof api.getResumenClinico === 'function' ? api.getResumenClinico() : Promise.resolve(null),
             ]);
 
             const pacientes = resPacientes.status === 'fulfilled' ? extraerLista(resPacientes.value) : [];
-            const ejRaw = resEjercicios.status === 'fulfilled' ? resEjercicios.value : null;
-            const ejLista = extraerLista(ejRaw);
-            const totalEjercicios = typeof ejRaw?.count === 'number' ? ejRaw.count : ejLista.length;
-
             const todasPautas = resPautas.status === 'fulfilled' ? extraerLista(resPautas.value) : [];
             const reportes = resReportes.status === 'fulfilled' ? extraerLista(resReportes.value) : [];
             const resumen = resResumen.status === 'fulfilled' ? resResumen.value : null;
@@ -698,33 +588,78 @@
             mapaPautasDashboard = mapaPautas;
 
             const pautasActivas = todasPautas.filter(p => p.activo !== false && !p.es_plantilla);
-            const vistos = obtenerVistosKine();
-            const pendientesCount = reportes.filter(r => {
-                const sinResp = !r.respuesta_kinesiologo || String(r.respuesta_kinesiologo).trim() === '';
-                const noVisto = r.id == null || !vistos[String(r.id)];
-                return sinResp && noVisto;
-            }).length;
 
-            let adherenciaTexto = '0%';
+            // Cálculo real de adherencia semanal + color semántico acorde al porcentaje
+            let adherenciaPct = 0;
             if (pautasActivas.length > 0) {
                 const totalMeta = pautasActivas.reduce((acc, p) => acc + Math.max(1, Number(p.frecuencia_semanal || p.meta_semanal || 3)), 0);
                 const totalCompletadas = pautasActivas.reduce((acc, p) => acc + Math.min(Number(p.sesiones_semana || 0), Math.max(1, Number(p.frecuencia_semanal || p.meta_semanal || 3))), 0);
-                adherenciaTexto = `${Math.round((totalCompletadas / totalMeta) * 100)}%`;
+                adherenciaPct = Math.round((totalCompletadas / totalMeta) * 100);
             } else if (reportes.length > 0) {
                 const completas = reportes.filter(r => Boolean(r.completado)).length;
-                adherenciaTexto = `${Math.round((completas / reportes.length) * 100)}%`;
+                adherenciaPct = Math.round((completas / reportes.length) * 100);
             }
 
-            // KPIs
-            document.getElementById('kpi-pacientes').textContent = resumen?.kpis?.pacientes_activos ?? pacientes.length;
-            document.getElementById('kpi-adherencia').textContent = adherenciaTexto;
-            document.getElementById('kpi-abandono').textContent = resumen?.kpis?.riesgo_abandono ?? 0;
+            const kpiAdherenciaEl = document.getElementById('kpi-adherencia');
+            kpiAdherenciaEl.textContent = `${adherenciaPct}%`;
+            if (pautasActivas.length === 0 && reportes.length === 0) {
+                aplicarEstiloKpi('card-kpi-adherencia', 'icon-kpi-adherencia', '#64748b', 'bx-pulse');
+            } else if (adherenciaPct < 40) {
+                aplicarEstiloKpi('card-kpi-adherencia', 'icon-kpi-adherencia', '#ef4444', 'bx-trending-down');
+            } else if (adherenciaPct < 70) {
+                aplicarEstiloKpi('card-kpi-adherencia', 'icon-kpi-adherencia', '#f59e0b', 'bx-minus');
+            } else {
+                aplicarEstiloKpi('card-kpi-adherencia', 'icon-kpi-adherencia', '#10b981', 'bx-trending-up');
+            }
 
-            // Contadores en Accesos Directos
-            document.getElementById('badge-mod-pautas').textContent = `${pautasActivas.length} ${pautasActivas.length === 1 ? 'activa' : 'activas'}`;
-            document.getElementById('badge-mod-reportes').textContent = `${pendientesCount} ${pendientesCount === 1 ? 'pendiente' : 'pendientes'}`;
-            document.getElementById('badge-mod-pacientes').textContent = `${pacientes.length} ${pacientes.length === 1 ? 'activo' : 'activos'}`;
-            document.getElementById('badge-mod-ejercicios').textContent = `${totalEjercicios} ejercicios`;
+            // Cálculo por paciente para trazabilidad de inactividad (>3d) y último EVA
+            const infoPorPaciente = {};
+            let inactivosCount = 0;
+
+            pacientes.forEach(p => {
+                const uid = String(p.user_id || ((p.user && typeof p.user === 'object') ? p.user.id : (p.user || p.id)));
+                const pautasPac = pautasActivas.filter(pt => {
+                    const pidPac = typeof pt.paciente === 'object' && pt.paciente !== null ? pt.paciente.id : pt.paciente;
+                    return String(pidPac) === uid || String(pt.paciente_user_id) === uid;
+                });
+                const idsPautas = new Set(pautasPac.map(pt => String(pt.id)));
+                const feedsPac = reportes
+                    .filter(f => {
+                        const pid = typeof f.pauta === 'object' && f.pauta !== null ? f.pauta.id : f.pauta;
+                        return idsPautas.has(String(pid));
+                    })
+                    .sort((a, b) => new Date(b.fecha_ejecucion || 0).getTime() - new Date(a.fecha_ejecucion || 0).getTime());
+
+                let inactivo = false;
+                let diasSinActividad = null;
+                if (pautasPac.length > 0) {
+                    const fechaRef = feedsPac.length > 0
+                        ? feedsPac[0].fecha_ejecucion
+                        : pautasPac.sort((a, b) => new Date(b.creado_en || 0).getTime() - new Date(a.creado_en || 0).getTime())[0]?.creado_en;
+                    diasSinActividad = diasDesde(fechaRef);
+                    if (diasSinActividad !== null && diasSinActividad > 3) {
+                        inactivo = true;
+                        inactivosCount++;
+                    }
+                }
+
+                infoPorPaciente[uid] = {
+                    pautasActivas: pautasPac.length,
+                    ultimoEva: feedsPac.length > 0 ? Number(feedsPac[0].nivel_dolor ?? feedsPac[0].escala_dolor ?? 0) : null,
+                    inactivo,
+                    diasSinActividad,
+                };
+            });
+
+            const riesgoAbandonoTotal = resumen?.kpis?.riesgo_abandono ?? inactivosCount;
+            document.getElementById('kpi-pacientes').textContent = resumen?.kpis?.pacientes_activos ?? pacientes.length;
+            document.getElementById('kpi-abandono').textContent = riesgoAbandonoTotal;
+            aplicarEstiloKpi(
+                'card-kpi-abandono',
+                'icon-kpi-abandono',
+                riesgoAbandonoTotal > 0 ? '#f59e0b' : '#10b981',
+                riesgoAbandonoTotal > 0 ? 'bx-time-five' : 'bx-check-circle'
+            );
 
             // Bandeja de Atención Prioritaria
             reportesActualesDashboard = reportes;
@@ -760,31 +695,56 @@
                 }).join('');
             }
 
-            // Pacientes asignados
+            // Pacientes asignados priorizando alertas de dolor e inactivos (>3d)
             const contPacientes = document.getElementById('lista-pacientes-recientes');
             if (pacientes.length === 0) {
                 contPacientes.innerHTML = `<p style="margin: 0; font-size: 0.85rem; color: var(--gris-500);">No tienes pacientes registrados todavía.</p>`;
             } else {
-                contPacientes.innerHTML = pacientes.slice(0, 4).map(p => {
+                const ordenados = [...pacientes].sort((a, b) => {
+                    const uidA = String(a.user_id || ((a.user && typeof a.user === 'object') ? a.user.id : (a.user || a.id)));
+                    const uidB = String(b.user_id || ((b.user && typeof b.user === 'object') ? b.user.id : (b.user || b.id)));
+                    const infoA = infoPorPaciente[uidA] || {};
+                    const infoB = infoPorPaciente[uidB] || {};
+                    const scoreA = (infoA.ultimoEva >= 6 ? 10 : 0) + (infoA.inactivo ? 5 : 0) + (infoA.pautasActivas > 0 ? 1 : 0);
+                    const scoreB = (infoB.ultimoEva >= 6 ? 10 : 0) + (infoB.inactivo ? 5 : 0) + (infoB.pautasActivas > 0 ? 1 : 0);
+                    return scoreB - scoreA;
+                });
+
+                contPacientes.innerHTML = ordenados.slice(0, 5).map(p => {
                     const userId = p.user_id || ((p.user && typeof p.user === 'object') ? p.user.id : (p.user || p.id));
+                    const info = infoPorPaciente[String(userId)] || {};
                     const nombre = capitalizarNombre(p.nombre_completo ||
                         (p.user && typeof p.user === 'object' ? `${p.user.first_name} ${p.user.last_name}`.trim() : '') ||
                         'Paciente');
                     const rut = formatearRutVisual(p.rut || 'Sin RUT');
 
+                    let badgesEstado = '';
+                    if (info.ultimoEva != null) {
+                        badgesEstado += `<span class="badge ${info.ultimoEva >= 6 ? 'badge-alerta' : 'badge-ok'}" style="font-size: 0.68rem;">EVA ${info.ultimoEva}/10</span>`;
+                    }
+                    if (info.inactivo) {
+                        badgesEstado += `<span class="badge" style="background: rgba(245, 158, 11, 0.18); color: #f59e0b; font-size: 0.68rem;" title="Sin reportes hace ${info.diasSinActividad} días">Inactivo ${info.diasSinActividad}d</span>`;
+                    }
+                    if (!badgesEstado) {
+                        badgesEstado = `<span class="badge badge-neutro" style="font-size: 0.68rem;">${info.pautasActivas > 0 ? 'Sin reportes aún' : 'Sin pauta'}</span>`;
+                    }
+
                     return `
                         <div class="actividad-row">
-                            <div style="min-width: 0;">
-                                <strong style="display: block; font-size: 0.88rem; color: var(--azul-900); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                    ${escaparHtml(nombre)}
-                                </strong>
-                                <span style="font-size: 0.77rem; color: var(--gris-600);">${escaparHtml(rut)}</span>
+                            <div style="min-width: 0; flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                    <strong style="font-size: 0.88rem; color: var(--azul-900);">
+                                        ${escaparHtml(nombre)}
+                                    </strong>
+                                    ${badgesEstado}
+                                </div>
+                                <span style="font-size: 0.76rem; color: var(--gris-600); display: block; margin-top: 2px;">${escaparHtml(rut)}</span>
                             </div>
                             <div style="display: flex; gap: 6px; flex-shrink: 0;">
-                                <a href="pautas.html?paciente=${encodeURIComponent(userId)}" class="btn btn-secondary btn-sm" title="Ver pautas">
-                                    <i class='bx bx-clipboard'></i>
+                                <a href="pautas.html?paciente=${encodeURIComponent(userId)}" class="btn btn-secondary btn-sm" title="Ver pautas asignadas al paciente">
+                                    <i class='bx bx-clipboard'></i> Pautas
                                 </a>
-                                <a href="crear_pauta.html?paciente=${encodeURIComponent(userId)}" class="btn btn-primary btn-sm" style="white-space: nowrap;">
+                                <a href="crear_pauta.html?paciente=${encodeURIComponent(userId)}" class="btn btn-secondary btn-sm" title="Prescribir nueva pauta" style="border-color: #0284c7; color: #38bdf8;">
                                     <i class='bx bx-plus-circle'></i> Prescribir
                                 </a>
                             </div>
