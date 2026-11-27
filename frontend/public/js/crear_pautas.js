@@ -634,22 +634,26 @@ window.verInfoEjercicio = function (ej) {
     const nombre = ej.nombre || ej.titulo || 'Ficha Clínica';
     const zona = ej.zona_corporal || ej.zona_cuerpo || ej.grupo_muscular || 'General';
     const areas = obtenerAreasEjercicio(ej);
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
 
     if (titulo) titulo.textContent = nombre;
+    contenedor.style.background = 'transparent';
+    contenedor.style.display = 'block';
+    contenedor.style.minHeight = 'auto';
+
     contenedor.innerHTML = `
-        <div style="padding: 18px 20px; text-align: left; background: #fff; width: 100%; max-height: 70vh; overflow-y: auto;">
-            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--gris-100);">
+        <div style="padding: 16px 18px; text-align: left; background: ${isDark ? '#0f1929' : '#f8fafc'}; border: 1px solid var(--gris-200); border-radius: 10px; width: 100%; max-height: 70vh; overflow-y: auto;">
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--gris-200);">
                 <span class="badge badge-neutro"><i class='bx bx-body'></i> ${esc(zona)}</span>
-                ${areas.map(a => `<span class="badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;"><i class='bx bx-plus-medical'></i> ${esc(a)}</span>`).join('')}
+                ${areas.map(a => `<span class="badge" style="background: ${isDark ? 'rgba(14, 165, 233, 0.16)' : '#e0f2fe'}; color: ${isDark ? '#7dd3fc' : '#0369a1'}; border: 1px solid ${isDark ? 'rgba(56, 189, 248, 0.35)' : '#bae6fd'};"><i class='bx bx-plus-medical'></i> ${esc(a)}</span>`).join('')}
             </div>
-            <div style="font-size: 0.9rem; color: var(--gris-700); line-height: 1.6;">
+            <div style="font-size: 0.9rem; color: var(--gris-800); line-height: 1.6;">
                 ${formatearDescripcionClinica(ej.descripcion)}
             </div>
         </div>
     `;
     modal.style.display = 'flex';
 };
-
 window.verMultimedia = function (nombre, url) {
     if (!url) return;
 
@@ -659,6 +663,9 @@ window.verMultimedia = function (nombre, url) {
     if (!modal || !contenedor) return;
 
     if (titulo) titulo.textContent = nombre;
+    contenedor.style.background = '#000';
+    contenedor.style.display = 'flex';
+    contenedor.style.minHeight = '250px';
     contenedor.innerHTML = '';
 
     if (url.includes('youtube.com') || url.includes('youtu.be')) {
