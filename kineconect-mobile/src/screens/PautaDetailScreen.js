@@ -215,8 +215,8 @@ export default function PautaDetailScreen({ route, navigation }) {
     surfaceSoft: isDark ? '#0B1220' : '#F1F5F9',
     border: isDark ? '#2A3A52' : '#E2E8F0',
     textMain: isDark ? '#F8FAFC' : '#0F172A',
-    textSub: isDark ? '#94A3B8' : '#64748B',
-    accentBg: isDark ? 'rgba(56, 189, 248, 0.12)' : '#E0F2FE',
+    textSub: isDark ? '#CBD5E1' : '#475569',
+    accentBg: isDark ? 'rgba(56, 189, 248, 0.14)' : '#E0F2FE',
     accentText: isDark ? '#BAE6FD' : '#0369A1',
     primary: isDark ? '#38BDF8' : '#0284C7',
     success: '#10B981',
@@ -224,7 +224,7 @@ export default function PautaDetailScreen({ route, navigation }) {
     warning: '#F59E0B',
     warningBg: isDark ? 'rgba(245, 158, 11, 0.14)' : '#FEF3C7',
     danger: isDark ? '#FCA5A5' : '#DC2626',
-    dangerBg: isDark ? 'rgba(239, 68, 68, 0.14)' : '#FEE2E2',
+    dangerBg: isDark ? 'rgba(239, 68, 68, 0.16)' : '#FEE2E2',
     dangerBorder: isDark ? 'rgba(239, 68, 68, 0.6)' : '#FCA5A5',
   };
 
@@ -250,10 +250,20 @@ export default function PautaDetailScreen({ route, navigation }) {
   const [seriesHechas, setSeriesHechas] = useState({});
   const [modoGuiado, setModoGuiado] = useState(false);
   const [indiceActual, setIndiceActual] = useState(0);
+  const [textoGrande, setTextoGrande] = useState(false);
+
+  // Temporizador de descanso entre series
   const [descansoRestante, setDescansoRestante] = useState(null);
   const [descansoTotal, setDescansoTotal] = useState(0);
 
+  // Temporizador activo de ejecución para ejercicios prescritos por tiempo (SEG)
+  const [tiempoEjecucionRestante, setTiempoEjecucionRestante] = useState(null);
+  const [ejecucionTotal, setEjecucionTotal] = useState(0);
+  const [ejecucionPausada, setEjecucionPausada] = useState(false);
+
+  // Modal de cierre / emergencia
   const [evaOpen, setEvaOpen] = useState(false);
+  const [detencionPorDolor, setDetencionPorDolor] = useState(false);
   const [sending, setSending] = useState(false);
 
   const cargar = useCallback(async () => {
@@ -337,21 +347,6 @@ export default function PautaDetailScreen({ route, navigation }) {
     cargar();
   }, [cargar]);
 
-  useEffect(() => {
-    if (descansoRestante === null) return;
-    if (descansoRestante <= 0) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setDescansoRestante(null);
-      return;
-    }
-    const timer = setTimeout(() => setDescansoRestante((prev) => (prev !== null ? prev - 1 : null)), 1000);
-    return () => clearTimeout(timer);
-  }, [descansoRestante]);
-
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ y: 0, animated: false });
-  }, [indiceActual, modoGuiado]);
-
   const ejercicios = useMemo(() => {
     const rawList = pauta?.ejercicios_detalle || pauta?.ejercicios || [];
     return rawList.map((item, idx) => {
@@ -383,6 +378,43 @@ export default function PautaDetailScreen({ route, navigation }) {
       };
     });
   }, [pauta, catalogoMap]);
+
+  // Efecto para temporizador de descanso
+  useEffect(() => {
+    if (descansoRestante === null) return;
+    if (descansoRestante <= 0) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setDescansoRestante(null);
+      return;
+    }
+    const timer = setTimeout(() => setDescansoRestante((prev) => (prev !== null ? prev - 1 : null)), 1000);
+    return () => clearTimeout(timer);
+  }, [descansoRestante]);
+
+  // Efecto para temporizador de ejecución por tiempo (SEG)
+  useEffect(() => {
+    if (tiempoEjecucionRestante === null || ejecucionPausada) return;
+    if (tiempoEjecucionRestante <= 0) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setTiempoEjecucionRestante(null);
+      setEjecucionPausada(false);
+      const ejActual = ejercicios[indiceActual];
+      if (ejActual) {
+        completarSiguienteSerie(ejActual);
+      }
+      return;
+    }
+    const timer = setTimeout(() => {
+      setTiempoEjecucionRestante((prev) => (prev !== null ? prev - 1 : null));
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [tiempoEjecucionRestante, ejecucionPausada, ejercicios, indiceActual]);
+
+  useEffect(() => {
+    setTiempoEjecucionRestante(null);
+    setEjecucionPausada(false);
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [indiceActual, modoGuiado]);
 
   if (error) {
     return (
@@ -424,7 +456,15 @@ export default function PautaDetailScreen({ route, navigation }) {
     setDescansoRestante(seg);
   };
 
-  const completarSiguienteSerie = (ej) => {
+  const iniciarCronometroEjercicio = (ej) => {
+    if (esSoloConsulta) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setEjecucionTotal(ej.repeticiones);
+    setTiempoEjecucionRestante(ej.repeticiones);
+    setEjecucionPausada(false);
+  };
+
+  function completarSiguienteSerie(ej) {
     if (esSoloConsulta) return;
     const actuales = seriesHechas[ej.key] || [];
     if (actuales.length >= ej.series) return;
@@ -443,11 +483,22 @@ export default function PautaDetailScreen({ route, navigation }) {
         setIndiceActual((prev) => Math.min(totalEjercicios - 1, prev + 1));
       }, 450);
     }
-  };
+  }
 
-  const abrirEvaluacionDolor = () => {
+  const abrirEvaluacionNormal = () => {
     if (esSoloConsulta) return;
     setDescansoRestante(null);
+    setTiempoEjecucionRestante(null);
+    setDetencionPorDolor(false);
+    setEvaOpen(true);
+  };
+
+  const abrirFlujoEmergenciaDolor = () => {
+    if (esSoloConsulta) return;
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    setDescansoRestante(null);
+    setTiempoEjecucionRestante(null);
+    setDetencionPorDolor(true);
     setEvaOpen(true);
   };
 
@@ -467,30 +518,41 @@ export default function PautaDetailScreen({ route, navigation }) {
         `Aún te faltan ${faltantes} ${faltantes === 1 ? 'serie' : 'series'} por completar. ¿Deseas finalizar la rutina de todas formas?`,
         [
           { text: 'Seguir entrenando', style: 'cancel' },
-          { text: 'Finalizar igual', onPress: abrirEvaluacionDolor },
+          { text: 'Finalizar igual', onPress: abrirEvaluacionNormal },
         ],
       );
       return;
     }
-    abrirEvaluacionDolor();
+    abrirEvaluacionNormal();
   };
 
   const enviar = async (nivel, comentario) => {
     const evaNivel = Number(nivel);
+    const esEmergencia = detencionPorDolor;
+    const ejActual = ejercicios[indiceActual] || ejercicios[0];
+
     setSending(true);
     try {
       const resumen = `Series: ${seriesCompletadas}/${totalSeries} (${ejerciciosCompletados}/${totalEjercicios} ejercicios).`;
-      const comentarioFinal = comentario?.trim() ? `${comentario.trim()} | ${resumen}` : resumen;
+      const prefijoEmergencia =
+        esEmergencia && ejActual
+          ? `[DETENCIÓN POR DOLOR AGUDO en Ej. ${indiceActual + 1}: ${ejActual.nombre}] `
+          : '';
+      const cuerpoTexto = `${prefijoEmergencia}${(comentario || '').trim()}`.trim();
+      const comentarioFinal = cuerpoTexto ? `${cuerpoTexto} | ${resumen}` : resumen;
+      const sesionCompletadaFinal = esEmergencia ? false : rutinaCompleta;
 
       const estado = await enviarFeedback({
         pauta: pauta.id,
         nivel_dolor: evaNivel,
         comentario: comentarioFinal,
-        completado: rutinaCompleta,
+        completado: sesionCompletadaFinal,
       });
 
       setEvaOpen(false);
-      if (rutinaCompleta) {
+      setDetencionPorDolor(false);
+
+      if (sesionCompletadaFinal) {
         setCompletadaHoyApi(true);
         cacheSet(`pauta_${id}`, { ...pauta, completada_hoy: true });
       }
@@ -500,11 +562,11 @@ export default function PautaDetailScreen({ route, navigation }) {
           ? 'Tu kinesiólogo ya recibió este reporte.'
           : 'Sin conexión: se enviará automáticamente en cuanto recuperes señal.';
 
-      if (evaNivel >= 7) {
+      if (esEmergencia || evaNivel >= 7) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         Alert.alert(
-          `Alerta de Dolor Severo (EVA ${evaNivel}/10)`,
-          `Se activó una alerta clínica prioritaria. ${estadoEnvioTexto}\n\nPor seguridad, suspende los ejercicios por hoy, mantén reposo relativo y espera la indicación de tu kinesiólogo.`,
+          `Sesión Detenida · Alerta Clínica (EVA ${evaNivel}/10)`,
+          `Registramos la detención en "${ejActual?.nombre || 'tu ejercicio'}". ${estadoEnvioTexto}\n\nSuspende los ejercicios por hoy. Recuerda que KineConnect realiza seguimiento asincrónico y no reemplaza atención médica de urgencia 24/7.`,
           [{ text: 'Entendido', onPress: () => navigation.goBack() }],
         );
       } else if (evaNivel >= 6) {
@@ -553,10 +615,10 @@ export default function PautaDetailScreen({ route, navigation }) {
         <View style={[styles.readOnlyBanner, { backgroundColor: c.warningBg, borderColor: c.warning }]}>
           <MaterialCommunityIcons name="calendar-check-outline" size={21} color={c.warning} />
           <View style={{ flex: 1 }}>
-            <Text style={{ color: c.warning, fontSize: 13, fontWeight: '800' }}>
+            <Text style={{ color: c.warning, fontSize: 13.5, fontWeight: '800' }}>
               Sesión de hoy completada · Disponible mañana
             </Text>
-            <Text style={{ color: c.textSub, fontSize: 12, marginTop: 2, lineHeight: 17 }}>
+            <Text style={{ color: c.textSub, fontSize: 12.5, marginTop: 2, lineHeight: 18 }}>
               Ya cumpliste tu entrenamiento de hoy (meta: {metaSemanalPauta}{' '}
               {metaSemanalPauta === 1 ? 'vez' : 'veces'} por semana). Puedes repasar la técnica cuando quieras.
             </Text>
@@ -569,10 +631,10 @@ export default function PautaDetailScreen({ route, navigation }) {
       <View style={[styles.readOnlyBanner, { backgroundColor: c.successBg, borderColor: c.success }]}>
         <MaterialCommunityIcons name="eye-check-outline" size={20} color={c.success} />
         <View style={{ flex: 1 }}>
-          <Text style={{ color: c.success, fontSize: 13, fontWeight: '800' }}>
+          <Text style={{ color: c.success, fontSize: 13.5, fontWeight: '800' }}>
             Modo repaso · Meta semanal cumplida ({metaSemanalPauta}/{metaSemanalPauta})
           </Text>
-          <Text style={{ color: c.textSub, fontSize: 12, marginTop: 2, lineHeight: 17 }}>
+          <Text style={{ color: c.textSub, fontSize: 12.5, marginTop: 2, lineHeight: 18 }}>
             Puedes revisar las indicaciones y la técnica. El registro de nuevas sesiones queda pausado hasta tu próximo
             ciclo.
           </Text>
@@ -581,38 +643,64 @@ export default function PautaDetailScreen({ route, navigation }) {
     );
   };
 
-  /* ═════════ VISTA GUIADA (Orden original: Título/Dosificación → Instrucciones arriba → Series abajo) ═════════ */
+  /* ═════════ VISTA GUIADA ═════════ */
   if (modoGuiado && totalEjercicios > 0) {
     const ej = ejercicios[indiceActual] || ejercicios[0];
     const hechas = seriesHechas[ej.key] || [];
     const ejTerminado = hechas.length >= ej.series;
-    const etiquetaUnidad = ej.unidad === 'SEG' ? 'Segundos' : 'Repeticiones';
-    const sufijoUnidad = ej.unidad === 'SEG' ? 'seg' : 'reps';
+    const esPorTiempo = ej.unidad === 'SEG';
+    const etiquetaUnidad = esPorTiempo ? 'Segundos' : 'Repeticiones';
+    const sufijoUnidad = esPorTiempo ? 'seg' : 'reps';
     const textoBoton = isDark ? '#0F172A' : '#FFFFFF';
+
+    // Escala tipográfica accesible (Adulto Mayor)
+    const sizeTituloPaso = textoGrande ? 16.5 : 14.5;
+    const sizeTextoPaso = textoGrande ? 17.5 : 15;
+    const lineTextoPaso = textoGrande ? 26 : 22.5;
 
     return (
       <View style={[styles.screen, { backgroundColor: c.bg }]}>
-        {/* Header sticky fijo arriba */}
+        {/* Header sticky con selector de tamaño de letra A / A+ */}
         <View style={[styles.stickyHeader, { backgroundColor: c.surface, borderBottomColor: c.border }]}>
           <View style={styles.topRow}>
             <TouchableOpacity
               onPress={() => {
                 setDescansoRestante(null);
+                setTiempoEjecucionRestante(null);
                 setModoGuiado(false);
               }}
               style={[styles.pillBtn, { backgroundColor: c.surfaceSoft, borderColor: c.border }]}
             >
               <MaterialCommunityIcons name="format-list-bulleted" size={16} color={c.primary} />
-              <Text style={{ color: c.textMain, fontWeight: '700', fontSize: 13 }}>Ver lista</Text>
+              <Text style={{ color: c.textMain, fontWeight: '700', fontSize: 13 }}>Lista</Text>
             </TouchableOpacity>
 
             <Text style={{ color: c.textMain, fontWeight: '800', fontSize: 13.5 }}>
               Ejercicio {indiceActual + 1} de {totalEjercicios}
             </Text>
 
-            <Text style={{ color: c.primary, fontWeight: '800', fontSize: 13 }}>
-              {esSoloConsulta ? 'Repaso' : `${Math.round(progresoGlobal * 100)}%`}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <TouchableOpacity
+                onPress={() => setTextoGrande((prev) => !prev)}
+                accessibilityLabel="Cambiar tamaño de letra"
+                style={[
+                  styles.pillBtn,
+                  {
+                    backgroundColor: textoGrande ? c.accentBg : c.surfaceSoft,
+                    borderColor: textoGrande ? c.primary : c.border,
+                    paddingHorizontal: 10,
+                  },
+                ]}
+              >
+                <Text style={{ color: textoGrande ? c.primary : c.textMain, fontWeight: '900', fontSize: 13 }}>
+                  {textoGrande ? 'A+' : 'A'}
+                </Text>
+              </TouchableOpacity>
+
+              <Text style={{ color: c.primary, fontWeight: '800', fontSize: 13 }}>
+                {esSoloConsulta ? 'Repaso' : `${Math.round(progresoGlobal * 100)}%`}
+              </Text>
+            </View>
           </View>
 
           {!esSoloConsulta && (
@@ -635,30 +723,38 @@ export default function PautaDetailScreen({ route, navigation }) {
             {/* 1. Título y dosificación */}
             <View style={{ padding: 18, paddingBottom: 14 }}>
               <View style={[styles.zonaChip, { backgroundColor: c.accentBg }]}>
-                <MaterialCommunityIcons name="human" size={13} color={c.primary} />
-                <Text style={{ color: c.primary, fontSize: 12, fontWeight: '700' }}>
+                <MaterialCommunityIcons name="human" size={14} color={c.primary} />
+                <Text style={{ color: c.primary, fontSize: 12.5, fontWeight: '700' }}>
                   {ej.zona} · Nivel {ej.dificultad}
                 </Text>
               </View>
 
-              <Text style={{ color: c.textMain, fontSize: 21, fontWeight: '800', marginTop: 10, lineHeight: 27 }}>
+              <Text
+                style={{
+                  color: c.textMain,
+                  fontSize: textoGrande ? 24 : 21.5,
+                  fontWeight: '800',
+                  marginTop: 10,
+                  lineHeight: textoGrande ? 31 : 28,
+                }}
+              >
                 {ej.nombre}
               </Text>
 
               <View style={[styles.metricsStrip, { backgroundColor: c.surfaceSoft, borderColor: c.border }]}>
                 <View style={styles.metricCol}>
-                  <Text style={{ color: c.primary, fontSize: 19, fontWeight: '900' }}>{ej.series}</Text>
-                  <Text style={{ color: c.textSub, fontSize: 11.5, fontWeight: '600' }}>Series</Text>
+                  <Text style={{ color: c.primary, fontSize: 20, fontWeight: '900' }}>{ej.series}</Text>
+                  <Text style={{ color: c.textSub, fontSize: 12, fontWeight: '700' }}>Series</Text>
                 </View>
                 <View style={[styles.metricDivider, { backgroundColor: c.border }]} />
                 <View style={styles.metricCol}>
-                  <Text style={{ color: c.primary, fontSize: 19, fontWeight: '900' }}>{ej.repeticiones}</Text>
-                  <Text style={{ color: c.textSub, fontSize: 11.5, fontWeight: '600' }}>{etiquetaUnidad}</Text>
+                  <Text style={{ color: c.primary, fontSize: 20, fontWeight: '900' }}>{ej.repeticiones}</Text>
+                  <Text style={{ color: c.textSub, fontSize: 12, fontWeight: '700' }}>{etiquetaUnidad}</Text>
                 </View>
                 <View style={[styles.metricDivider, { backgroundColor: c.border }]} />
                 <View style={styles.metricCol}>
-                  <Text style={{ color: c.primary, fontSize: 19, fontWeight: '900' }}>{ej.descanso}s</Text>
-                  <Text style={{ color: c.textSub, fontSize: 11.5, fontWeight: '600' }}>Descanso</Text>
+                  <Text style={{ color: c.primary, fontSize: 20, fontWeight: '900' }}>{ej.descanso}s</Text>
+                  <Text style={{ color: c.textSub, fontSize: 12, fontWeight: '700' }}>Descanso</Text>
                 </View>
               </View>
             </View>
@@ -666,9 +762,9 @@ export default function PautaDetailScreen({ route, navigation }) {
             {/* 2. Video (solo si existe URL real) */}
             {!!ej.mediaUrl && <VideoMedia uri={ej.mediaUrl} />}
 
-            {/* 3. Instrucciones arriba (antes de registrar las series) */}
+            {/* 3. Instrucciones arriba con tipografía de alto contraste */}
             <View style={[styles.stepsContainer, { borderTopWidth: 1, borderTopColor: c.border }]}>
-              <Text style={{ color: c.textMain, fontWeight: '800', fontSize: 15, marginBottom: 2 }}>
+              <Text style={{ color: c.textMain, fontWeight: '800', fontSize: textoGrande ? 18 : 16, marginBottom: 2 }}>
                 Cómo realizar este ejercicio
               </Text>
               {ej.pasos.length > 0 ? (
@@ -682,7 +778,7 @@ export default function PautaDetailScreen({ route, navigation }) {
                         esPrecaucion && {
                           backgroundColor: c.warningBg,
                           borderRadius: 12,
-                          padding: 10,
+                          padding: 12,
                           marginHorizontal: -4,
                         },
                       ]}
@@ -695,7 +791,7 @@ export default function PautaDetailScreen({ route, navigation }) {
                       >
                         <MaterialCommunityIcons
                           name={iconoPaso(p.titulo)}
-                          size={16}
+                          size={18}
                           color={esPrecaucion ? c.warning : c.primary}
                         />
                       </View>
@@ -704,30 +800,32 @@ export default function PautaDetailScreen({ route, navigation }) {
                           style={{
                             color: esPrecaucion ? c.warning : c.textMain,
                             fontWeight: '800',
-                            fontSize: 13.5,
-                            marginBottom: 2,
+                            fontSize: sizeTituloPaso,
+                            marginBottom: 3,
                           }}
                         >
                           {p.titulo}
                         </Text>
-                        <Text style={{ color: c.textMain, fontSize: 14, lineHeight: 21 }}>{p.contenido}</Text>
+                        <Text style={{ color: c.textMain, fontSize: sizeTextoPaso, lineHeight: lineTextoPaso }}>
+                          {p.contenido}
+                        </Text>
                       </View>
                     </View>
                   );
                 })
               ) : (
-                <Text style={{ color: c.textSub, fontSize: 13.5, lineHeight: 20 }}>
+                <Text style={{ color: c.textSub, fontSize: sizeTextoPaso, lineHeight: lineTextoPaso }}>
                   Ejecuta el movimiento de forma lenta y controlada, sin dolor agudo.
                 </Text>
               )}
             </View>
 
-            {/* 4. Registro de series abajo */}
+            {/* 4. Registro de series abajo (con cronómetro activo si es por tiempo SEG) */}
             {!esSoloConsulta && (
               <View style={[styles.seriesBlock, { backgroundColor: c.surfaceSoft, borderTopColor: c.border }]}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                  <Text style={{ color: c.textMain, fontWeight: '800', fontSize: 15 }}>Tus series</Text>
-                  <Text style={{ color: ejTerminado ? c.success : c.primary, fontWeight: '800', fontSize: 13 }}>
+                  <Text style={{ color: c.textMain, fontWeight: '800', fontSize: 15.5 }}>Tus series</Text>
+                  <Text style={{ color: ejTerminado ? c.success : c.primary, fontWeight: '800', fontSize: 13.5 }}>
                     {hechas.length} de {ej.series}
                   </Text>
                 </View>
@@ -767,7 +865,7 @@ export default function PautaDetailScreen({ route, navigation }) {
                         <Text style={{ color: c.textMain, fontWeight: '800', fontSize: 16 }}>
                           Descanso · {descansoRestante}s
                         </Text>
-                        <Text style={{ color: c.textSub, fontSize: 12, lineHeight: 16 }}>
+                        <Text style={{ color: c.textSub, fontSize: 12.5, lineHeight: 17 }}>
                           Respira profundo antes de la siguiente serie
                         </Text>
                       </View>
@@ -784,19 +882,83 @@ export default function PautaDetailScreen({ route, navigation }) {
                       style={{ height: 5, borderRadius: 3, backgroundColor: c.border }}
                     />
                   </View>
+                ) : tiempoEjecucionRestante !== null ? (
+                  <View style={[styles.restActionBox, { backgroundColor: c.surface, borderColor: c.primary }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      <MaterialCommunityIcons name="timer-outline" size={26} color={c.primary} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: c.primary, fontWeight: '900', fontSize: 19 }}>
+                          Mantén · {tiempoEjecucionRestante}s
+                        </Text>
+                        <Text style={{ color: c.textSub, fontSize: 12.5 }}>
+                          Serie {hechas.length + 1} de {ej.series} ({ej.repeticiones} seg)
+                        </Text>
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => setEjecucionPausada((prev) => !prev)}
+                        style={[styles.skipRestBtn, { backgroundColor: c.accentBg, borderColor: c.primary }]}
+                      >
+                        <Text style={{ color: c.primary, fontWeight: '800', fontSize: 12.5 }}>
+                          {ejecucionPausada ? 'Reanudar' : 'Pausar'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                    <ProgressBar
+                      progress={ejecucionTotal > 0 ? (ejecucionTotal - tiempoEjecucionRestante) / ejecucionTotal : 0}
+                      color={c.success}
+                      style={{ height: 6, borderRadius: 3, backgroundColor: c.border }}
+                    />
+                    <TouchableOpacity
+                      onPress={() => {
+                        setTiempoEjecucionRestante(null);
+                        setEjecucionPausada(false);
+                        completarSiguienteSerie(ej);
+                      }}
+                      style={{ alignSelf: 'flex-end', paddingTop: 2 }}
+                    >
+                      <Text style={{ color: c.textSub, fontSize: 12, fontWeight: '700', textDecorationLine: 'underline' }}>
+                        Completar serie ahora
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 ) : !ejTerminado ? (
-                  <Button
-                    mode="contained"
-                    icon="check"
-                    onPress={() => completarSiguienteSerie(ej)}
-                    buttonColor={c.primary}
-                    textColor={textoBoton}
-                    style={{ borderRadius: 14 }}
-                    contentStyle={{ paddingVertical: 6 }}
-                    labelStyle={{ fontWeight: '800' }}
-                  >
-                    Completar serie {hechas.length + 1} ({ej.repeticiones} {sufijoUnidad})
-                  </Button>
+                  esPorTiempo ? (
+                    <View style={{ gap: 8 }}>
+                      <Button
+                        mode="contained"
+                        icon="timer-play-outline"
+                        onPress={() => iniciarCronometroEjercicio(ej)}
+                        buttonColor={c.primary}
+                        textColor={textoBoton}
+                        style={{ borderRadius: 14 }}
+                        contentStyle={{ paddingVertical: 6 }}
+                        labelStyle={{ fontWeight: '800' }}
+                      >
+                        Iniciar serie {hechas.length + 1} ({ej.repeticiones} seg)
+                      </Button>
+                      <TouchableOpacity
+                        onPress={() => completarSiguienteSerie(ej)}
+                        style={{ alignSelf: 'center', paddingVertical: 4 }}
+                      >
+                        <Text style={{ color: c.textSub, fontSize: 12.5, fontWeight: '700' }}>
+                          Ya la completé · Marcar serie lista
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <Button
+                      mode="contained"
+                      icon="check"
+                      onPress={() => completarSiguienteSerie(ej)}
+                      buttonColor={c.primary}
+                      textColor={textoBoton}
+                      style={{ borderRadius: 14 }}
+                      contentStyle={{ paddingVertical: 6 }}
+                      labelStyle={{ fontWeight: '800' }}
+                    >
+                      Completar serie {hechas.length + 1} ({ej.repeticiones} {sufijoUnidad})
+                    </Button>
+                  )
                 ) : (
                   <View style={[styles.doneBox, { backgroundColor: c.successBg, borderColor: c.success }]}>
                     <MaterialCommunityIcons name="check-circle" size={20} color={c.success} />
@@ -859,21 +1021,32 @@ export default function PautaDetailScreen({ route, navigation }) {
             )}
           </View>
 
-          {!esSoloConsulta && !ejTerminado && (
+          {/* Botón de Emergencia por Dolor Agudo */}
+          {!esSoloConsulta && (
             <TouchableOpacity
               activeOpacity={0.8}
-              onPress={abrirEvaluacionDolor}
+              onPress={abrirFlujoEmergenciaDolor}
               style={[styles.painStopBtn, { backgroundColor: c.dangerBg, borderColor: c.dangerBorder }]}
             >
               <MaterialCommunityIcons name="alert-octagon" size={20} color={c.danger} />
-              <Text style={{ color: c.danger, fontWeight: '800', fontSize: 13 }}>
+              <Text style={{ color: c.danger, fontWeight: '800', fontSize: 13.5 }}>
                 ¿Dolor agudo? Detener sesión y reportar
               </Text>
             </TouchableOpacity>
           )}
         </ScrollView>
 
-        <EvaModal visible={evaOpen} onDismiss={() => setEvaOpen(false)} onSubmit={enviar} sending={sending} />
+        <EvaModal
+          visible={evaOpen}
+          onDismiss={() => {
+            setEvaOpen(false);
+            setDetencionPorDolor(false);
+          }}
+          onSubmit={enviar}
+          sending={sending}
+          modoEmergencia={detencionPorDolor}
+          ejercicioActual={ej.nombre}
+        />
       </View>
     );
   }
@@ -895,18 +1068,18 @@ export default function PautaDetailScreen({ route, navigation }) {
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
             <View style={[styles.metaChip, { backgroundColor: c.surface, borderColor: c.border }]}>
               <MaterialCommunityIcons name="dumbbell" size={14} color={c.primary} />
-              <Text style={{ color: c.textSub, fontSize: 12, fontWeight: '700' }}>
+              <Text style={{ color: c.textSub, fontSize: 12.5, fontWeight: '700' }}>
                 {totalEjercicios} {totalEjercicios === 1 ? 'ejercicio' : 'ejercicios'}
               </Text>
             </View>
             <View style={[styles.metaChip, { backgroundColor: c.surface, borderColor: c.border }]}>
               <MaterialCommunityIcons name="layers-outline" size={14} color={c.primary} />
-              <Text style={{ color: c.textSub, fontSize: 12, fontWeight: '700' }}>{totalSeries} series</Text>
+              <Text style={{ color: c.textSub, fontSize: 12.5, fontWeight: '700' }}>{totalSeries} series</Text>
             </View>
             {totalEjercicios > 0 && (
               <View style={[styles.metaChip, { backgroundColor: c.surface, borderColor: c.border }]}>
                 <MaterialCommunityIcons name="clock-outline" size={14} color={c.primary} />
-                <Text style={{ color: c.textSub, fontSize: 12, fontWeight: '700' }}>
+                <Text style={{ color: c.textSub, fontSize: 12.5, fontWeight: '700' }}>
                   ≈ {minutosEstimados(ejercicios)} min
                 </Text>
               </View>
@@ -919,17 +1092,17 @@ export default function PautaDetailScreen({ route, navigation }) {
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
                 <MaterialCommunityIcons name="stethoscope" size={17} color={c.primary} />
-                <Text numberOfLines={1} style={{ color: c.primary, fontSize: 12.5, fontWeight: '800', flex: 1 }}>
+                <Text numberOfLines={1} style={{ color: c.primary, fontSize: 13, fontWeight: '800', flex: 1 }}>
                   Indicación de {autorIndicacionPauta}
                 </Text>
               </View>
               {!!pauta.actualizado_en && (
-                <Text style={{ color: c.textSub, fontSize: 11, fontWeight: '600' }}>
+                <Text style={{ color: c.textSub, fontSize: 11.5, fontWeight: '600' }}>
                   {new Date(pauta.actualizado_en).toLocaleDateString('es-CL', { timeZone: 'America/Santiago' })}
                 </Text>
               )}
             </View>
-            <Text style={{ color: c.textMain, fontSize: 14, lineHeight: 20 }}>{pauta.notas}</Text>
+            <Text style={{ color: c.textMain, fontSize: 14.5, lineHeight: 21 }}>{pauta.notas}</Text>
           </View>
         )}
 
@@ -938,17 +1111,17 @@ export default function PautaDetailScreen({ route, navigation }) {
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
                 <MaterialCommunityIcons name="message-text-outline" size={17} color={c.primary} />
-                <Text numberOfLines={1} style={{ color: c.primary, fontSize: 12.5, fontWeight: '800', flex: 1 }}>
+                <Text numberOfLines={1} style={{ color: c.primary, fontSize: 13, fontWeight: '800', flex: 1 }}>
                   Comentario reciente de {autorRespuestaPauta}
                 </Text>
               </View>
               {!!formatearFechaHora(respuestasPauta[0].fecha_respuesta || respuestasPauta[0].fecha_ejecucion) && (
-                <Text style={{ color: c.textSub, fontSize: 11, fontWeight: '600' }}>
+                <Text style={{ color: c.textSub, fontSize: 11.5, fontWeight: '600' }}>
                   {formatearFechaHora(respuestasPauta[0].fecha_respuesta || respuestasPauta[0].fecha_ejecucion)}
                 </Text>
               )}
             </View>
-            <Text style={{ color: c.textMain, fontSize: 14, lineHeight: 20 }}>
+            <Text style={{ color: c.textMain, fontSize: 14.5, lineHeight: 21 }}>
               {String(respuestasPauta[0].respuesta_kinesiologo).trim()}
             </Text>
           </View>
@@ -959,8 +1132,8 @@ export default function PautaDetailScreen({ route, navigation }) {
         {!esSoloConsulta && (
           <View style={[styles.summaryBox, sombra, { backgroundColor: c.surface, borderColor: c.border }]}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
-              <Text style={{ color: c.textMain, fontWeight: '700', fontSize: 14 }}>Progreso de hoy</Text>
-              <Text style={{ color: rutinaCompleta ? c.success : c.primary, fontWeight: '800', fontSize: 13 }}>
+              <Text style={{ color: c.textMain, fontWeight: '700', fontSize: 14.5 }}>Progreso de hoy</Text>
+              <Text style={{ color: rutinaCompleta ? c.success : c.primary, fontWeight: '800', fontSize: 13.5 }}>
                 {seriesCompletadas}/{totalSeries} series
               </Text>
             </View>
@@ -984,7 +1157,7 @@ export default function PautaDetailScreen({ route, navigation }) {
           textColor={textoBotonPrincipal}
           style={{ borderRadius: 14, marginTop: 2 }}
           contentStyle={{ paddingVertical: 6 }}
-          labelStyle={{ fontWeight: '800', fontSize: 15 }}
+          labelStyle={{ fontWeight: '800', fontSize: 15.5 }}
         >
           {esSoloConsulta
             ? 'Repasar rutina y técnica'
@@ -994,7 +1167,7 @@ export default function PautaDetailScreen({ route, navigation }) {
         </Button>
 
         {totalEjercicios > 0 && (
-          <Text style={{ color: c.textMain, fontSize: 16, fontWeight: '800', marginTop: 6 }}>Ejercicios</Text>
+          <Text style={{ color: c.textMain, fontSize: 16.5, fontWeight: '800', marginTop: 6 }}>Ejercicios</Text>
         )}
 
         {ejercicios.map((ej, index) => {
@@ -1029,14 +1202,14 @@ export default function PautaDetailScreen({ route, navigation }) {
               </View>
 
               <View style={{ flex: 1 }}>
-                <Text numberOfLines={2} style={{ color: c.textMain, fontWeight: '700', fontSize: 15 }}>
+                <Text numberOfLines={2} style={{ color: c.textMain, fontWeight: '700', fontSize: 15.5 }}>
                   {ej.nombre}
                 </Text>
-                <Text style={{ color: c.textSub, fontSize: 12.5, marginTop: 3 }}>
+                <Text style={{ color: c.textSub, fontSize: 13, marginTop: 3 }}>
                   {ej.series} {ej.series === 1 ? 'serie' : 'series'} × {ej.repeticiones} {sufijo} · {ej.descanso}s
                   descanso
                 </Text>
-                <Text style={{ color: c.textSub, fontSize: 11.5, marginTop: 1, opacity: 0.8 }}>{ej.zona}</Text>
+                <Text style={{ color: c.textSub, fontSize: 12, marginTop: 1, opacity: 0.85 }}>{ej.zona}</Text>
               </View>
 
               <View style={{ alignItems: 'flex-end', gap: 4 }}>
@@ -1065,7 +1238,16 @@ export default function PautaDetailScreen({ route, navigation }) {
         )}
       </ScrollView>
 
-      <EvaModal visible={evaOpen} onDismiss={() => setEvaOpen(false)} onSubmit={enviar} sending={sending} />
+      <EvaModal
+        visible={evaOpen}
+        onDismiss={() => {
+          setEvaOpen(false);
+          setDetencionPorDolor(false);
+        }}
+        onSubmit={enviar}
+        sending={sending}
+        modoEmergencia={detencionPorDolor}
+      />
     </View>
   );
 }
@@ -1124,11 +1306,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   media: { width: '100%', height: 210, backgroundColor: '#000' },
-  stepsContainer: { padding: 18, gap: 14 },
+  stepsContainer: { padding: 18, gap: 15 },
   stepRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   stepIcon: {
-    width: 30,
-    height: 30,
+    width: 32,
+    height: 32,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',

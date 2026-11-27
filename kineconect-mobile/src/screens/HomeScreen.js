@@ -3,7 +3,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import { useCallback, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { ProgressBar, Text, useTheme } from 'react-native-paper';
+import { Button, ProgressBar, Text, useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import EmptyState from '../components/EmptyState';
@@ -164,7 +164,7 @@ export default function HomeScreen({ navigation }) {
     surfaceSoft: isDark ? '#0B1220' : '#F1F5F9',
     border: isDark ? '#334155' : '#E2E8F0',
     textMain: isDark ? '#F8FAFC' : '#0F172A',
-    textSub: isDark ? '#94A3B8' : '#64748B',
+    textSub: isDark ? '#CBD5E1' : '#475569',
     accentBg: isDark ? '#082F49' : '#E0F2FE',
     accentText: isDark ? '#38BDF8' : '#0369A1',
     primary: isDark ? '#38BDF8' : '#0284C7',
@@ -378,14 +378,14 @@ export default function HomeScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl onRefresh={onRefresh} refreshing={refreshing} tintColor={c.primary} />}
       >
-        {/* Cabecera superior con saludo y mensaje motivacional */}
+        {/* Cabecera superior */}
         <View style={styles.header}>
           <View style={styles.headerTextContainer}>
             <Text style={[styles.subGreeting, { color: c.primary }]}>MI REHABILITACIÓN</Text>
             <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.greeting, { color: c.textMain }]}>
               ¡Hola, {nombrePaciente}!
             </Text>
-            <Text style={{ color: c.textSub, fontSize: 13.5, fontWeight: '600', marginTop: 3, lineHeight: 19 }}>
+            <Text style={{ color: c.textSub, fontSize: 14, fontWeight: '600', marginTop: 3, lineHeight: 20 }}>
               {mensajeMotivacional.emoji} {mensajeMotivacional.texto}
             </Text>
 
@@ -402,10 +402,10 @@ export default function HomeScreen({ navigation }) {
                 <MaterialCommunityIcons
                   color={infoKine.asignado ? c.accentText : c.textSub}
                   name={infoKine.asignado ? 'stethoscope' : 'account-clock-outline'}
-                  size={14}
+                  size={15}
                 />
                 <Text style={[styles.kineText, { color: infoKine.asignado ? c.accentText : c.textSub }]}>
-                  {infoKine.asignado ? `Kinesiólogo: ${infoKine.nombre}` : 'Sin kinesiólogo asignado'}
+                  {infoKine.asignado ? `Kinesiólogo: ${infoKine.nombre}` : 'En espera de asignación'}
                 </Text>
               </View>
 
@@ -416,7 +416,7 @@ export default function HomeScreen({ navigation }) {
                     { backgroundColor: c.warningBg, borderColor: c.warning },
                   ]}
                 >
-                  <MaterialCommunityIcons color={c.warning} name="cloud-upload-outline" size={14} />
+                  <MaterialCommunityIcons color={c.warning} name="cloud-upload-outline" size={15} />
                   <Text style={[styles.kineText, { color: c.warning }]}>
                     {pendientesOffline} por enviar
                   </Text>
@@ -436,55 +436,57 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* Tarjeta de Adherencia Semanal */}
-        <View style={[styles.heroCard, { backgroundColor: c.surface, borderColor: c.border }]}>
-          <View style={styles.statsHeader}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <View style={[styles.miniIconBox, { backgroundColor: metaGlobalCumplida ? c.successBg : c.accentBg }]}>
-                <MaterialCommunityIcons
-                  color={metaGlobalCumplida ? c.success : c.primary}
-                  name={metaGlobalCumplida ? 'trophy-outline' : 'target'}
-                  size={18}
-                />
+        {/* Tarjeta de Adherencia Semanal (solo si tiene pautas activas) */}
+        {pautas.length > 0 && (
+          <View style={[styles.heroCard, { backgroundColor: c.surface, borderColor: c.border }]}>
+            <View style={styles.statsHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={[styles.miniIconBox, { backgroundColor: metaGlobalCumplida ? c.successBg : c.accentBg }]}>
+                  <MaterialCommunityIcons
+                    color={metaGlobalCumplida ? c.success : c.primary}
+                    name={metaGlobalCumplida ? 'trophy-outline' : 'target'}
+                    size={18}
+                  />
+                </View>
+                <Text style={[styles.statsTitle, { color: c.textMain }]}>Adherencia semanal</Text>
               </View>
-              <Text style={[styles.statsTitle, { color: c.textMain }]}>Adherencia semanal</Text>
+
+              <View
+                style={[
+                  styles.goalBadge,
+                  { backgroundColor: metaGlobalCumplida ? c.successBg : c.surfaceSoft },
+                ]}
+              >
+                <Text
+                  style={{
+                    color: metaGlobalCumplida ? c.success : c.textSub,
+                    fontSize: 12,
+                    fontWeight: '700',
+                  }}
+                >
+                  {metaGlobalCumplida ? '✓ Meta semanal cumplida' : `${Math.round(progreso * 100)}%`}
+                </Text>
+              </View>
             </View>
 
-            <View
-              style={[
-                styles.goalBadge,
-                { backgroundColor: metaGlobalCumplida ? c.successBg : c.surfaceSoft },
-              ]}
-            >
-              <Text
-                style={{
-                  color: metaGlobalCumplida ? c.success : c.textSub,
-                  fontSize: 11.5,
-                  fontWeight: '700',
-                }}
-              >
-                {metaGlobalCumplida ? '✓ Meta semanal cumplida' : `${Math.round(progreso * 100)}%`}
+            <View style={styles.progressNumbersRow}>
+              <Text style={[styles.currentSessions, { color: c.textMain }]}>
+                {Math.min(sesionesSemana, metaSemanal)}
+              </Text>
+              <Text style={[styles.totalSessions, { color: c.textSub }]}>
+                {' '}/ {metaSemanal} sesiones esta semana
               </Text>
             </View>
+
+            <ProgressBar
+              color={metaGlobalCumplida ? c.success : c.primary}
+              progress={progreso}
+              style={[styles.thickProgressBar, { backgroundColor: c.surfaceSoft }]}
+            />
           </View>
+        )}
 
-          <View style={styles.progressNumbersRow}>
-            <Text style={[styles.currentSessions, { color: c.textMain }]}>
-              {Math.min(sesionesSemana, metaSemanal)}
-            </Text>
-            <Text style={[styles.totalSessions, { color: c.textSub }]}>
-              {' '}/ {metaSemanal} sesiones esta semana
-            </Text>
-          </View>
-
-          <ProgressBar
-            color={metaGlobalCumplida ? c.success : c.primary}
-            progress={progreso}
-            style={[styles.thickProgressBar, { backgroundColor: c.surfaceSoft }]}
-          />
-        </View>
-
-        {/* Listado de Pautas Activas */}
+        {/* Listado de Pautas Activas o Guía de Onboarding */}
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: c.textMain }]}>Tus pautas activas</Text>
           <View style={[styles.badge, { backgroundColor: c.accentBg }]}>
@@ -493,12 +495,68 @@ export default function HomeScreen({ navigation }) {
         </View>
 
         {pautas.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <EmptyState
-              onRetry={cargar}
-              subtitle="Tu kinesiólogo te asignará una rutina pronto."
-              title="Aún no tienes pautas"
-            />
+          <View style={[styles.onboardingCard, { backgroundColor: c.surface, borderColor: c.border }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <View style={[styles.onboardingIconBox, { backgroundColor: c.accentBg }]}>
+                <MaterialCommunityIcons name="clipboard-text-clock-outline" size={26} color={c.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: c.textMain, fontSize: 16.5, fontWeight: '800' }}>
+                  Tu plan terapéutico está en preparación
+                </Text>
+                <Text style={{ color: c.textSub, fontSize: 13.5, marginTop: 2, lineHeight: 19 }}>
+                  {infoKine.asignado
+                    ? `${infoKine.nombre} aún no ha publicado tu rutina activa.`
+                    : 'Tu cuenta está activa y lista para recibir tu primera pauta.'}
+                </Text>
+              </View>
+            </View>
+
+            <View style={[styles.onboardingStepsBox, { backgroundColor: c.surfaceSoft, borderColor: c.border }]}>
+              <View style={styles.onboardingStepRow}>
+                <Text style={[styles.onboardingStepNum, { backgroundColor: c.accentBg, color: c.primary }]}>1</Text>
+                <Text style={{ flex: 1, color: c.textMain, fontSize: 13.5, lineHeight: 19 }}>
+                  Tu kinesiólogo configurará tus ejercicios según tu evaluación clínica.
+                </Text>
+              </View>
+
+              <View style={styles.onboardingStepRow}>
+                <Text style={[styles.onboardingStepNum, { backgroundColor: c.accentBg, color: c.primary }]}>2</Text>
+                <Text style={{ flex: 1, color: c.textMain, fontSize: 13.5, lineHeight: 19 }}>
+                  Desliza hacia abajo o pulsa <Text style={{ fontWeight: '800' }}>Actualizar</Text> cuando te avisen que ya está lista.
+                </Text>
+              </View>
+
+              <View style={styles.onboardingStepRow}>
+                <Text style={[styles.onboardingStepNum, { backgroundColor: c.accentBg, color: c.primary }]}>3</Text>
+                <Text style={{ flex: 1, color: c.textMain, fontSize: 13.5, lineHeight: 19 }}>
+                  Si ingresaste con clave temporal, te recomendamos actualizarla en <Text style={{ fontWeight: '800' }}>Mi Perfil</Text>.
+                </Text>
+              </View>
+            </View>
+
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Button
+                mode="contained"
+                icon="refresh"
+                onPress={onRefresh}
+                loading={refreshing}
+                buttonColor={c.primary}
+                textColor={isDark ? '#0F172A' : '#FFFFFF'}
+                style={{ flex: 1, borderRadius: 12 }}
+              >
+                Actualizar
+              </Button>
+              <Button
+                mode="outlined"
+                icon="account-cog-outline"
+                onPress={() => navigation.navigate('Perfil')}
+                textColor={c.textMain}
+                style={{ flex: 1, borderRadius: 12, borderColor: c.border }}
+              >
+                Mi Perfil
+              </Button>
+            </View>
           </View>
         ) : (
           pautas.map((p) => {
@@ -574,7 +632,7 @@ export default function HomeScreen({ navigation }) {
                     <Text
                       style={{
                         color: soloLectura ? c.primary : (isDark ? '#0F172A' : '#FFFFFF'),
-                        fontSize: 12,
+                        fontSize: 12.5,
                         fontWeight: '800',
                       }}
                     >
@@ -585,8 +643,8 @@ export default function HomeScreen({ navigation }) {
 
                 {!!indicacion && (
                   <View style={[styles.indicacionPreview, { backgroundColor: c.accentBg, borderColor: c.primary }]}>
-                    <MaterialCommunityIcons name="clipboard-text-outline" size={15} color={c.primary} />
-                    <Text numberOfLines={2} style={{ flex: 1, color: c.accentText, fontSize: 12, fontWeight: '600', lineHeight: 16 }}>
+                    <MaterialCommunityIcons name="clipboard-text-outline" size={16} color={c.primary} />
+                    <Text numberOfLines={2} style={{ flex: 1, color: c.accentText, fontSize: 13, fontWeight: '600', lineHeight: 18 }}>
                       Indicación: {indicacion}
                     </Text>
                   </View>
@@ -597,7 +655,7 @@ export default function HomeScreen({ navigation }) {
         )}
 
         {/* Indicaciones y Respuestas del Kinesiólogo */}
-        <View style={[styles.sectionHeader, { marginTop: 12, justifyContent: 'space-between' }]}>
+        <View style={[styles.sectionHeader, { marginTop: 14, justifyContent: 'space-between' }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Text style={[styles.sectionTitle, { color: c.textMain }]}>Indicaciones del kinesiólogo</Text>
             {respuestasVisibles.length > 0 && (
@@ -626,7 +684,7 @@ export default function HomeScreen({ navigation }) {
               activeOpacity={0.75}
               onPress={() => limpiarRespuestasLeidas(respuestasVisibles)}
             >
-              <Text style={{ color: c.textSub, fontSize: 12, fontWeight: '700' }}>
+              <Text style={{ color: c.textSub, fontSize: 12.5, fontWeight: '700' }}>
                 Limpiar leídas
               </Text>
             </TouchableOpacity>
@@ -636,7 +694,7 @@ export default function HomeScreen({ navigation }) {
         {respuestasVisibles.length === 0 ? (
           <View style={[styles.respuestaEmptyCard, { backgroundColor: c.surface, borderColor: c.border }]}>
             <MaterialCommunityIcons name="message-text-outline" size={20} color={c.textSub} />
-            <Text style={{ flex: 1, color: c.textSub, fontSize: 12.5, lineHeight: 18 }}>
+            <Text style={{ flex: 1, color: c.textSub, fontSize: 13.5, lineHeight: 19 }}>
               No tienes indicaciones nuevas de tu kinesiólogo.
             </Text>
           </View>
@@ -667,7 +725,7 @@ export default function HomeScreen({ navigation }) {
                     borderColor: esNueva ? c.primary : c.border,
                     borderLeftColor: esNueva ? c.primary : c.border,
                     borderWidth: esNueva ? 1.5 : 1,
-                    opacity: esNueva ? 1 : 0.88,
+                    opacity: esNueva ? 1 : 0.9,
                   },
                 ]}
               >
@@ -701,7 +759,7 @@ export default function HomeScreen({ navigation }) {
                     )}
 
                     {!!fechaTexto && (
-                      <Text style={{ color: c.textSub, fontSize: 11, fontWeight: '600' }}>
+                      <Text style={{ color: c.textSub, fontSize: 11.5, fontWeight: '600' }}>
                         {fechaTexto}
                       </Text>
                     )}
@@ -719,8 +777,8 @@ export default function HomeScreen({ navigation }) {
                 <Text
                   style={{
                     color: esNueva ? c.textMain : c.textSub,
-                    fontSize: 13.5,
-                    lineHeight: 19,
+                    fontSize: 14.5,
+                    lineHeight: 20,
                     fontWeight: esNueva ? '600' : '400',
                   }}
                 >
@@ -779,15 +837,15 @@ const styles = StyleSheet.create({
   },
   headerTextContainer: { flex: 1 },
   subGreeting: {
-    fontSize: 11,
+    fontSize: 11.5,
     fontWeight: '800',
     letterSpacing: 0.8,
     marginBottom: 4,
   },
   greeting: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '800',
-    lineHeight: 28,
+    lineHeight: 29,
   },
   kineTag: {
     flexDirection: 'row',
@@ -799,7 +857,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 6,
   },
-  kineText: { fontSize: 12, fontWeight: '700' },
+  kineText: { fontSize: 12.5, fontWeight: '700' },
   avatarPlaceholder: {
     width: 46,
     height: 46,
@@ -828,7 +886,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  statsTitle: { fontSize: 15, fontWeight: '700' },
+  statsTitle: { fontSize: 15.5, fontWeight: '700' },
   goalBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -840,7 +898,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   currentSessions: { fontSize: 30, fontWeight: '900' },
-  totalSessions: { fontSize: 14, fontWeight: '600' },
+  totalSessions: { fontSize: 14.5, fontWeight: '600' },
   thickProgressBar: { height: 9, borderRadius: 5 },
   sectionHeader: {
     flexDirection: 'row',
@@ -848,10 +906,44 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 12,
   },
-  sectionTitle: { fontSize: 17, fontWeight: '800' },
+  sectionTitle: { fontSize: 17.5, fontWeight: '800' },
   badge: { paddingHorizontal: 9, paddingVertical: 2, borderRadius: 10 },
   badgeText: { fontSize: 12.5, fontWeight: '800' },
-  emptyContainer: { marginTop: 12 },
+  onboardingCard: {
+    borderRadius: 20,
+    padding: 18,
+    borderWidth: 1.5,
+    gap: 14,
+    marginBottom: 12,
+  },
+  onboardingIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  onboardingStepsBox: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 13,
+    gap: 10,
+  },
+  onboardingStepRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  onboardingStepNum: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    textAlign: 'center',
+    lineHeight: 22,
+    fontSize: 12,
+    fontWeight: '900',
+    overflow: 'hidden',
+  },
   pautaItem: {
     padding: 15,
     borderRadius: 18,
@@ -872,8 +964,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pautaInfo: { flex: 1 },
-  pautaTitle: { fontSize: 15.5, fontWeight: '700', marginBottom: 3 },
-  pautaSubtitle: { fontSize: 12.5 },
+  pautaTitle: { fontSize: 16, fontWeight: '700', marginBottom: 3 },
+  pautaSubtitle: { fontSize: 13 },
   actionPill: {
     paddingHorizontal: 12,
     paddingVertical: 7,
@@ -913,7 +1005,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   respuestaTitle: {
-    fontSize: 12.5,
+    fontSize: 13,
     fontWeight: '800',
   },
   nuevaPill: {
@@ -923,7 +1015,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   nuevaText: {
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '800',
   },
   closeMsgBtn: {
@@ -951,7 +1043,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   verPautaLink: {
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: '700',
   },
 });
