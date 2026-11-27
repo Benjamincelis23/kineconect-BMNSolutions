@@ -16,6 +16,30 @@ function actualizarBotonTema(theme) {
     }
 }
 
+function escaparHtmlLayout(texto) {
+    return String(texto ?? '').replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+    }[c]));
+}
+
+function capitalizarNombreProfesional(user) {
+    if (!user || typeof user !== 'object') return 'Kinesiólogo';
+    const fullFromParts = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+    const raw = (user.nombre_completo || fullFromParts || user.username || 'Kinesiólogo')
+        .replace(/^@+\s*/, '')
+        .trim();
+
+    if (!raw) return 'Kinesiólogo';
+    return raw
+        .split(/\s+/)
+        .map((parte) => parte.charAt(0).toUpperCase() + parte.slice(1).toLowerCase())
+        .join(' ');
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     const path = window.location.pathname;
 
@@ -28,7 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let tituloPagina = 'Panel Clínico';
     if (isInicio) tituloPagina = 'Resumen Clínico';
-    else if (isCrearPauta) tituloPagina = 'Prescripción Biomecánica';
+    else if (isCrearPauta) tituloPagina = 'Prescribir Pauta';
     else if (isEjercicios) tituloPagina = 'Catálogo de Ejercicios';
     else if (isMensajes) tituloPagina = 'Bandeja de Reportes';
     else if (isPautas) tituloPagina = 'Pautas y Plantillas';
@@ -66,7 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <i class='bx bx-home-alt'></i> Inicio
                 </a>
                 <a href="crear_pauta.html" class="${isCrearPauta ? 'active' : ''}">
-                    <i class='bx bx-body'></i> Mapa Anatómico
+                    <i class='bx bx-body'></i> Prescribir Pauta
                 </a>
                 <a href="ejercicios.html" class="${isEjercicios ? 'active' : ''}">
                     <i class='bx bx-dumbbell'></i> Catálogo Ejercicios
@@ -175,7 +199,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const user = api.getUser();
         const userTag = document.getElementById('user-display');
         if (user && userTag) {
-            const nombreMostrar = user.nombre_completo || user.username || 'Kinesiólogo';
+            const nombreMostrar = escaparHtmlLayout(capitalizarNombreProfesional(user));
             userTag.innerHTML = `<i class='bx bx-user-circle'></i> <span>${nombreMostrar}</span>`;
         }
     }

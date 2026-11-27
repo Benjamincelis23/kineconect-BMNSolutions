@@ -2,6 +2,11 @@
 <html lang="es">
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pautas y Plantillas - KineConnect</title>
+    <link rel="stylesheet" href="public/css/style.css">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
     <style>
         body.dark-mode #select-filtro-paciente,
         html.dark-mode #select-filtro-paciente,
@@ -72,6 +77,27 @@
             color: #ffffff;
         }
 
+        .detalle-indicaciones-box {
+            background: #f8fafc;
+            border: 1px solid var(--gris-200);
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 16px;
+            font-size: 0.88rem;
+            color: var(--gris-700);
+        }
+
+        .detalle-ejercicio-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border: 1px solid var(--gris-200);
+            border-radius: 8px;
+            background: #ffffff;
+        }
+
         [data-theme="dark"] .pautas-tabs-bar {
             border-bottom-color: #24344d;
         }
@@ -92,6 +118,13 @@
             background: rgba(255, 255, 255, 0.1);
         }
 
+        [data-theme="dark"] .detalle-indicaciones-box,
+        [data-theme="dark"] .detalle-ejercicio-row {
+            background: #0f1929;
+            border-color: #24344d;
+            color: #cbd5e1;
+        }
+
         #kc-toast-pautas {
             position: fixed;
             top: 20px;
@@ -104,11 +137,6 @@
             pointer-events: none;
         }
     </style>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pautas y Plantillas - KineConnect</title>
-    <link rel="stylesheet" href="public/css/style.css">
-    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 </head>
 
 <body>
@@ -122,8 +150,7 @@
                 <div class="page-header" style="flex-wrap: wrap; gap: 12px;">
                     <div>
                         <h2>Pautas y Plantillas</h2>
-                        <p>Configura las rutinas prescritas a tus pacientes y administra tus protocolos reutilizables.
-                        </p>
+                        <p>Configura las rutinas prescritas a tus pacientes y administra tus protocolos reutilizables.</p>
                     </div>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                         <select id="select-filtro-paciente" onchange="aplicarFiltroPacienteUI(this.value)"
@@ -132,7 +159,7 @@
                             <option value="">Todos los pacientes</option>
                         </select>
                         <a href="crear_pauta.html" class="btn btn-primary">
-                            <i class='bx bx-plus'></i> Nueva Pauta
+                            <i class='bx bx-plus'></i> Prescribir Pauta
                         </a>
                     </div>
                 </div>
@@ -168,9 +195,9 @@
                                 <tr>
                                     <th>Título de la Pauta</th>
                                     <th id="col-destino-header">Paciente Asignado</th>
-                                    <th>Dosificación</th>
+                                    <th id="col-progreso-header">Progreso Semanal</th>
                                     <th>Fecha Creación</th>
-                                    <th>Estado</th>
+                                    <th id="col-estado-header" class="is-hidden">Estado</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
@@ -232,9 +259,7 @@
                 </button>
             </div>
 
-            <div id="detalle-pauta-indicaciones"
-                style="background: #f8fafc; border: 1px solid var(--gris-200); border-radius: 8px; padding: 10px 12px; margin-bottom: 16px; font-size: 0.88rem; color: var(--gris-700);">
-            </div>
+            <div id="detalle-pauta-indicaciones" class="detalle-indicaciones-box"></div>
 
             <h4 style="margin: 0 0 10px; font-size: 0.92rem; color: var(--azul-900);">Ejercicios y Dosificación</h4>
             <div id="detalle-pauta-lista-ejercicios"
@@ -534,6 +559,8 @@
             const noPautas = document.getElementById('no-pautas');
             const noPautasTxt = document.getElementById('no-pautas-texto');
             const colDestino = document.getElementById('col-destino-header');
+            const colProgreso = document.getElementById('col-progreso-header');
+            const colEstado = document.getElementById('col-estado-header');
 
             const asignadas = pautasCargadas.filter(p => p.activo !== false && !p.es_plantilla);
             const plantillas = pautasCargadas.filter(p => p.activo !== false && p.es_plantilla === true);
@@ -543,15 +570,21 @@
             document.getElementById('count-tab-plantillas').textContent = plantillas.length;
             document.getElementById('count-tab-archivadas').textContent = archivadas.length;
 
+            const mostrarColumnaEstado = tabPautasActual !== 'asignadas';
+            if (colEstado) colEstado.classList.toggle('is-hidden', !mostrarColumnaEstado);
+
             let visibles = asignadas;
             if (tabPautasActual === 'plantillas') {
                 visibles = plantillas;
                 if (colDestino) colDestino.textContent = 'Tipo de Protocolo';
+                if (colProgreso) colProgreso.textContent = 'Contenido';
             } else if (tabPautasActual === 'archivadas') {
                 visibles = archivadas;
                 if (colDestino) colDestino.textContent = 'Paciente / Tipo';
+                if (colProgreso) colProgreso.textContent = 'Progreso Semanal';
             } else {
                 if (colDestino) colDestino.textContent = 'Paciente Asignado';
+                if (colProgreso) colProgreso.textContent = 'Progreso Semanal';
             }
 
             if (visibles.length === 0) {
@@ -597,10 +630,14 @@
 
                 const idPauta = Number(p.id);
                 const hechasSem = Number(p.sesiones_semana ?? 0);
-                const metaSem = Number(p.meta_semanal ?? 3);
-                const cicloHtml = !esPlantilla
-                    ? `<span style="display: block; font-size: 0.76rem; color: var(--gris-600); margin-top: 4px; font-weight: 600;">${hechasSem} de ${metaSem} sesiones esta semana</span>`
-                    : '';
+                const metaSem = Number(p.frecuencia_semanal ?? p.meta_semanal ?? 3);
+
+                const columnaProgresoHtml = !esPlantilla
+                    ? `<div style="display: flex; flex-direction: column; gap: 4px;">
+                        <strong style="font-size: 0.84rem; color: var(--azul-900);">${hechasSem} de ${metaSem} sesiones esta semana</strong>
+                        <span class="badge badge-neutro" style="align-self: flex-start;">${textoEjercicios}</span>
+                       </div>`
+                    : `<span class="badge badge-neutro">${textoEjercicios} · ${metaSem}x/sem</span>`;
 
                 const alertaDolor = !esPlantilla ? alertasPorPauta[idPauta] : null;
                 const alertaBadgeHtml = alertaDolor != null
@@ -637,12 +674,9 @@
                         ${alertaBadgeHtml}
                     </td>
                     <td>${pacienteBadge}</td>
-                    <td>
-                        <span class="badge badge-neutro">${textoEjercicios}</span>
-                        ${cicloHtml}
-                    </td>
+                    <td>${columnaProgresoHtml}</td>
                     <td style="white-space: nowrap;">${fecha}</td>
-                    <td>${estadoBadge}</td>
+                    ${mostrarColumnaEstado ? `<td>${estadoBadge}</td>` : ''}
                     <td>
                         <div style="display: flex; gap: 6px; align-items: center; flex-wrap: nowrap;">
                             ${botonUsarPlantilla}
@@ -654,7 +688,7 @@
                             </a>
                             ${botonDesarchivar}
                             <button type="button" class="btn btn-sm"
-                                style="${btnStyleBase} background: rgba(239, 68, 68, 0.14); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.35);"
+                                style="${btnStyleBase} background: rgba(239, 68, 68, 0.16); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.42);"
                                 onclick="eliminarPauta(${idPauta})"
                                 title="${esActiva ? 'Archivar o eliminar' : 'Eliminar definitivamente'}">
                                 <i class='bx bx-trash'></i>${esActiva ? '' : ' Borrar'}
@@ -704,17 +738,18 @@
                     const zonaEj = d.zona_cuerpo || infoCat.zona || '';
                     const series = d.series ?? 3;
                     const reps = d.repeticiones ?? 12;
+                    const unidad = String(d.unidad_medida || 'REPS').toUpperCase() === 'SEG' ? 'segundos' : 'repeticiones';
                     const descanso = d.tiempo_descanso_segundos ?? 60;
 
                     return `
-                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--gris-200); border-radius: 8px; background: #fff;">
+                        <div class="detalle-ejercicio-row">
                             <div>
                                 <strong style="color: var(--azul-900); font-size: 0.92rem; display: block;">${idx + 1}. ${escaparHtml(nombreEj)}</strong>
                                 ${zonaEj ? `<span class="badge badge-neutro" style="font-size: 0.7rem; margin-top: 4px; display: inline-block;">${escaparHtml(zonaEj)}</span>` : ''}
                             </div>
                             <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; flex-shrink: 0;">
                                 <span class="badge badge-ok">${series} ${series === 1 ? 'serie' : 'series'}</span>
-                                <span class="badge badge-neutro">${reps} repeticiones</span>
+                                <span class="badge badge-neutro">${reps} ${unidad}</span>
                                 <span class="badge badge-neutro">${descanso}s descanso</span>
                             </div>
                         </div>
