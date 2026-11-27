@@ -315,7 +315,7 @@ body {
 }
 
 .btn:disabled {
-    opacity: 0.55;
+    opacity: 0.45;
     cursor: not-allowed;
     transform: none !important;
 }
@@ -346,6 +346,98 @@ body {
     background: var(--gris-100);
     border-color: var(--gris-400);
     color: var(--azul-900);
+}
+
+/* Botones de acción secundaria con acento (Prescribir / Eliminar) */
+.btn-prescribir-row {
+    background: #e0f2fe !important;
+    border: 1px solid #7dd3fc !important;
+    color: #0369a1 !important;
+    font-weight: 700 !important;
+}
+
+.btn-prescribir-row:hover {
+    background: #bae6fd !important;
+    color: #0c4a6e !important;
+}
+
+[data-theme="dark"] .btn-prescribir-row {
+    background: rgba(14, 165, 233, 0.16) !important;
+    border-color: rgba(56, 189, 248, 0.42) !important;
+    color: #7dd3fc !important;
+}
+
+[data-theme="dark"] .btn-prescribir-row:hover {
+    background: rgba(14, 165, 233, 0.26) !important;
+    color: #bae6fd !important;
+}
+
+.btn-eliminar-row {
+    background: #fee2e2 !important;
+    border: 1px solid #fca5a5 !important;
+    color: #dc2626 !important;
+    font-weight: 700 !important;
+}
+
+.btn-eliminar-row:hover {
+    background: #fecaca !important;
+    color: #991b1b !important;
+}
+
+[data-theme="dark"] .btn-eliminar-row {
+    background: rgba(220, 38, 38, 0.18) !important;
+    border-color: rgba(248, 113, 113, 0.42) !important;
+    color: #fca5a5 !important;
+}
+
+[data-theme="dark"] .btn-eliminar-row:hover {
+    background: rgba(220, 38, 38, 0.3) !important;
+    color: #ffffff !important;
+}
+
+/* Checkbox personalizado estilizado para claro y oscuro */
+input[type="checkbox"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 17px;
+    height: 17px;
+    border-radius: 5px;
+    border: 1.5px solid #94a3b8;
+    background: #ffffff;
+    display: inline-grid;
+    place-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+input[type="checkbox"]::before {
+    content: "";
+    width: 10px;
+    height: 10px;
+    transform: scale(0);
+    transition: transform 0.12s ease-in-out;
+    box-shadow: inset 1em 1em #ffffff;
+    clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+
+input[type="checkbox"]:checked {
+    background: #0284c7;
+    border-color: #0284c7;
+}
+
+input[type="checkbox"]:checked::before {
+    transform: scale(1);
+}
+
+[data-theme="dark"] input[type="checkbox"] {
+    background: #0f1929;
+    border-color: #475569;
+}
+
+[data-theme="dark"] input[type="checkbox"]:checked {
+    background: #0284c7;
+    border-color: #38bdf8;
 }
 
 /* Badges */
@@ -708,14 +800,14 @@ tbody tr:hover {
     font-size: 0.9rem;
 }
 
-/* Contenedor del Mapa Vectorial SVG (adaptado a tema claro y oscuro) */
+/* Contenedor del Mapa Vectorial SVG */
 .mapa-svg-container {
     position: relative;
     background: radial-gradient(circle at 50% 45%, #f8fafc 0%, #e2e8f0 100%);
     border: 1.5px solid var(--gris-200);
     border-radius: 14px;
     padding: 14px 10px;
-    min-height: 395px;
+    min-height: 365px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -725,12 +817,11 @@ tbody tr:hover {
 .anatomia-zona {
     fill: #cbd5e1;
     stroke: #475569;
-    stroke-width: 1.2;
+    stroke-width: 1.3;
     cursor: pointer;
     transition: fill 0.2s ease, stroke 0.2s ease, filter 0.2s ease;
 }
 
-/* Hover sincronizado tanto en piezas individuales como en grupos (<g>) */
 .anatomia-zona:hover,
 .anatomia-zona:hover .anatomia-pieza,
 .anatomia-zona.is-hovered,
@@ -756,7 +847,6 @@ tbody tr:hover {
     transition: inherit;
 }
 
-/* Panel fijo de información anatómica debajo del SVG (nunca tapa botones) */
 .anatomia-info-panel {
     margin-top: 12px;
     padding: 10px 12px;
@@ -907,9 +997,7 @@ tbody tr:hover {
     border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
-/* ==========================================================================
-   Ajuste visual de formulario de pacientes
-   ========================================================================== */
+/* Ajuste visual de formulario de pacientes */
 .registro-card-header {
     margin-bottom: 20px;
     border-bottom: 1px solid var(--gris-200);
@@ -1141,7 +1229,7 @@ html[data-theme="dark"] .badge-alerta {
     box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25) !important;
 }
 
-/* Mapa Anatómico Biomédico en Modo Oscuro (sin caja blanca nuclear) */
+/* Mapa Anatómico Biomédico en Modo Oscuro con contraste equilibrado */
 [data-theme="dark"] .vista-segmented-control {
     background: #0b1220 !important;
     border: 1px solid #1e293b;
@@ -1163,28 +1251,29 @@ html[data-theme="dark"] .badge-alerta {
 }
 
 [data-theme="dark"] .mapa-svg-container {
-    background: radial-gradient(circle at 50% 45%, #111c33 0%, #09101f 100%) !important;
+    background: radial-gradient(circle at 50% 45%, #13203a 0%, #09101f 100%) !important;
     border-color: #1e293b !important;
-    box-shadow: inset 0 0 24px rgba(2, 132, 199, 0.08);
+    box-shadow: inset 0 0 24px rgba(56, 189, 248, 0.1);
 }
 
 [data-theme="dark"] .anatomia-zona {
-    fill: #1e293b;
-    stroke: #475569;
+    fill: #273752;
+    stroke: #64748b;
+    stroke-width: 1.35;
 }
 
 [data-theme="dark"] .anatomia-zona:hover,
 [data-theme="dark"] .anatomia-zona:hover .anatomia-pieza,
 [data-theme="dark"] .anatomia-zona.is-hovered,
 [data-theme="dark"] .anatomia-zona.is-hovered .anatomia-pieza {
-    fill: rgba(56, 189, 248, 0.35) !important;
+    fill: rgba(56, 189, 248, 0.42) !important;
     stroke: #38bdf8 !important;
     filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.85));
 }
 
 [data-theme="dark"] .anatomia-zona.active,
 [data-theme="dark"] .anatomia-zona.active .anatomia-pieza {
-    fill: rgba(16, 185, 129, 0.35) !important;
+    fill: rgba(16, 185, 129, 0.4) !important;
     stroke: #34d399 !important;
     filter: drop-shadow(0 0 12px rgba(52, 211, 153, 0.85));
 }
@@ -1234,27 +1323,7 @@ html[data-theme="dark"] .carrito-header {
     color: #7dd3fc !important;
 }
 
-/* Transiciones para sidebar y panel principal */
-.sidebar {
-    transition: transform 0.3s ease, margin-left 0.3s ease;
-}
-
-.main {
-    transition: margin-left 0.3s ease, width 0.3s ease;
-}
-
-.sidebar.is-collapsed {
-    transform: translateX(-100%);
-    position: absolute;
-    z-index: 100;
-}
-
-.main.sidebar-collapsed {
-    margin-left: 0 !important;
-    width: 100% !important;
-}
-
-/* Modal Overlay */
+/* Modal Overlay global adaptado a claro y oscuro */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -1287,7 +1356,26 @@ html[data-theme="dark"] .modal-card,
     border: 1px solid #24344d !important;
 }
 
-/* Responsive Móvil y Tablet */
+/* Transiciones para sidebar y panel principal */
+.sidebar {
+    transition: transform 0.3s ease, margin-left 0.3s ease;
+}
+
+.main {
+    transition: margin-left 0.3s ease, width 0.3s ease;
+}
+
+.sidebar.is-collapsed {
+    transform: translateX(-100%);
+    position: absolute;
+    z-index: 100;
+}
+
+.main.sidebar-collapsed {
+    margin-left: 0 !important;
+    width: 100% !important;
+}
+
 @media (max-width: 768px) {
     .sidebar {
         position: fixed;
@@ -1322,13 +1410,5 @@ html[data-theme="dark"] .modal-card,
     .card {
         padding: 16px;
         border-radius: 14px;
-    }
-
-    .mapa-svg-container {
-        min-height: 340px;
-    }
-
-    #svg-anatomia {
-        max-height: 330px !important;
     }
 }

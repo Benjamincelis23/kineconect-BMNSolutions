@@ -57,7 +57,19 @@
             align-items: center;
             gap: 12px;
             border-left: 4px solid #2563eb;
-            transition: border-color 0.2s ease;
+            transition: border-color 0.2s ease, transform 0.15s ease;
+        }
+
+        .kpi-card.clickable {
+            cursor: pointer;
+        }
+
+        .kpi-card.clickable:hover {
+            transform: translateY(-2px);
+        }
+
+        .kpi-card.filtro-activo {
+            outline: 2px solid #f59e0b;
         }
 
         .kpi-icon-box {
@@ -75,9 +87,9 @@
             display: flex;
             align-items: flex-end;
             justify-content: space-around;
-            gap: 10px;
-            height: 128px;
-            padding: 10px 8px 4px;
+            gap: 8px;
+            height: 144px;
+            padding: 10px 8px 6px;
             border-radius: 10px;
             background: var(--gris-50, #f8fafc);
             border: 1px solid var(--gris-200);
@@ -87,7 +99,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 42px;
+            width: 54px;
             height: 100%;
             justify-content: flex-end;
         }
@@ -145,18 +157,6 @@
         [data-theme="dark"] .bandeja-paciente {
             color: #f8fafc !important;
         }
-
-        [data-theme="dark"] #modal-responder-bandeja .modal-card {
-            background: #162236 !important;
-            color: #f8fafc !important;
-            border: 1px solid #24344d !important;
-        }
-
-        [data-theme="dark"] #modal-responder-bandeja textarea {
-            background: #0f1929 !important;
-            color: #f8fafc !important;
-            border-color: #334155 !important;
-        }
     </style>
 </head>
 
@@ -181,7 +181,7 @@
                     </div>
                 </div>
 
-                <!-- 1. MÉTRICAS RESUMEN CLÍNICO (KPIs CON SEMÁNTICA DINÁMICA) -->
+                <!-- 1. MÉTRICAS RESUMEN CLÍNICO (4 KPIs DISTINTOS Y ACCIONABLES) -->
                 <div
                     style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 22px;">
                     <div id="card-kpi-pacientes" class="card kpi-card" style="border-left-color: #2563eb;">
@@ -208,19 +208,23 @@
                         </div>
                     </div>
 
-                    <div id="card-kpi-adherencia" class="card kpi-card" style="border-left-color: #64748b;">
-                        <div id="icon-kpi-adherencia" class="kpi-icon-box" style="background: rgba(100, 116, 139, 0.14); color: #94a3b8;">
-                            <i class='bx bx-pulse'></i>
+                    <a href="mensajes.html" style="text-decoration: none;">
+                        <div id="card-kpi-pendientes" class="card kpi-card clickable" style="border-left-color: #0284c7;">
+                            <div id="icon-kpi-pendientes" class="kpi-icon-box" style="background: rgba(2, 132, 199, 0.14); color: #38bdf8;">
+                                <i class='bx bx-envelope'></i>
+                            </div>
+                            <div>
+                                <span style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">
+                                    Reportes Sin Revisar
+                                </span>
+                                <strong id="kpi-pendientes-bandeja" style="font-size: 1.4rem; color: var(--azul-900);">—</strong>
+                            </div>
                         </div>
-                        <div>
-                            <span style="display: block; font-size: 0.76rem; font-weight: 600; color: var(--gris-600);">
-                                Adherencia Semanal
-                            </span>
-                            <strong id="kpi-adherencia" style="font-size: 1.4rem; color: var(--azul-900);">—</strong>
-                        </div>
-                    </div>
+                    </a>
 
-                    <div id="card-kpi-abandono" class="card kpi-card" style="border-left-color: #64748b;">
+                    <div id="card-kpi-abandono" class="card kpi-card clickable" onclick="toggleFiltroInactivosDashboard()"
+                        title="Haz clic para filtrar en la lista inferior quiénes son los pacientes inactivos"
+                        style="border-left-color: #64748b;">
                         <div id="icon-kpi-abandono" class="kpi-icon-box" style="background: rgba(100, 116, 139, 0.14); color: #94a3b8;">
                             <i class='bx bx-time-five'></i>
                         </div>
@@ -253,19 +257,19 @@
                     </div>
                 </div>
 
-                <!-- 3. ANALÍTICA CLÍNICA: TENDENCIA EVA Y CUMPLIMIENTO DE SESIONES -->
+                <!-- 3. ANALÍTICA CLÍNICA: TENDENCIA EVA Y CUMPLIMIENTO SEMANAL -->
                 <div
                     style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 18px; margin-bottom: 22px;">
 
                     <div class="card" style="padding: 18px 20px;">
                         <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
                             <h3 style="margin: 0; font-size: 0.98rem; color: var(--azul-900); display: flex; align-items: center; gap: 7px;">
-                                <i class='bx bx-bar-chart-alt-2' style="color: #0284c7;"></i> Evolución de Dolor EVA Reciente
+                                <i class='bx bx-bar-chart-alt-2' style="color: #0284c7;"></i> Últimos 6 Reportes EVA
                             </h3>
-                            <span id="badge-eva-promedio" class="badge badge-neutro">Promedio: —</span>
+                            <span id="badge-eva-promedio" class="badge badge-neutro">Promedio (6): —</span>
                         </div>
                         <p style="margin: 0 0 12px; font-size: 0.78rem; color: var(--gris-600);">
-                            Últimos reportes recibidos (0 = sin dolor, 10 = dolor máximo).
+                            Intensidad de dolor por sesión recibida con fecha y paciente.
                         </p>
                         <div id="grafico-eva-dashboard" class="eva-chart-bars">
                             <span style="font-size: 0.82rem; color: var(--gris-500); align-self: center;">Sin reportes recientes para graficar</span>
@@ -276,7 +280,7 @@
                         <div>
                             <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
                                 <h3 style="margin: 0; font-size: 0.98rem; color: var(--azul-900); display: flex; align-items: center; gap: 7px;">
-                                    <i class='bx bx-target-lock' style="color: #10b981;"></i> Cumplimiento de Sesiones Semanales
+                                    <i class='bx bx-target-lock' style="color: #10b981;"></i> Adherencia y Cumplimiento Semanal
                                 </h3>
                                 <a href="pautas.html" style="font-size: 0.8rem; font-weight: 700; color: #0284c7; text-decoration: none;">
                                     Ver pautas →
@@ -306,7 +310,7 @@
                             </div>
                             <div>
                                 <strong id="mini-kpi-respondidos" style="display: block; font-size: 1.05rem; color: var(--azul-900);">0</strong>
-                                <span style="font-size: 0.74rem; color: var(--gris-600);">Feedbacks respondidos</span>
+                                <span style="font-size: 0.74rem; color: var(--gris-600);">Con respuesta escrita</span>
                             </div>
                         </div>
                     </div>
@@ -339,15 +343,21 @@
 
                     <div class="card" style="padding: 18px 20px; display: flex; flex-direction: column;">
                         <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                            style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 14px;">
                             <h3
                                 style="margin: 0; font-size: 1rem; color: var(--azul-900); display: flex; align-items: center; gap: 8px;">
                                 <i class='bx bx-user-check' style="color: #2563eb;"></i> Seguimiento de Pacientes
                             </h3>
-                            <a href="pacientes.html"
-                                style="font-size: 0.82rem; font-weight: 700; color: #2563eb; text-decoration: none;">
-                                Gestionar todos →
-                            </a>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button type="button" id="btn-filtrar-inactivos-lista" class="btn btn-secondary btn-sm"
+                                    onclick="toggleFiltroInactivosDashboard()" style="font-size: 0.74rem; padding: 4px 9px;">
+                                    Solo inactivos (&gt;3d)
+                                </button>
+                                <a href="pacientes.html"
+                                    style="font-size: 0.82rem; font-weight: 700; color: #2563eb; text-decoration: none;">
+                                    Todos →
+                                </a>
+                            </div>
                         </div>
 
                         <div id="lista-pacientes-recientes"
@@ -420,6 +430,9 @@
         const STORAGE_VISTOS_KINE = 'kc_reportes_vistos_kine_v1';
 
         let reportesActualesDashboard = [];
+        let pacientesDashboardCache = [];
+        let infoPorPacienteCache = {};
+        let soloInactivosDashboard = false;
         let mapaPautasDashboard = {};
         let feedbackBandejaSeleccionado = null;
 
@@ -476,6 +489,17 @@
             });
         }
 
+        function formatearDiaMesChile(isoStr) {
+            if (!isoStr) return '';
+            const d = new Date(isoStr);
+            if (Number.isNaN(d.getTime())) return '';
+            return d.toLocaleDateString('es-CL', {
+                timeZone: 'America/Santiago',
+                day: '2-digit',
+                month: '2-digit',
+            });
+        }
+
         function diasDesde(isoStr) {
             if (!isoStr) return null;
             const d = new Date(isoStr);
@@ -483,7 +507,6 @@
             return Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
         }
 
-        // Escala cromática única de EVA en toda la web (0-3 verde, 4-5 ámbar, >=6 rojo)
         function claseBadgeEva(dolor) {
             const d = Number(dolor ?? 0);
             if (d >= 6) return 'badge-alerta';
@@ -538,6 +561,94 @@
             if (Array.isArray(resp)) return resp;
             if (resp && Array.isArray(resp.results)) return resp.results;
             return [];
+        }
+
+        function toggleFiltroInactivosDashboard() {
+            soloInactivosDashboard = !soloInactivosDashboard;
+            const kpiCard = document.getElementById('card-kpi-abandono');
+            const btnFiltro = document.getElementById('btn-filtrar-inactivos-lista');
+            if (kpiCard) kpiCard.classList.toggle('filtro-activo', soloInactivosDashboard);
+            if (btnFiltro) {
+                btnFiltro.className = soloInactivosDashboard ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
+                btnFiltro.textContent = soloInactivosDashboard ? 'Mostrando inactivos' : 'Solo inactivos (>3d)';
+            }
+            renderizarListaPacientesDashboard();
+        }
+
+        function renderizarListaPacientesDashboard() {
+            const contPacientes = document.getElementById('lista-pacientes-recientes');
+            if (!contPacientes) return;
+
+            if (pacientesDashboardCache.length === 0) {
+                contPacientes.innerHTML = `<p style="margin: 0; font-size: 0.85rem; color: var(--gris-500);">No tienes pacientes registrados todavía.</p>`;
+                return;
+            }
+
+            let lista = [...pacientesDashboardCache];
+            if (soloInactivosDashboard) {
+                lista = lista.filter(p => {
+                    const uid = String(p.user_id || ((p.user && typeof p.user === 'object') ? p.user.id : (p.user || p.id)));
+                    return Boolean(infoPorPacienteCache[uid]?.inactivo);
+                });
+            }
+
+            if (lista.length === 0) {
+                contPacientes.innerHTML = `<p style="margin: 0; font-size: 0.85rem; color: var(--gris-500);">No hay pacientes con más de 3 días sin actividad.</p>`;
+                return;
+            }
+
+            const ordenados = lista.sort((a, b) => {
+                const uidA = String(a.user_id || ((a.user && typeof a.user === 'object') ? a.user.id : (a.user || a.id)));
+                const uidB = String(b.user_id || ((b.user && typeof b.user === 'object') ? b.user.id : (b.user || b.id)));
+                const infoA = infoPorPacienteCache[uidA] || {};
+                const infoB = infoPorPacienteCache[uidB] || {};
+                const scoreA = (infoA.inactivo ? 30 : 0) + (infoA.ultimoEva >= 6 ? 15 : 0) + (infoA.pautasActivas > 0 ? 1 : 0);
+                const scoreB = (infoB.inactivo ? 30 : 0) + (infoB.ultimoEva >= 6 ? 15 : 0) + (infoB.pautasActivas > 0 ? 1 : 0);
+                return scoreB - scoreA;
+            });
+
+            contPacientes.innerHTML = ordenados.map(p => {
+                const userId = p.user_id || ((p.user && typeof p.user === 'object') ? p.user.id : (p.user || p.id));
+                const info = infoPorPacienteCache[String(userId)] || {};
+                const nombre = capitalizarNombre(p.nombre_completo ||
+                    (p.user && typeof p.user === 'object' ? `${p.user.first_name} ${p.user.last_name}`.trim() : '') ||
+                    'Paciente');
+                const rut = formatearRutVisual(p.rut || 'Sin RUT');
+
+                let badgesEstado = '';
+                if (info.inactivo) {
+                    const diasTxt = info.diasSinActividad != null ? `Inactivo ${info.diasSinActividad}d` : 'Inactivo >3d';
+                    badgesEstado += `<span class="badge badge-eva-moderado" style="font-size: 0.68rem;">${diasTxt}</span>`;
+                }
+                if (info.ultimoEva != null) {
+                    badgesEstado += `<span class="badge ${claseBadgeEva(info.ultimoEva)}" style="font-size: 0.68rem;">EVA ${info.ultimoEva}/10</span>`;
+                }
+                if (!badgesEstado) {
+                    badgesEstado = `<span class="badge badge-neutro" style="font-size: 0.68rem;">${info.pautasActivas > 0 ? 'Sin reportes aún' : 'Sin pauta'}</span>`;
+                }
+
+                return `
+                    <div class="actividad-row">
+                        <div style="min-width: 0; flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                <strong style="font-size: 0.88rem; color: var(--azul-900);">
+                                    ${escaparHtml(nombre)}
+                                </strong>
+                                ${badgesEstado}
+                            </div>
+                            <span style="font-size: 0.76rem; color: var(--gris-600); display: block; margin-top: 2px;">${escaparHtml(rut)}</span>
+                        </div>
+                        <div style="display: flex; gap: 6px; flex-shrink: 0;">
+                            <a href="pautas.html?paciente=${encodeURIComponent(userId)}" class="btn btn-secondary btn-sm" title="Ver pautas asignadas">
+                                <i class='bx bx-clipboard'></i> Pautas
+                            </a>
+                            <a href="crear_pauta.html?paciente=${encodeURIComponent(userId)}" class="btn btn-secondary btn-sm btn-prescribir-row" title="Prescribir nueva pauta">
+                                <i class='bx bx-plus-circle'></i> Prescribir
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         function renderizarBandejaPrioritaria(bandejaApi, reportes, mapaPautas = {}) {
@@ -715,7 +826,24 @@
             const plantillasActivas = todasPautas.filter(p => p.activo !== false && p.es_plantilla === true);
             const respondidosCount = reportes.filter(r => r.respuesta_kinesiologo && String(r.respuesta_kinesiologo).trim() !== '').length;
 
-            // Cumplimiento semanal + adherencia con semántica real
+            // KPI de Reportes Sin Revisar (coherente con Bandeja de Reportes)
+            const vistos = obtenerVistosKine();
+            const sinRevisarCount = reportes.filter(r => {
+                const sinResp = !r.respuesta_kinesiologo || String(r.respuesta_kinesiologo).trim() === '';
+                const noVisto = r.id == null || !vistos[String(r.id)];
+                return sinResp && noVisto;
+            }).length;
+
+            const kpiPendEl = document.getElementById('kpi-pendientes-bandeja');
+            if (kpiPendEl) kpiPendEl.textContent = sinRevisarCount;
+            aplicarEstiloKpi(
+                'card-kpi-pendientes',
+                'icon-kpi-pendientes',
+                sinRevisarCount > 0 ? '#0284c7' : '#10b981',
+                sinRevisarCount > 0 ? 'bx-envelope' : 'bx-check-double'
+            );
+
+            // Cumplimiento semanal único en su tarjeta analítica
             let totalMeta = 0;
             let totalCompletadas = 0;
             let adherenciaPct = 0;
@@ -734,14 +862,6 @@
                 ? '#64748b'
                 : adherenciaPct < 40 ? '#ef4444' : adherenciaPct < 70 ? '#f59e0b' : '#10b981';
 
-            document.getElementById('kpi-adherencia').textContent = `${adherenciaPct}%`;
-            aplicarEstiloKpi(
-                'card-kpi-adherencia',
-                'icon-kpi-adherencia',
-                colorAdherencia,
-                adherenciaPct < 40 ? 'bx-trending-down' : adherenciaPct < 70 ? 'bx-minus' : 'bx-trending-up'
-            );
-
             document.getElementById('texto-sesiones-cumplidas').textContent = `${totalCompletadas} / ${totalMeta} sesiones`;
             document.getElementById('texto-porcentaje-meta').textContent = `${adherenciaPct}% de la meta`;
             const barraMeta = document.getElementById('barra-progreso-meta');
@@ -753,37 +873,44 @@
             document.getElementById('mini-kpi-plantillas').textContent = plantillasActivas.length;
             document.getElementById('mini-kpi-respondidos').textContent = respondidosCount;
 
-            // Gráfico de barras EVA
+            // Gráfico de barras EVA: promedio calculado EXACTAMENTE sobre las 6 barras mostradas + fecha en eje X
             const graficoEvaEl = document.getElementById('grafico-eva-dashboard');
             const badgeEvaProm = document.getElementById('badge-eva-promedio');
             if (reportes.length > 0 && graficoEvaEl) {
                 const ultimos6 = reportes.slice(0, 6).reverse();
-                const prom = (reportes.reduce((acc, r) => acc + Number(r.nivel_dolor ?? r.escala_dolor ?? 0), 0) / reportes.length).toFixed(1);
+                const prom6 = (ultimos6.reduce((acc, r) => acc + Number(r.nivel_dolor ?? r.escala_dolor ?? 0), 0) / ultimos6.length).toFixed(1);
                 if (badgeEvaProm) {
-                    badgeEvaProm.textContent = `Promedio: ${prom}/10`;
-                    badgeEvaProm.className = `badge ${claseBadgeEva(Number(prom))}`;
+                    badgeEvaProm.textContent = `Promedio (${ultimos6.length}): ${prom6}/10`;
+                    badgeEvaProm.className = `badge ${claseBadgeEva(Number(prom6))}`;
                 }
                 graficoEvaEl.innerHTML = ultimos6.map(r => {
                     const eva = Number(r.nivel_dolor ?? r.escala_dolor ?? 0);
                     const color = colorBarraEva(eva);
                     const altoPx = Math.max(10, Math.round((eva / 10) * 82));
                     const pacCorto = capitalizarNombre(r.paciente_nombre || 'Pac').split(' ')[0];
+                    const fechaCorta = formatearDiaMesChile(r.fecha_ejecucion);
                     return `
-                        <div class="eva-bar-col" title="${escaparHtml(r.paciente_nombre || 'Paciente')} • EVA ${eva}/10">
+                        <div class="eva-bar-col" title="${escaparHtml(r.paciente_nombre || 'Paciente')} • ${fechaCorta} • EVA ${eva}/10">
                             <span style="font-size: 0.72rem; font-weight: 800; color: ${color}; margin-bottom: 3px;">${eva}</span>
                             <div class="eva-bar-track">
                                 <div style="width: 100%; height: ${altoPx}px; background: ${color}; border-radius: 6px;"></div>
                             </div>
-                            <span style="font-size: 0.68rem; color: var(--gris-600); margin-top: 4px; max-width: 44px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            <span style="font-size: 0.68rem; font-weight: 700; color: var(--azul-900); margin-top: 4px; max-width: 52px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                                 ${escaparHtml(pacCorto)}
+                            </span>
+                            <span style="font-size: 0.62rem; color: var(--gris-500); line-height: 1.1;">
+                                ${escaparHtml(fechaCorta)}
                             </span>
                         </div>
                     `;
                 }).join('');
             }
 
-            // Trazabilidad por paciente: inactivos (>3d) y último EVA
+            // Trazabilidad por paciente: inactivos (>3d) sincronizados con el KPI
             const infoPorPaciente = {};
+            const idsInactivosApi = new Set(
+                (resumen?.pacientes_inactivos || []).map(x => String(x.user_id || x.id))
+            );
             let inactivosCount = 0;
 
             pacientes.forEach(p => {
@@ -800,7 +927,7 @@
                     })
                     .sort((a, b) => new Date(b.fecha_ejecucion || 0).getTime() - new Date(a.fecha_ejecucion || 0).getTime());
 
-                let inactivo = false;
+                let inactivo = idsInactivosApi.has(uid);
                 let diasSinActividad = null;
                 if (pautasPac.length > 0) {
                     const fechaRef = feedsPac.length > 0
@@ -809,9 +936,9 @@
                     diasSinActividad = diasDesde(fechaRef);
                     if (diasSinActividad !== null && diasSinActividad > 3) {
                         inactivo = true;
-                        inactivosCount++;
                     }
                 }
+                if (inactivo) inactivosCount++;
 
                 infoPorPaciente[uid] = {
                     pautasActivas: pautasPac.length,
@@ -821,21 +948,23 @@
                 };
             });
 
-            const riesgoAbandonoTotal = Math.max(Number(resumen?.kpis?.riesgo_abandono ?? 0), inactivosCount);
+            pacientesDashboardCache = pacientes;
+            infoPorPacienteCache = infoPorPaciente;
+
             document.getElementById('kpi-pacientes').textContent = resumen?.kpis?.pacientes_activos ?? pacientes.length;
-            document.getElementById('kpi-abandono').textContent = riesgoAbandonoTotal;
+            document.getElementById('kpi-abandono').textContent = inactivosCount;
             aplicarEstiloKpi(
                 'card-kpi-abandono',
                 'icon-kpi-abandono',
-                riesgoAbandonoTotal > 0 ? '#f59e0b' : '#10b981',
-                riesgoAbandonoTotal > 0 ? 'bx-time-five' : 'bx-check-circle'
+                inactivosCount > 0 ? '#f59e0b' : '#10b981',
+                inactivosCount > 0 ? 'bx-time-five' : 'bx-check-circle'
             );
 
             // Bandeja de Atención Prioritaria
             reportesActualesDashboard = reportes;
             renderizarBandejaPrioritaria(resumen?.bandeja_prioritaria || [], reportes, mapaPautas);
 
-            // Últimos 4 reportes EVA con semáforo unificado
+            // Últimos 4 reportes EVA
             const contReportes = document.getElementById('lista-ultimos-reportes');
             if (reportes.length === 0) {
                 contReportes.innerHTML = `<p style="margin: 0; font-size: 0.85rem; color: var(--gris-500);">Aún no hay reportes recibidos desde la app móvil.</p>`;
@@ -865,64 +994,7 @@
                 }).join('');
             }
 
-            // Pacientes asignados priorizando inactivos y EVA alto (hasta 8 para no ocultar alertas)
-            const contPacientes = document.getElementById('lista-pacientes-recientes');
-            if (pacientes.length === 0) {
-                contPacientes.innerHTML = `<p style="margin: 0; font-size: 0.85rem; color: var(--gris-500);">No tienes pacientes registrados todavía.</p>`;
-            } else {
-                const ordenados = [...pacientes].sort((a, b) => {
-                    const uidA = String(a.user_id || ((a.user && typeof a.user === 'object') ? a.user.id : (a.user || a.id)));
-                    const uidB = String(b.user_id || ((b.user && typeof b.user === 'object') ? b.user.id : (b.user || b.id)));
-                    const infoA = infoPorPaciente[uidA] || {};
-                    const infoB = infoPorPaciente[uidB] || {};
-                    const scoreA = (infoA.ultimoEva >= 6 ? 20 : 0) + (infoA.inactivo ? 10 : 0) + (infoA.pautasActivas > 0 ? 1 : 0);
-                    const scoreB = (infoB.ultimoEva >= 6 ? 20 : 0) + (infoB.inactivo ? 10 : 0) + (infoB.pautasActivas > 0 ? 1 : 0);
-                    return scoreB - scoreA;
-                });
-
-                contPacientes.innerHTML = ordenados.slice(0, 8).map(p => {
-                    const userId = p.user_id || ((p.user && typeof p.user === 'object') ? p.user.id : (p.user || p.id));
-                    const info = infoPorPaciente[String(userId)] || {};
-                    const nombre = capitalizarNombre(p.nombre_completo ||
-                        (p.user && typeof p.user === 'object' ? `${p.user.first_name} ${p.user.last_name}`.trim() : '') ||
-                        'Paciente');
-                    const rut = formatearRutVisual(p.rut || 'Sin RUT');
-
-                    let badgesEstado = '';
-                    if (info.ultimoEva != null) {
-                        badgesEstado += `<span class="badge ${claseBadgeEva(info.ultimoEva)}" style="font-size: 0.68rem;">EVA ${info.ultimoEva}/10</span>`;
-                    }
-                    if (info.inactivo) {
-                        badgesEstado += `<span class="badge badge-eva-moderado" style="font-size: 0.68rem;" title="Sin reportes hace ${info.diasSinActividad} días">Inactivo ${info.diasSinActividad}d</span>`;
-                    }
-                    if (!badgesEstado) {
-                        badgesEstado = `<span class="badge badge-neutro" style="font-size: 0.68rem;">${info.pautasActivas > 0 ? 'Sin reportes aún' : 'Sin pauta'}</span>`;
-                    }
-
-                    return `
-                        <div class="actividad-row">
-                            <div style="min-width: 0; flex: 1;">
-                                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                                    <strong style="font-size: 0.88rem; color: var(--azul-900);">
-                                        ${escaparHtml(nombre)}
-                                    </strong>
-                                    ${badgesEstado}
-                                </div>
-                                <span style="font-size: 0.76rem; color: var(--gris-600); display: block; margin-top: 2px;">${escaparHtml(rut)}</span>
-                            </div>
-                            <div style="display: flex; gap: 6px; flex-shrink: 0;">
-                                <a href="pautas.html?paciente=${encodeURIComponent(userId)}" class="btn btn-secondary btn-sm" title="Ver pautas asignadas">
-                                    <i class='bx bx-clipboard'></i> Pautas
-                                </a>
-                                <a href="crear_pauta.html?paciente=${encodeURIComponent(userId)}" class="btn btn-secondary btn-sm"
-                                    style="background: #e0f2fe; border-color: #7dd3fc; color: #0369a1;" title="Prescribir nueva pauta">
-                                    <i class='bx bx-plus-circle'></i> Prescribir
-                                </a>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            }
+            renderizarListaPacientesDashboard();
         }
 
         document.addEventListener('DOMContentLoaded', () => {
