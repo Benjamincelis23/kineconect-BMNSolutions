@@ -43,6 +43,15 @@ function normalizarTexto(txt) {
         .trim();
 }
 
+function formatearRutChileno(rutRaw) {
+    if (!rutRaw) return 'Sin RUT';
+    const limpio = String(rutRaw).replace(/[^0-9kK]/g, '').toUpperCase();
+    if (limpio.length < 2) return limpio;
+    const cuerpo = limpio.slice(0, -1);
+    const dv = limpio.slice(-1);
+    return `${cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}-${dv}`;
+}
+
 function inferirUnidadEjercicio(ejercicio, unidadExplicita = null) {
     if (unidadExplicita) {
         const u = String(unidadExplicita).toUpperCase();
@@ -211,7 +220,7 @@ window.cambiarVistaAnatomica = function (vista) {
     }
 };
 
-// ---------- 2. Mapa anatómico SVG ----------
+// ---------- 2. Mapa anatómico SVG con panel informativo fijo ----------
 const ALIAS_ZONAS_ANATOMICAS = {
     cuello: ['cuello', 'cabeza', 'cervical', 'nuca'],
     hombros: ['hombro', 'hombros', 'deltoides', 'manguito'],
@@ -241,10 +250,41 @@ function obtenerAreasEjercicio(item) {
     return ['Rehabilitación General'];
 }
 
+function actualizarPanelInfoAnatomico(zonaEl = null) {
+    const panel = document.getElementById('panel-info-anatomico');
+    if (!panel) return;
+
+    if (!zonaEl) {
+        const activa = zonaSeleccionadaActual
+            ? document.querySelector(`.anatomia-zona[data-zona="${zonaSeleccionadaActual}"]`)
+            : null;
+        if (!activa) {
+            panel.innerHTML = `
+                <span style="font-size: 0.78rem; font-weight: 700; color: var(--azul-900);">Explorador Anatómico</span>
+                <span style="font-size: 0.74rem; color: var(--gris-600); margin-top: 2px;">
+                    Pasa el cursor o haz clic sobre una región muscular para filtrar ejercicios.
+                </span>
+            `;
+            return;
+        }
+        zonaEl = activa;
+    }
+
+    const titulo = zonaEl.getAttribute('data-titulo') || 'Región Anatómica';
+    const detalle = zonaEl.getAttribute('data-detalle') || '';
+    const enfoque = zonaEl.getAttribute('data-enfoque') || '';
+
+    panel.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px;">
+            <strong style="font-size: 0.82rem; color: var(--azul-900);">${esc(titulo)}</strong>
+            ${enfoque ? `<span class="badge badge-neutro" style="font-size: 0.64rem; text-transform: none;">${esc(enfoque)}</span>` : ''}
+        </div>
+        ${detalle ? `<span style="font-size: 0.75rem; color: var(--gris-600); margin-top: 3px; line-height: 1.35;">${esc(detalle)}</span>` : ''}
+    `;
+}
+
 function inicializarEventosMapa() {
     const zonas = document.querySelectorAll('.anatomia-zona');
-    const tooltip = document.getElementById('tooltip-anatomico');
-    const wrapper = document.getElementById('svg-map-wrapper');
 
     zonas.forEach(zona => {
         zona.addEventListener('click', () => {
@@ -258,32 +298,21 @@ function inicializarEventosMapa() {
                 actualizarResaltadoZonas();
                 const labelTxt = document.getElementById('txt-zona-seleccionada');
                 if (labelTxt) labelTxt.textContent = tituloZona;
+                actualizarPanelInfoAnatomico(zona);
                 filtrarYRenderizarEjercicios();
             }
         });
 
-        zona.addEventListener('mousemove', (e) => {
-            if (!tooltip || !wrapper) return;
-            const tituloZona = zona.getAttribute('data-titulo') || zona.getAttribute('data-zona') || 'Músculo';
-            const detalleZona = zona.getAttribute('data-detalle') || '';
-            const patron = zona.getAttribute('data-patron') || 'General';
-
-            const rect = wrapper.getBoundingClientRect();
-            const posX = e.clientX - rect.left + 12;
-            const posY = e.clientY - rect.top - 12;
-
-            tooltip.style.display = 'block';
-            tooltip.style.left = `${Math.min(posX, rect.width - 175)}px`;
-            tooltip.style.top = `${Math.max(posY, 8)}px`;
-            tooltip.innerHTML = `
-                <strong>${esc(tituloZona)}</strong>
-                ${detalleZona ? `<span style="display:block; font-size:0.72rem; opacity:0.9; margin-top:2px;">${esc(detalleZona)}</span>` : ''}
-                <span style="display:block; font-size:0.7rem; margin-top:3px; opacity:0.75;">Patrón: ${esc(patron)}</span>
-            `;
+        zona.addEventListener('mouseenter', () => {
+            const idZona = zona.getAttribute('data-zona');
+            document.querySelectorAll(`.anatomia-zona[data-zona="${idZona}"]`).forEach(el => el.classList.add('is-hovered'));
+            actualizarPanelInfoAnatomico(zona);
         });
 
         zona.addEventListener('mouseleave', () => {
-            if (tooltip) tooltip.style.display = 'none';
+            const idZona = zona.getAttribute('data-zona');
+            document.querySelectorAll(`.anatomia-zona[data-zona="${idZona}"]`).forEach(el => el.classList.remove('is-hovered'));
+            actualizarPanelInfoAnatomico(null);
         });
     });
 }
@@ -293,6 +322,7 @@ window.resetFiltroZona = function () {
     const labelTxt = document.getElementById('txt-zona-seleccionada');
     if (labelTxt) labelTxt.textContent = 'Cuerpo Completo';
     actualizarResaltadoZonas();
+    actualizarPanelInfoAnatomico(null);
     filtrarYRenderizarEjercicios();
 };
 
@@ -487,7 +517,7 @@ function crearItemTarjetaCatalogo(ej, areaClave) {
                     </button>
                 ` : ''}
                 <button type="button" class="btn ${yaEnCarrito ? 'btn-secondary' : 'btn-primary'} btn-sm" data-accion="agregar" data-id="${ej.id}"
-                    title="${yaEnCarrito ? 'Ya está en el carrito' : 'Añadir a la pauta'}" style="white-space: nowrap;">
+                    title="${yaEnCarrito ? 'Ya está en la pauta' : 'Añadir a la pauta'}" style="white-space: nowrap;">
                     <i class='bx ${yaEnCarrito ? 'bx-check' : 'bx-plus'}'></i> ${yaEnCarrito ? 'Añadido' : 'Añadir'}
                 </button>
             </div>
@@ -671,7 +701,7 @@ window.cerrarModalMultimedia = function () {
     if (modal) modal.style.display = 'none';
 };
 
-// ---------- 6. Paso 1: Carrito Lateral Limpio + Paso 2: Modal Amplio de Dosificación ----------
+// ---------- 6. Paso 1: Resumen de Pauta + Paso 2: Modal Exclusivo de Dosificación ----------
 window.agregarAlCarrito = function (idEjercicio, dosificacion = null, silencioso = false) {
     const ejercicio = todosLosEjercicios.find(e => e.id === idEjercicio);
     if (!ejercicio) return;
@@ -686,7 +716,7 @@ window.agregarAlCarrito = function (idEjercicio, dosificacion = null, silencioso
             existente.unidad_medida = unidadInferida;
             existente.descanso = dosificacion.descanso ?? existente.descanso;
         } else if (!silencioso) {
-            mostrarToast('Este ejercicio ya está en tu lista. Podrás ajustar sus series al continuar.', 'info', 2200);
+            mostrarToast('Este ejercicio ya está en la pauta. Ajustarás sus series al continuar.', 'info', 2200);
         }
     } else {
         carrito.push({
@@ -697,7 +727,7 @@ window.agregarAlCarrito = function (idEjercicio, dosificacion = null, silencioso
             descanso: dosificacion?.descanso ?? 60
         });
         if (!silencioso) {
-            mostrarToast(`"${ejercicio.nombre || ejercicio.titulo}" añadido al carrito.`, 'success', 1800);
+            mostrarToast(`"${ejercicio.nombre || ejercicio.titulo}" añadido a la pauta.`, 'success', 1800);
         }
     }
 
@@ -741,14 +771,14 @@ function renderizarCarrito() {
     }
     if (btnSubmit) {
         btnSubmit.disabled = (carrito.length === 0);
-        btnSubmit.innerHTML = `<i class='bx bx-sliders-alt'></i> Continuar y Configurar (${carrito.length})`;
+        btnSubmit.innerHTML = `<i class='bx bx-sliders-alt'></i> Dosificar y Confirmar (${carrito.length})`;
     }
     if (!contenedor) return;
 
     if (carrito.length === 0) {
         contenedor.innerHTML = `
             <div class="empty-state" id="carrito-vacio-msg" style="padding: 16px;">
-                <p style="margin: 0; font-size: 0.85rem;">El carrito está vacío. Selecciona ejercicios de la lista central.</p>
+                <p style="margin: 0; font-size: 0.85rem;">Aún no has agregado ejercicios. Selecciónalos desde el catálogo central.</p>
             </div>
         `;
         return;
@@ -791,9 +821,15 @@ function asegurarModalDosificacion() {
                 color: #0f172a;
                 border: 1px solid #e2e8f0;
             }
-            .kc-dosif-subbox {
+            .kc-dosif-summary-strip {
                 background: #f8fafc;
                 border-bottom: 1px solid #e2e8f0;
+                padding: 12px 22px;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 14px;
+                align-items: center;
+                font-size: 0.82rem;
             }
             .kc-dosif-row {
                 background: #f8fafc;
@@ -827,7 +863,7 @@ function asegurarModalDosificacion() {
                 color: #f8fafc !important;
                 border-color: #24344d !important;
             }
-            [data-theme="dark"] .kc-dosif-subbox {
+            [data-theme="dark"] .kc-dosif-summary-strip {
                 background: #0f1929 !important;
                 border-color: #24344d !important;
             }
@@ -839,9 +875,7 @@ function asegurarModalDosificacion() {
                 color: #94a3b8 !important;
             }
             [data-theme="dark"] .kc-dosif-row input,
-            [data-theme="dark"] .kc-dosif-row select,
-            [data-theme="dark"] .kc-dosif-subbox input,
-            [data-theme="dark"] .kc-dosif-subbox select {
+            [data-theme="dark"] .kc-dosif-row select {
                 background: #162236 !important;
                 color: #f8fafc !important;
                 border-color: #334155 !important;
@@ -863,56 +897,31 @@ function asegurarModalDosificacion() {
     modal.className = 'modal-overlay';
     modal.style.cssText = 'display: none; position: fixed; inset: 0; background: rgba(7, 13, 24, 0.78); backdrop-filter: blur(2px); z-index: 9998; align-items: center; justify-content: center; padding: 16px;';
     modal.innerHTML = `
-        <div class="card kc-dosif-shell" style="width: 100%; max-width: 920px; max-height: 92vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 16px;">
-            <!-- Header fijo -->
+        <div class="card kc-dosif-shell" style="width: 100%; max-width: 900px; max-height: 92vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 16px;">
             <div style="padding: 16px 22px; border-bottom: 1px solid var(--gris-200); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-shrink: 0;">
                 <div>
                     <h3 style="margin: 0; font-size: 1.12rem; color: var(--azul-900); display: flex; align-items: center; gap: 8px;">
-                        <i class='bx bx-sliders-alt' style="color: #38bdf8;"></i> Configurar Dosificación y Confirmar Pauta
+                        <i class='bx bx-sliders-alt' style="color: #38bdf8;"></i> Dosificación por Ejercicio
                     </h3>
-                    <p id="modal-dosif-subtitulo" style="margin: 3px 0 0; font-size: 0.82rem; color: var(--gris-600);"></p>
+                    <p style="margin: 3px 0 0; font-size: 0.82rem; color: var(--gris-600);">
+                        Ajusta series, repeticiones o tiempo de sostén y descanso antes de confirmar.
+                    </p>
                 </div>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="cerrarModalDosificacion()">
-                    <i class='bx bx-arrow-back'></i> Volver a elegir
+                    <i class='bx bx-arrow-back'></i> Volver
                 </button>
             </div>
 
-            <!-- Cabecera fija de datos generales (no se pierde al hacer scroll) -->
-            <div class="kc-dosif-subbox" style="padding: 14px 22px; flex-shrink: 0;">
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;">
-                    <div class="field" style="margin: 0;">
-                        <label style="font-size: 0.74rem; font-weight: 700; margin-bottom: 3px; display: block;">Nombre de la Pauta *</label>
-                        <input type="text" id="modal-dosif-titulo" style="width: 100%; padding: 6px 10px; font-size: 0.85rem;">
-                    </div>
-                    <div class="field" style="margin: 0;">
-                        <label style="font-size: 0.74rem; font-weight: 700; margin-bottom: 3px; display: block;">Frecuencia Semanal *</label>
-                        <select id="modal-dosif-frecuencia" style="width: 100%; padding: 6px 10px; font-size: 0.85rem; border-radius: 8px;">
-                            <option value="1">1 vez por semana (cada 7 días)</option>
-                            <option value="2">2 veces por semana (cada 3–4 días)</option>
-                            <option value="3">3 veces por semana (Estándar - día por medio)</option>
-                            <option value="4">4 veces por semana</option>
-                            <option value="5">5 veces por semana (Lunes a Viernes)</option>
-                            <option value="6">6 veces por semana</option>
-                            <option value="7">7 veces por semana (Todos los días)</option>
-                        </select>
-                    </div>
-                    <div class="field" style="margin: 0;">
-                        <label style="font-size: 0.74rem; font-weight: 700; margin-bottom: 3px; display: block;">Objetivo / Instrucciones</label>
-                        <input type="text" id="modal-dosif-notas" placeholder="Indicaciones clínicas..." style="width: 100%; padding: 6px 10px; font-size: 0.85rem;">
-                    </div>
-                </div>
-            </div>
+            <!-- Resumen compacto de solo lectura (sin repetir el formulario) -->
+            <div id="modal-dosif-resumen" class="kc-dosif-summary-strip" style="flex-shrink: 0;"></div>
 
-            <!-- Sub-barra fija del listado -->
             <div style="padding: 12px 22px 6px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
-                <strong style="font-size: 0.88rem; color: var(--azul-900);">Detalle de Ejercicios Seleccionados</strong>
+                <strong style="font-size: 0.88rem; color: var(--azul-900);">Ejercicios Prescritos</strong>
                 <span id="modal-dosif-contador" class="badge badge-ok">0 Ejercicios</span>
             </div>
 
-            <!-- Única zona con scroll: los ejercicios -->
             <div id="modal-dosif-lista" style="padding: 8px 22px 18px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px;"></div>
 
-            <!-- Footer fijo -->
             <div style="padding: 13px 22px; border-top: 1px solid var(--gris-200); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; flex-shrink: 0;">
                 <button type="button" class="btn btn-secondary" onclick="cerrarModalDosificacion()">
                     <i class='bx bx-plus'></i> Seguir añadiendo ejercicios
@@ -988,7 +997,6 @@ window.abrirModalDosificacion = function () {
     const checkSoloPlantilla = document.getElementById('check-solo-plantilla');
     const selectPaciente = document.getElementById('select-paciente-pauta');
     const inputNombre = document.getElementById('pauta-nombre');
-    const inputDescripcion = document.getElementById('pauta-descripcion');
     const selectFrecuencia = document.getElementById('pauta-frecuencia');
 
     const esSoloPlantilla = checkSoloPlantilla ? checkSoloPlantilla.checked : false;
@@ -996,7 +1004,7 @@ window.abrirModalDosificacion = function () {
     const titulo = inputNombre ? inputNombre.value.trim() : '';
 
     if (!esSoloPlantilla && !pacienteId) {
-        mostrarToast('Selecciona un paciente en el menú superior o marca "Guardar como Plantilla Maestra".', 'warning');
+        mostrarToast('Selecciona un paciente en "Asignar a Paciente" o marca "Guardar como Plantilla Maestra".', 'warning');
         if (selectPaciente) selectPaciente.focus();
         return;
     }
@@ -1016,18 +1024,27 @@ window.abrirModalDosificacion = function () {
     const pacTexto = esSoloPlantilla
         ? 'Plantilla Maestra Reutilizable'
         : (selectPaciente?.options[selectPaciente.selectedIndex]?.text || 'Paciente seleccionado');
+    const frecTexto = selectFrecuencia?.options[selectFrecuencia.selectedIndex]?.text || '3x / semana';
 
-    document.getElementById('modal-dosif-subtitulo').textContent = `Destinatario: ${pacTexto}`;
-    document.getElementById('modal-dosif-titulo').value = titulo;
-    document.getElementById('modal-dosif-notas').value = inputDescripcion ? inputDescripcion.value.trim() : '';
-    document.getElementById('modal-dosif-frecuencia').value = selectFrecuencia ? selectFrecuencia.value : '3';
+    const resumenEl = document.getElementById('modal-dosif-resumen');
+    if (resumenEl) {
+        resumenEl.innerHTML = `
+            <span><strong style="color: var(--azul-900);">Pauta:</strong> ${esc(titulo)}</span>
+            <span>•</span>
+            <span><strong style="color: var(--azul-900);">Paciente:</strong> ${esc(pacTexto)}</span>
+            <span>•</span>
+            <span><strong style="color: var(--azul-900);">Frecuencia:</strong> ${esc(frecTexto)}</span>
+        `;
+    }
 
     const btnFinal = document.getElementById('btn-finalizar-prescripcion');
     if (btnFinal) {
         btnFinal.disabled = false;
-        btnFinal.innerHTML = esSoloPlantilla
-            ? "<i class='bx bx-bookmark-alt'></i> Confirmar y Guardar Plantilla"
-            : "<i class='bx bx-check-circle'></i> Confirmar y Asignar Pauta";
+        btnFinal.innerHTML = pautaEditandoId
+            ? "<i class='bx bx-check-circle'></i> Confirmar Cambios de Pauta"
+            : esSoloPlantilla
+                ? "<i class='bx bx-bookmark-alt'></i> Confirmar y Guardar Plantilla"
+                : "<i class='bx bx-check-circle'></i> Confirmar y Asignar Pauta";
     }
 
     renderizarListaModalDosificacion();
@@ -1045,9 +1062,9 @@ window.confirmarGuardadoFinal = async function () {
     const esSoloPlantilla = checkSoloPlantilla ? checkSoloPlantilla.checked : false;
     const pacienteId = selectPaciente ? selectPaciente.value : '';
 
-    const titulo = (document.getElementById('modal-dosif-titulo')?.value || '').trim();
-    const textoNotas = (document.getElementById('modal-dosif-notas')?.value || '').trim();
-    const frecuenciaSemanal = aEntero(document.getElementById('modal-dosif-frecuencia')?.value, 3, 1);
+    const titulo = (document.getElementById('pauta-nombre')?.value || '').trim();
+    const textoNotas = (document.getElementById('pauta-descripcion')?.value || '').trim();
+    const frecuenciaSemanal = aEntero(document.getElementById('pauta-frecuencia')?.value, 3, 1);
 
     if (!titulo) {
         mostrarToast('El nombre de la pauta no puede quedar vacío.', 'warning');
@@ -1109,7 +1126,7 @@ window.confirmarGuardadoFinal = async function () {
         if (btnFinal) {
             btnFinal.disabled = false;
             btnFinal.innerHTML = pautaEditandoId
-                ? "<i class='bx bx-check-circle'></i> Confirmar Cambios"
+                ? "<i class='bx bx-check-circle'></i> Confirmar Cambios de Pauta"
                 : esSoloPlantilla
                     ? "<i class='bx bx-bookmark-alt'></i> Confirmar y Guardar Plantilla"
                     : "<i class='bx bx-check-circle'></i> Confirmar y Asignar Pauta";
@@ -1117,7 +1134,7 @@ window.confirmarGuardadoFinal = async function () {
     }
 };
 
-// ---------- 7. Plantillas / protocolos rápidos ----------
+// ---------- 7. Plantillas / protocolos rápidos y Edición (?editar=ID) ----------
 function aplicarPautaAlFormulario(pauta) {
     const inputNombre = document.getElementById('pauta-nombre');
     if (inputNombre) {
@@ -1151,36 +1168,38 @@ function aplicarPautaAlFormulario(pauta) {
 
 async function cargarSelectorPlantillas() {
     const select = document.getElementById('select-plantilla-predefinida');
-    if (!select) return;
 
     try {
         const resp = typeof api.getPautas === 'function' ? await api.getPautas() : [];
         todasLasPautas = Array.isArray(resp) ? resp : (resp?.results || []);
         todasLasPlantillas = todasLasPautas.filter(p => p.es_plantilla === true);
 
-        select.innerHTML = '<option value="">-- Sin plantilla (Prescripción manual) --</option>';
-        todasLasPlantillas.forEach(pl => {
-            const opt = document.createElement('option');
-            opt.value = pl.id;
-            opt.textContent = `📋 ${pl.titulo}`;
-            select.appendChild(opt);
-        });
+        if (select) {
+            select.innerHTML = '<option value="">-- Sin plantilla (Prescripción manual) --</option>';
+            todasLasPlantillas.forEach(pl => {
+                const opt = document.createElement('option');
+                opt.value = pl.id;
+                opt.textContent = `📋 ${pl.titulo}`;
+                select.appendChild(opt);
+            });
 
-        select.addEventListener('change', (e) => {
-            const id = parseInt(e.target.value, 10);
-            if (!id) return;
-            const pauta = todasLasPautas.find(p => p.id === id);
-            if (pauta) aplicarPautaAlFormulario(pauta);
-        });
+            select.addEventListener('change', (e) => {
+                const id = parseInt(e.target.value, 10);
+                if (!id) return;
+                const pauta = todasLasPautas.find(p => p.id === id);
+                if (pauta) aplicarPautaAlFormulario(pauta);
+            });
+        }
 
         const idUrl = parseInt(new URLSearchParams(window.location.search).get('plantilla'), 10);
         if (idUrl) {
             const pauta = todasLasPautas.find(p => p.id === idUrl);
             if (pauta) {
-                if (pauta.es_plantilla) select.value = String(pauta.id);
+                if (select && pauta.es_plantilla) select.value = String(pauta.id);
                 aplicarPautaAlFormulario(pauta);
             }
         }
+
         const editarId = parseInt(new URLSearchParams(window.location.search).get('editar'), 10);
         if (editarId) {
             pautaEditandoId = editarId;
@@ -1194,16 +1213,18 @@ async function cargarSelectorPlantillas() {
                 if (selectPac && pautaEditar.paciente) {
                     selectPac.value = String(pautaEditar.paciente);
                 }
-                const h2 = document.querySelector('.page-header h2');
+                const h2 = document.getElementById('titulo-pagina-pauta');
                 if (h2) h2.textContent = `Editar Pauta Prescrita #${editarId}`;
+                const btnVolver = document.getElementById('btn-volver-pautas');
+                if (btnVolver) btnVolver.classList.remove('is-hidden');
             }
         }
     } catch (error) {
-        console.error('Error al cargar plantillas predefinidas:', error);
+        console.error('Error al cargar plantillas o edición:', error);
     }
 }
 
-// ---------- 8. Selector de pacientes (?paciente=ID) ----------
+// ---------- 8. Selector de pacientes (?paciente=ID) con RUT formateado ----------
 async function cargarSelectorPacientes() {
     const select = document.getElementById('select-paciente-pauta');
     if (!select) return;
@@ -1224,7 +1245,7 @@ async function cargarSelectorPacientes() {
             const nombre = p.nombre_completo ||
                 (p.user && typeof p.user === 'object' ? `${p.user.first_name} ${p.user.last_name}`.trim() : '') ||
                 'Paciente';
-            opt.textContent = `${nombre} (${p.rut || 'Sin RUT'})`;
+            opt.textContent = `${nombre} (${formatearRutChileno(p.rut)})`;
 
             if (pacienteUrlParam && (String(userId) === String(pacienteUrlParam) || String(p.id) === String(pacienteUrlParam))) {
                 opt.selected = true;
@@ -1236,7 +1257,7 @@ async function cargarSelectorPacientes() {
     }
 }
 
-// ---------- 9. Inicialización del formulario (abre Paso 2: Modal de Dosificación) ----------
+// ---------- 9. Inicialización del formulario ----------
 function inicializarFormularioPauta() {
     const form = document.getElementById('form-guardar-pauta');
     const checkSoloPlantilla = document.getElementById('check-solo-plantilla');

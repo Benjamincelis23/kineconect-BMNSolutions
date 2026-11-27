@@ -61,6 +61,37 @@ body {
     overflow-x: hidden;
 }
 
+/* Scrollbars estilizados */
+::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.35);
+    border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.55);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-track {
+    background: #0b1120;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+    background: #334155;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
+
 /* App Shell Layout */
 .app-shell {
     display: flex;
@@ -88,15 +119,16 @@ body {
     color: #ffffff;
 }
 
-/* Sidebar */
+/* Sidebar sobrio y legible */
 .sidebar {
     width: 260px;
-    background: linear-gradient(180deg, var(--azul-950) 0%, var(--azul-900) 100%);
+    background: linear-gradient(180deg, #071320 0%, #0b1f33 65%, #0e2740 100%);
     color: #ffffff;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    box-shadow: 4px 0 16px rgba(10, 27, 43, 0.12);
+    box-shadow: 4px 0 18px rgba(7, 19, 32, 0.22);
+    border-right: 1px solid rgba(255, 255, 255, 0.07);
     position: sticky;
     top: 0;
     height: 100vh;
@@ -130,7 +162,7 @@ body {
     align-items: center;
     gap: 12px;
     padding: 11px 16px;
-    color: #94a3b8;
+    color: #cbd5e1;
     text-decoration: none;
     font-size: 0.92rem;
     font-weight: 600;
@@ -146,30 +178,36 @@ body {
 
 .sidebar nav a.active {
     color: #ffffff;
-    background: linear-gradient(90deg, var(--azul-600) 0%, var(--azul-700) 100%);
-    box-shadow: 0 4px 12px rgba(33, 115, 172, 0.35);
+    background: linear-gradient(90deg, #0284c7 0%, #0369a1 100%);
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
 }
 
 .sidebar-footer {
-    padding: 18px 20px;
+    padding: 16px 18px;
+    background: rgba(4, 11, 20, 0.55);
     border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .btn-logout {
     width: 100%;
     padding: 10px 16px;
-    background: rgba(239, 68, 68, 0.12);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    color: #fca5a5;
+    background: rgba(220, 38, 38, 0.2);
+    border: 1px solid rgba(248, 113, 113, 0.45);
+    color: #fecaca;
     border-radius: var(--radius-md);
     font-size: 0.88rem;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     transition: all 0.2s ease;
 }
 
 .btn-logout:hover {
-    background: var(--rojo-500);
+    background: #dc2626;
+    border-color: #ef4444;
     color: #ffffff;
 }
 
@@ -276,16 +314,22 @@ body {
     line-height: 1.4;
 }
 
-.btn-primary {
-    background: linear-gradient(135deg, var(--azul-700) 0%, var(--azul-900) 100%);
-    color: #ffffff;
-    box-shadow: 0 4px 10px rgba(15, 47, 76, 0.2);
+.btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none !important;
 }
 
-.btn-primary:hover {
+.btn-primary {
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 10px rgba(2, 132, 199, 0.22);
+}
+
+.btn-primary:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 6px 14px rgba(15, 47, 76, 0.3);
-    background: linear-gradient(135deg, var(--azul-600) 0%, var(--azul-800) 100%);
+    box-shadow: 0 6px 14px rgba(2, 132, 199, 0.32);
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
 }
 
 .btn-primary:active {
@@ -298,7 +342,7 @@ body {
     color: var(--gris-700);
 }
 
-.btn-secondary:hover {
+.btn-secondary:hover:not(:disabled) {
     background: var(--gris-100);
     border-color: var(--gris-400);
     color: var(--azul-900);
@@ -511,11 +555,11 @@ tbody tr:hover {
 }
 
 /* ==========================================================================
-   Mapa Anatómico y Prescripción Biomecánica
+   Mapa Anatómico y Prescripción Clínica
    ========================================================================== */
 .biomecanico-toolbar {
     margin-bottom: 22px;
-    padding: 14px 20px;
+    padding: 16px 20px;
 }
 
 .biomecanico-toolbar-inner {
@@ -523,7 +567,7 @@ tbody tr:hover {
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 14px;
 }
 
 .biomecanico-group-wrapper {
@@ -541,7 +585,7 @@ tbody tr:hover {
 
 .biomecanico-pills-list {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     flex-wrap: wrap;
 }
 
@@ -566,45 +610,19 @@ tbody tr:hover {
     transform: translateY(-1px);
 }
 
-.filtro-biomecanico-pill.activo-todos {
-    background: var(--azul-900);
-    border-color: var(--azul-900);
+.filtro-biomecanico-pill.activo-todos,
+.filtro-biomecanico-pill.active {
+    background: #0284c7;
+    border-color: #0284c7;
     color: #ffffff;
-}
-
-.filtro-biomecanico-pill.activo-empuje {
-    background: #f59e0b;
-    border-color: #d97706;
-    color: #ffffff;
-    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
-}
-
-.filtro-biomecanico-pill.activo-traccion {
-    background: #3b82f6;
-    border-color: #2563eb;
-    color: #ffffff;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-}
-
-.filtro-biomecanico-pill.activo-core {
-    background: #10b981;
-    border-color: #059669;
-    color: #ffffff;
-    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
-}
-
-.filtro-biomecanico-pill.activo-piernas {
-    background: #8b5cf6;
-    border-color: #7c3aed;
-    color: #ffffff;
-    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);
 }
 
 /* Grid Principal de 3 Columnas */
 .pauta-builder-grid {
     display: grid;
-    grid-template-columns: 360px 1fr 340px;
-    gap: 24px;
+    grid-template-columns: 350px 1fr 360px;
+    gap: 22px;
     align-items: start;
 }
 
@@ -630,11 +648,12 @@ tbody tr:hover {
     padding: 4px;
     border-radius: 10px;
     margin-bottom: 12px;
+    gap: 4px;
 }
 
 .btn-vista-toggle {
     flex: 1;
-    padding: 9px 12px;
+    padding: 8px 12px;
     font-size: 0.82rem;
     font-weight: 700;
     border-radius: 8px;
@@ -644,9 +663,9 @@ tbody tr:hover {
 }
 
 .btn-vista-toggle.activo {
-    background: var(--azul-900);
+    background: #0284c7;
     color: #ffffff;
-    box-shadow: 0 3px 8px rgba(15, 47, 76, 0.25);
+    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);
 }
 
 .btn-vista-toggle.inactivo {
@@ -662,51 +681,45 @@ tbody tr:hover {
 .anatomico-indicador {
     background: var(--gris-50);
     border: 1px solid var(--gris-200);
-    border-radius: 8px;
-    padding: 8px 12px;
+    border-radius: 10px;
+    padding: 9px 12px;
     margin-bottom: 12px;
     text-align: left;
 }
 
 .anatomico-indicador-sub {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     color: var(--gris-600);
     text-transform: uppercase;
     font-weight: 700;
+    letter-spacing: 0.4px;
 }
 
 .anatomico-indicador-main {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-top: 2px;
+    margin-top: 3px;
 }
 
 .label-zona-activa-txt {
-    font-weight: 700;
+    font-weight: 800;
     color: var(--azul-900);
-    font-size: 0.88rem;
+    font-size: 0.9rem;
 }
 
-/* Contenedor del Mapa Vectorial SVG */
+/* Contenedor del Mapa Vectorial SVG (adaptado a tema claro y oscuro) */
 .mapa-svg-container {
     position: relative;
-    background: radial-gradient(circle at center, #ffffff 0%, #f1f5f9 100%);
+    background: radial-gradient(circle at 50% 45%, #f8fafc 0%, #e2e8f0 100%);
     border: 1.5px solid var(--gris-200);
     border-radius: 14px;
-    padding: 16px 12px;
-    min-height: 440px;
+    padding: 14px 10px;
+    min-height: 395px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.03);
-}
-
-.anatomia-base {
-    fill: #e2e8f0;
-    stroke: #94a3b8;
-    stroke-width: 1;
-    opacity: 0.85;
+    overflow: hidden;
 }
 
 .anatomia-zona {
@@ -714,96 +727,61 @@ tbody tr:hover {
     stroke: #475569;
     stroke-width: 1.2;
     cursor: pointer;
-    transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: fill 0.2s ease, stroke 0.2s ease, filter 0.2s ease;
 }
 
-.anatomia-zona:hover {
+/* Hover sincronizado tanto en piezas individuales como en grupos (<g>) */
+.anatomia-zona:hover,
+.anatomia-zona:hover .anatomia-pieza,
+.anatomia-zona.is-hovered,
+.anatomia-zona.is-hovered .anatomia-pieza {
     fill: #38bdf8 !important;
-    stroke: var(--azul-700) !important;
+    stroke: #0284c7 !important;
     stroke-width: 1.8;
-    filter: drop-shadow(0 2px 6px rgba(56, 189, 248, 0.6));
+    filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.75));
 }
 
-.anatomia-zona.active {
-    fill: var(--verde-500) !important;
-    stroke: #064e3b !important;
-    stroke-width: 2.2;
-    filter: drop-shadow(0 2px 8px rgba(16, 185, 129, 0.65));
-}
-
-/* Resaltados por Patrón Biomecánico */
-.anatomia-zona.grupo-empuje.active-grupo {
-    fill: #f59e0b !important;
-    stroke: #92400e !important;
-    stroke-width: 1.8;
-    filter: drop-shadow(0 2px 6px rgba(245, 158, 11, 0.5));
-}
-
-.anatomia-zona.grupo-traccion.active-grupo {
-    fill: #3b82f6 !important;
-    stroke: #1e3a8a !important;
-    stroke-width: 1.8;
-    filter: drop-shadow(0 2px 6px rgba(59, 130, 246, 0.5));
-}
-
-.anatomia-zona.grupo-core.active-grupo {
+.anatomia-zona.active,
+.anatomia-zona.active .anatomia-pieza {
     fill: #10b981 !important;
-    stroke: #064e3b !important;
-    stroke-width: 1.8;
-    filter: drop-shadow(0 2px 6px rgba(16, 185, 129, 0.5));
+    stroke: #059669 !important;
+    stroke-width: 2;
+    filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.75));
 }
 
-.anatomia-zona.grupo-piernas.active-grupo {
-    fill: #8b5cf6 !important;
-    stroke: #4c1d95 !important;
-    stroke-width: 1.8;
-    filter: drop-shadow(0 2px 6px rgba(139, 92, 246, 0.5));
+.anatomia-pieza {
+    fill: inherit;
+    stroke: inherit;
+    stroke-width: inherit;
+    transition: inherit;
 }
 
-.zona-label {
-    font-size: 7.5px;
-    fill: #334155;
-    font-weight: 700;
-    pointer-events: none;
-    text-anchor: middle;
-    user-select: none;
-    letter-spacing: -0.2px;
+/* Panel fijo de información anatómica debajo del SVG (nunca tapa botones) */
+.anatomia-info-panel {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--gris-200);
+    background: var(--gris-50);
+    text-align: left;
+    min-height: 62px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
-/* Tooltip Anatómico Flotante */
-#tooltip-anatomico {
-    position: absolute;
-    display: none;
-    background: rgba(15, 23, 42, 0.92);
-    color: #ffffff;
-    padding: 6px 10px;
-    border-radius: 6px;
-    font-size: 0.76rem;
-    pointer-events: none;
-    z-index: 100;
-    backdrop-filter: blur(4px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-    white-space: nowrap;
-    transform: translate(-50%, -120%);
-}
-
-#tooltip-anatomico strong {
-    display: block;
-    color: #38bdf8;
-}
-
-/* Tarjeta del Carrito */
+/* Tarjeta de Resumen de Pauta */
 .carrito-card {
-    border: 2px solid var(--azul-500);
+    border: 1.5px solid var(--azul-500);
     position: sticky;
-    top: 90px;
+    top: 86px;
 }
 
 .carrito-header {
     margin-top: 0;
     color: var(--azul-900);
-    font-size: 1.15rem;
-    border-bottom: 1px solid var(--gris-300);
+    font-size: 1.1rem;
+    border-bottom: 1px solid var(--gris-200);
     padding-bottom: 10px;
     display: flex;
     justify-content: space-between;
@@ -813,8 +791,8 @@ tbody tr:hover {
 .ejercicios-disponibles-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    max-height: 540px;
+    gap: 10px;
+    max-height: 550px;
     overflow-y: auto;
     padding-right: 6px;
 }
@@ -831,21 +809,8 @@ tbody tr:hover {
     gap: 12px;
 }
 
-.carrito-item-card {
-    padding: 10px 12px;
-    background: #f8fafc;
-    border: 1px solid var(--gris-300);
-    border-radius: 8px;
-}
-
-.carrito-item-inputs {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 6px;
-}
-
 /* ==========================================================================
-   Utilidades y Clases de Soporte para inicio.html y gestión de pacientes
+   Utilidades y Clases de Soporte
    ========================================================================== */
 .is-hidden {
     display: none !important;
@@ -866,21 +831,6 @@ tbody tr:hover {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 20px;
-}
-
-.btn-close-sidebar-mobile {
-    display: none;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    background: rgba(255, 255, 255, 0.08);
-    color: #e2e8f0;
-    font-size: 1.35rem;
-    cursor: pointer;
-    flex-shrink: 0;
 }
 
 @media (max-width: 768px) {
@@ -1001,7 +951,7 @@ tbody tr:hover {
 }
 
 /* ==========================================================================
-   Modo Oscuro
+   Modo Oscuro Global
    ========================================================================== */
 html[data-theme="dark"] {
     --azul-950: #030712;
@@ -1045,8 +995,7 @@ body,
 table th,
 table td,
 .filtro-biomecanico-pill,
-.ejercicio-item-card,
-.carrito-item-card {
+.ejercicio-item-card {
     transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
 }
 
@@ -1097,7 +1046,7 @@ html[data-theme="dark"] .btn-secondary {
     color: #e2e8f0;
 }
 
-html[data-theme="dark"] .btn-secondary:hover {
+html[data-theme="dark"] .btn-secondary:hover:not(:disabled) {
     background-color: #334155;
     border-color: #475569;
     color: #ffffff;
@@ -1128,22 +1077,34 @@ html[data-theme="dark"] .field label {
 
 html[data-theme="dark"] .field input,
 html[data-theme="dark"] .field select,
-html[data-theme="dark"] .field textarea {
-    background-color: #0f172a;
-    border-color: #334155;
-    color: #f8fafc;
+html[data-theme="dark"] .field textarea,
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="number"],
+[data-theme="dark"] input[type="email"],
+[data-theme="dark"] input[type="password"],
+[data-theme="dark"] input[type="search"],
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+    background-color: #0f1929 !important;
+    border-color: #334155 !important;
+    color: #f8fafc !important;
 }
 
 html[data-theme="dark"] .field input:focus,
 html[data-theme="dark"] .field select:focus,
 html[data-theme="dark"] .field textarea:focus {
-    border-color: #38bdf8;
-    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+    border-color: #38bdf8 !important;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2) !important;
 }
 
 html[data-theme="dark"] .field input::placeholder,
 html[data-theme="dark"] .field textarea::placeholder {
-    color: #64748b;
+    color: #64748b !important;
+}
+
+[data-theme="dark"] select option {
+    background: #162236 !important;
+    color: #f8fafc !important;
 }
 
 html[data-theme="dark"] .badge-neutro {
@@ -1161,44 +1122,71 @@ html[data-theme="dark"] .badge-alerta {
     color: #f87171;
 }
 
-html[data-theme="dark"] .filtro-biomecanico-pill {
-    background-color: #1e293b;
-    border-color: #334155;
-    color: #cbd5e1;
+[data-theme="dark"] .filtro-biomecanico-pill {
+    background: #1e293b !important;
+    color: #cbd5e1 !important;
+    border-color: #334155 !important;
 }
 
-html[data-theme="dark"] .filtro-biomecanico-pill:hover {
-    background-color: #334155;
-    color: #ffffff;
+[data-theme="dark"] .filtro-biomecanico-pill:hover {
+    border-color: #38bdf8 !important;
+    color: #f8fafc !important;
 }
 
-html[data-theme="dark"] .registro-card-header {
-    border-bottom-color: #1e293b;
+[data-theme="dark"] .filtro-biomecanico-pill.activo-todos,
+[data-theme="dark"] .filtro-biomecanico-pill.active {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+    border-color: #38bdf8 !important;
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25) !important;
 }
 
-html[data-theme="dark"] .titulo-nuevo-paciente {
-    color: #38bdf8;
-}
-
-html[data-theme="dark"] .subtitulo-nuevo-paciente {
-    color: #94a3b8;
-}
-
-html[data-theme="dark"] .form-actions-full {
-    border-top-color: #1e293b;
-}
-
-html[data-theme="dark"] .login-card {
-    background-color: #131d31;
+/* Mapa Anatómico Biomédico en Modo Oscuro (sin caja blanca nuclear) */
+[data-theme="dark"] .vista-segmented-control {
+    background: #0b1220 !important;
     border: 1px solid #1e293b;
 }
 
-html[data-theme="dark"] .login-card .brand {
-    color: #38bdf8;
+[data-theme="dark"] .btn-vista-toggle.inactivo {
+    background: transparent !important;
+    color: #94a3b8 !important;
 }
 
-html[data-theme="dark"] .login-card .subtitle {
-    color: #94a3b8;
+[data-theme="dark"] .btn-vista-toggle.inactivo:hover {
+    color: #f8fafc !important;
+}
+
+[data-theme="dark"] .anatomico-indicador,
+[data-theme="dark"] .anatomia-info-panel {
+    background: #0b1220 !important;
+    border-color: #1e293b !important;
+}
+
+[data-theme="dark"] .mapa-svg-container {
+    background: radial-gradient(circle at 50% 45%, #111c33 0%, #09101f 100%) !important;
+    border-color: #1e293b !important;
+    box-shadow: inset 0 0 24px rgba(2, 132, 199, 0.08);
+}
+
+[data-theme="dark"] .anatomia-zona {
+    fill: #1e293b;
+    stroke: #475569;
+}
+
+[data-theme="dark"] .anatomia-zona:hover,
+[data-theme="dark"] .anatomia-zona:hover .anatomia-pieza,
+[data-theme="dark"] .anatomia-zona.is-hovered,
+[data-theme="dark"] .anatomia-zona.is-hovered .anatomia-pieza {
+    fill: rgba(56, 189, 248, 0.35) !important;
+    stroke: #38bdf8 !important;
+    filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.85));
+}
+
+[data-theme="dark"] .anatomia-zona.active,
+[data-theme="dark"] .anatomia-zona.active .anatomia-pieza {
+    fill: rgba(16, 185, 129, 0.35) !important;
+    stroke: #34d399 !important;
+    filter: drop-shadow(0 0 12px rgba(52, 211, 153, 0.85));
 }
 
 html[data-theme="dark"] .ejercicio-item-card {
@@ -1207,15 +1195,9 @@ html[data-theme="dark"] .ejercicio-item-card {
     color: #f8fafc;
 }
 
-html[data-theme="dark"] .carrito-item-card {
-    background-color: #0f172a;
-    border-color: #1e293b;
-    color: #f8fafc;
-}
-
 html[data-theme="dark"] .carrito-card {
     background-color: #131d31;
-    border-color: #2582c0;
+    border-color: #0284c7;
 }
 
 html[data-theme="dark"] .carrito-header {
@@ -1223,46 +1205,33 @@ html[data-theme="dark"] .carrito-header {
     border-bottom-color: #1e293b;
 }
 
-html[data-theme="dark"] .anatomia-base {
-    fill: #1e293b;
-    stroke: #334155;
+[data-theme="dark"] .card span[style*="#e0f2fe"],
+[data-theme="dark"] .ejercicio-item-card span[style*="#e0f2fe"] {
+    background: rgba(14, 165, 233, 0.16) !important;
+    color: #7dd3fc !important;
+    border-color: rgba(56, 189, 248, 0.35) !important;
 }
 
-html[data-theme="dark"] .anatomia-zona {
-    fill: #334155;
-    stroke: #475569;
+[data-theme="dark"] .card button[style*="#f1f5f9"],
+[data-theme="dark"] .ejercicio-item-card button[style*="#f1f5f9"] {
+    background: #1e293b !important;
+    color: #cbd5e1 !important;
+    border-color: #334155 !important;
 }
 
-html[data-theme="dark"] .zona-label {
-    fill: #cbd5e1;
+[data-theme="dark"] #lista-ejercicios-disponibles > div:not(.ejercicio-item-card) {
+    background: rgba(56, 189, 248, 0.12) !important;
+    border-left-color: #38bdf8 !important;
 }
 
-html[data-theme="dark"] .alert-banner {
-    background-color: #1e1b10;
-    border-color: #451a03;
-    color: #fde68a;
+[data-theme="dark"] .plantilla-box-check {
+    background: rgba(14, 165, 233, 0.1) !important;
+    border-color: rgba(56, 189, 248, 0.3) !important;
 }
 
-html[data-theme="dark"] .modal-card {
-    background-color: #131d31;
-    border-color: #1e293b;
-    color: #f1f5f9;
-}
-
-html[data-theme="dark"] .modal-header,
-html[data-theme="dark"] .modal-footer {
-    background-color: #0f172a;
-    border-color: #1e293b;
-}
-
-html[data-theme="dark"] .ejercicio-detalle-card {
-    background-color: #0f172a;
-    border-color: #1e293b;
-}
-
-html[data-theme="dark"] .loading-text,
-html[data-theme="dark"] .empty-text {
-    color: #94a3b8;
+[data-theme="dark"] .plantilla-box-check label,
+[data-theme="dark"] .plantilla-box-check small {
+    color: #7dd3fc !important;
 }
 
 /* Transiciones para sidebar y panel principal */
@@ -1274,27 +1243,15 @@ html[data-theme="dark"] .empty-text {
     transition: margin-left 0.3s ease, width 0.3s ease;
 }
 
-/* Ocultar barra lateral en escritorio */
 .sidebar.is-collapsed {
     transform: translateX(-100%);
     position: absolute;
     z-index: 100;
 }
 
-/* Expandir contenido a pantalla completa */
 .main.sidebar-collapsed {
     margin-left: 0 !important;
     width: 100% !important;
-}
-
-/* Imagen / miniatura en la tarjeta de ejercicio */
-.ejercicio-card-img {
-    width: 100%;
-    height: 140px;
-    object-fit: cover;
-    border-radius: 8px 8px 0 0;
-    margin-bottom: 10px;
-    background-color: var(--gris-200, #e2e8f0);
 }
 
 /* Modal Overlay */
@@ -1321,37 +1278,8 @@ html[data-theme="dark"] .empty-text {
     overflow-y: auto;
 }
 
-.kc-logo-sidebar {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    text-decoration: none;
-    margin-bottom: 24px;
-    padding: 4px 2px;
-}
-
-.kc-logo-sidebar svg {
-    width: 38px;
-    height: 38px;
-    flex-shrink: 0;
-    transition: transform 0.25s ease;
-}
-
-.kc-logo-sidebar:hover svg {
-    transform: scale(1.06);
-}
-
-.kc-logo-sidebar .brand {
-    margin-bottom: 0;
-    font-size: 1.35rem;
-    line-height: 1;
-}
-
-/* ==========================================================================
-   ADAPTACIÓN RESPONSIVE PARA TELÉFONOS Y TABLETS
-   ========================================================================== */
+/* Responsive Móvil y Tablet */
 @media (max-width: 768px) {
-    /* Drawer lateral flotante en móvil */
     .sidebar {
         position: fixed;
         top: 0;
@@ -1374,32 +1302,10 @@ html[data-theme="dark"] .empty-text {
         transform: translateX(-105%);
     }
 
-    /* Cabecera superior compacta */
     .topbar {
         padding: 12px 16px;
     }
 
-    .topbar h1,
-    .topbar-title {
-        font-size: 1.02rem !important;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .user-tag {
-        padding: 5px 10px;
-        font-size: 0.78rem;
-        max-width: 125px;
-    }
-
-    .user-tag span {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    /* Contenedor y tarjetas más cómodas */
     .content {
         padding: 16px;
     }
@@ -1409,207 +1315,11 @@ html[data-theme="dark"] .empty-text {
         border-radius: 14px;
     }
 
-    .page-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
-        margin-bottom: 18px;
-    }
-
-    .page-header h2 {
-        font-size: 1.28rem;
-    }
-
-    .page-header p {
-        font-size: 0.86rem;
-    }
-
-    .header-pacientes {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
-        margin-bottom: 18px;
-    }
-
-    /* Tablas con celdas compactas y scroll horizontal fluido */
-    th {
-        padding: 10px 12px;
-        font-size: 0.74rem;
-        white-space: nowrap;
-    }
-
-    td {
-        padding: 11px 12px;
-        font-size: 0.84rem;
-    }
-
-    /* Barra de herramientas y selectores en crear_pauta */
-    .biomecanico-toolbar {
-        padding: 14px;
-    }
-
-    .biomecanico-group-wrapper,
-    .biomecanico-toolbar-inner > div {
-        min-width: 100% !important;
-        width: 100%;
-    }
-
-    .biomecanico-toolbar-inner .field {
-        min-width: 100% !important;
-        width: 100%;
-    }
-
     .mapa-svg-container {
         min-height: 340px;
-        padding: 12px 8px;
     }
 
     #svg-anatomia {
         max-height: 330px !important;
     }
-
-    .ejercicio-item-card {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .ejercicio-item-card button,
-    .ejercicio-item-card > div:last-child {
-        width: 100%;
-        justify-content: flex-end;
-    }
-
-    /* Modales adaptados al ancho del teléfono */
-    .modal-overlay {
-        padding: 10px;
-    }
-
-    .modal-card {
-        width: 96% !important;
-        max-width: 96% !important;
-        padding: 16px !important;
-    }
-}
-
-@media (max-width: 480px) {
-    .login-card {
-        padding: 26px 20px;
-    }
-
-    .login-card .brand {
-        font-size: 1.55rem;
-    }
-
-    .acciones-registro,
-    .form-actions-full {
-        flex-direction: column;
-    }
-
-    .acciones-registro .btn,
-    .form-actions-full .btn {
-        width: 100%;
-    }
-
-    .user-tag span {
-        display: none;
-    }
-}
-/* ==========================================================================
-   CORRECCIÓN GLOBAL MODO OSCURO: PÍLDORAS ACTIVAS, INPUTS, SELECTS Y BADGES
-   ========================================================================== */
-
-/* 1. Píldoras de filtro activas (Zona y Área Clínica) */
-.filtro-biomecanico-pill.activo-todos,
-.filtro-biomecanico-pill.active {
-    background: #0284c7 !important;
-    color: #ffffff !important;
-    border-color: #0284c7 !important;
-    font-weight: 700 !important;
-    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35) !important;
-}
-
-[data-theme="dark"] .filtro-biomecanico-pill {
-    background: #1e293b !important;
-    color: #cbd5e1 !important;
-    border-color: #334155 !important;
-}
-
-[data-theme="dark"] .filtro-biomecanico-pill:hover {
-    border-color: #38bdf8 !important;
-    color: #f8fafc !important;
-}
-
-[data-theme="dark"] .filtro-biomecanico-pill.activo-todos,
-[data-theme="dark"] .filtro-biomecanico-pill.active {
-    background: #0284c7 !important;
-    color: #ffffff !important;
-    border-color: #38bdf8 !important;
-    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25) !important;
-}
-
-/* 2. Inputs, buscadores, textareas y selects en Modo Oscuro (corrige cajas blancas) */
-[data-theme="dark"] input[type="text"],
-[data-theme="dark"] input[type="number"],
-[data-theme="dark"] input[type="email"],
-[data-theme="dark"] input[type="password"],
-[data-theme="dark"] input[type="search"],
-[data-theme="dark"] textarea,
-[data-theme="dark"] select,
-[data-theme="dark"] #input-buscar-catalogo,
-[data-theme="dark"] #select-orden-catalogo {
-    background: #0f1929 !important;
-    color: #f8fafc !important;
-    border-color: #334155 !important;
-}
-
-[data-theme="dark"] input::placeholder,
-[data-theme="dark"] textarea::placeholder {
-    color: #64748b !important;
-}
-
-[data-theme="dark"] select option {
-    background: #162236 !important;
-    color: #f8fafc !important;
-}
-
-/* 3. Badges de Áreas Clínicas y botones "+X más" en Modo Oscuro */
-[data-theme="dark"] .card span[style*="#e0f2fe"],
-[data-theme="dark"] .ejercicio-item-card span[style*="#e0f2fe"] {
-    background: rgba(14, 165, 233, 0.16) !important;
-    color: #7dd3fc !important;
-    border-color: rgba(56, 189, 248, 0.35) !important;
-}
-
-[data-theme="dark"] .card button[style*="#f1f5f9"],
-[data-theme="dark"] .ejercicio-item-card button[style*="#f1f5f9"] {
-    background: #1e293b !important;
-    color: #cbd5e1 !important;
-    border-color: #334155 !important;
-}
-
-/* 4. Encabezados de grupo en lista de ejercicios (crear_pautas.js) */
-[data-theme="dark"] #lista-ejercicios-disponibles > div[style*="#f1f5f9"] {
-    background: #0f1929 !important;
-    border-left-color: #38bdf8 !important;
-}
-
-/* 5. Cajita "Guardar exclusivamente como Plantilla Maestra" en crear_pauta.html */
-[data-theme="dark"] .field[style*="#f0f9ff"] {
-    background: rgba(14, 165, 233, 0.12) !important;
-    border-color: rgba(56, 189, 248, 0.32) !important;
-}
-
-[data-theme="dark"] .field[style*="#f0f9ff"] label,
-[data-theme="dark"] .field[style*="#f0f9ff"] small {
-    color: #7dd3fc !important;
-}
-[data-theme="dark"] .btn-vista-toggle.inactivo {
-    background: #0f1929 !important;
-    color: #94a3b8 !important;
-    border-color: #334155 !important;
-}
-
-[data-theme="dark"] #lista-ejercicios-disponibles > div:not(.ejercicio-item-card) {
-    background: rgba(56, 189, 248, 0.12) !important;
-    border-left-color: #38bdf8 !important;
 }
