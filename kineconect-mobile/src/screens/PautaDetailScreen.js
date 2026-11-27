@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Button, ProgressBar, Text, useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 import EmptyState from '../components/EmptyState';
 import EvaModal from '../components/EvaModal';
 import Skeleton from '../components/Skeleton';
@@ -654,9 +653,10 @@ export default function PautaDetailScreen({ route, navigation }) {
     const textoBoton = isDark ? '#0F172A' : '#FFFFFF';
 
     // Escala tipográfica accesible (Adulto Mayor)
-    const sizeTituloPaso = textoGrande ? 16.5 : 14.5;
-    const sizeTextoPaso = textoGrande ? 17.5 : 15;
-    const lineTextoPaso = textoGrande ? 26 : 22.5;
+   const escala = prefs.fontScale || 1;
+const sizeTituloPaso = Math.round((textoGrande ? 16.5 : 14.5) * escala);
+const sizeTextoPaso = Math.round((textoGrande ? 17.5 : 15) * escala);
+const lineTextoPaso = Math.round((textoGrande ? 26 : 22.5) * escala);
 
     return (
       <View style={[styles.screen, { backgroundColor: c.bg }]}>

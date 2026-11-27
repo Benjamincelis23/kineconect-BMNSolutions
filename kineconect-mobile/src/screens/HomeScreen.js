@@ -5,7 +5,6 @@ import { useCallback, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Button, ProgressBar, Text, useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 import EmptyState from '../components/EmptyState';
 import Skeleton from '../components/Skeleton';
 import api from '../services/api';
@@ -148,7 +147,7 @@ export default function HomeScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const isDark = theme.dark;
-
+  const { openPanel } = useAccessibility();
   const [me, setMe] = useState(null);
   const [pautas, setPautas] = useState(null);
   const [respuestasKine, setRespuestasKine] = useState([]);
@@ -424,16 +423,29 @@ export default function HomeScreen({ navigation }) {
               )}
             </View>
           </View>
+<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={openPanel}
+              accessibilityRole="button"
+              accessibilityLabel="Abrir opciones de accesibilidad y comodidad"
+              style={[styles.avatarPlaceholder, { backgroundColor: c.surface, borderColor: c.border }]}
+            >
+              <MaterialCommunityIcons name="human" size={22} color={c.primary} />
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => navigation.navigate('Perfil')}
-            style={[styles.avatarPlaceholder, { backgroundColor: c.accentBg, borderColor: c.primary }]}
-          >
-            <Text style={[styles.avatarText, { color: c.primary }]}>
-              {nombrePaciente.charAt(0).toUpperCase()}
-            </Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate('Perfil')}
+              accessibilityRole="button"
+              accessibilityLabel="Ir a mi perfil"
+              style={[styles.avatarPlaceholder, { backgroundColor: c.accentBg, borderColor: c.primary }]}
+            >
+              <Text style={[styles.avatarText, { color: c.primary }]}>
+                {nombrePaciente.charAt(0).toUpperCase()}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Tarjeta de Adherencia Semanal (solo si tiene pautas activas) */}

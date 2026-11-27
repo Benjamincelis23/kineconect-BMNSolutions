@@ -3,14 +3,17 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useContext } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
-// Importamos los Contextos (Autenticación y Tema)
+// Contextos globales (Autenticación, Tema y Accesibilidad)
+import { AccessibilityProvider } from './src/context/AccessibilityContext';
 import { AuthContext, AuthProvider } from './src/context/AuthContext';
 import { AppThemeProvider } from './src/context/ThemeContext';
 
-// Importamos tus pantallas y navegadores
+// Modal global de Accesibilidad y Comodidad
+import AccessibilityModal from './src/components/AccessibilityModal';
+
+// Pantallas y navegadores
 import MainTabNavigator from './src/navigation/MainTabNavigator';
 import LoginScreen from './src/screens/LoginScreen';
-// (Eliminamos la importación de RegisterScreen)
 
 const Stack = createNativeStackNavigator();
 
@@ -18,11 +21,10 @@ const Stack = createNativeStackNavigator();
 function RootNavigator() {
   const { userToken, isLoading } = useContext(AuthContext);
 
-  // Muestra un cargando mientras verifica si hay sesión guardada
   if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color="#0284C7" />
       </View>
     );
   }
@@ -30,25 +32,26 @@ function RootNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {userToken ? (
-        // Usuario CON sesión: va al menú principal (MainTabNavigator)
         <Stack.Screen name="Main" component={MainTabNavigator} />
       ) : (
-        // Usuario SIN sesión: va solo al login
         <Stack.Screen name="Login" component={LoginScreen} />
       )}
     </Stack.Navigator>
   );
 }
 
-// App: Envuelve todo con los proveedores de estado y estilos
+// App: Envuelve todo con los proveedores de estado, tema y accesibilidad
 export default function App() {
   return (
     <AuthProvider>
-      <AppThemeProvider>
-        <NavigationContainer>
-          <RootNavigator />
-        </NavigationContainer>
-      </AppThemeProvider>
+      <AccessibilityProvider>
+        <AppThemeProvider>
+          <NavigationContainer>
+            <RootNavigator />
+          </NavigationContainer>
+          <AccessibilityModal />
+        </AppThemeProvider>
+      </AccessibilityProvider>
     </AuthProvider>
   );
 }
