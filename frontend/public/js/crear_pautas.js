@@ -1304,6 +1304,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     inicializarAccionesCatalogo();
     inicializarFormularioPauta();
     await inicializarCatalogo();
+
+    const hayVideos = todosLosEjercicios.some(e => Boolean(resolverUrlMedia(e)));
+    const btnVideoPauta = document.getElementById('btn-solo-video-pauta');
+    if (btnVideoPauta) {
+        btnVideoPauta.style.display = hayVideos ? 'inline-flex' : 'none';
+    }
+
     await cargarSelectorPacientes();
     await cargarSelectorPlantillas();
 

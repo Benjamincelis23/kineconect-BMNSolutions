@@ -1185,8 +1185,8 @@
                            </button>`)
                     : '';
 
-                const botonAjustarHtml = (dolor >= 6 && pautaId)
-                    ? `<a href="crear_pauta.html?editar=${encodeURIComponent(pautaId)}" class="btn btn-secondary btn-sm">
+                const botonAjustarHtml = pautaId
+                    ? `<a href="crear_pauta.html?editar=${encodeURIComponent(pautaId)}" class="btn btn-secondary btn-sm" title="Modificar series, repeticiones o ejercicios de esta pauta">
                         <i class='bx bx-slider-alt'></i> Ajustar pauta
                        </a>`
                     : '';
