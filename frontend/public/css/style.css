@@ -1271,11 +1271,20 @@ html[data-theme="dark"] .carrito-header {
 }
 
 .modal-card {
-    background: var(--bg-card, #ffffff);
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    background: #ffffff;
+    color: var(--gris-900);
+    border: 1px solid var(--gris-200);
+    border-radius: 14px;
+    box-shadow: 0 20px 35px rgba(0, 0, 0, 0.35);
     max-height: 92vh;
     overflow-y: auto;
+}
+
+html[data-theme="dark"] .modal-card,
+[data-theme="dark"] .modal-card {
+    background: #131d31 !important;
+    color: #f8fafc !important;
+    border: 1px solid #24344d !important;
 }
 
 /* Responsive Móvil y Tablet */
