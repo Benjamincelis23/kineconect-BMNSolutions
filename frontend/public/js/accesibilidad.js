@@ -1,5 +1,9 @@
 (function () {
+    if (window.__kcA11yInitialized) return;
+    window.__kcA11yInitialized = true;
+
     const STORAGE_KEY = 'kc_a11y_prefs_v1';
+    const TIP_DISMISSED_KEY = 'kc_a11y_tip_closed_v1';
 
     const DEFAULTS = {
         tamanoTexto: 'normal', // 'normal' | 'grande' | 'xl'
@@ -21,9 +25,7 @@
     function guardarPrefs(prefs) {
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
-        } catch {
-            // Ignora si el almacenamiento está restringido
-        }
+        } catch {}
     }
 
     function aplicarPrefsAlDocumento(prefs) {
@@ -68,13 +70,11 @@
         const observer = new MutationObserver(etiquetarIconos);
         observer.observe(document.body, { childList: true, subtree: true });
 
-        // Soporte teclado (Tab + Enter/Espacio) en Mapa Anatómico SVG
         document.querySelectorAll('.anatomia-zona').forEach(zona => {
             const titulo = zona.getAttribute('data-titulo') || zona.getAttribute('data-zona') || 'Región muscular';
             zona.setAttribute('tabindex', '0');
             zona.setAttribute('role', 'button');
             zona.setAttribute('aria-label', `Filtrar ejercicios de ${titulo}`);
-
             zona.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
@@ -94,6 +94,7 @@
         modal.setAttribute('aria-modal', 'true');
         modal.setAttribute('aria-labelledby', 'titulo-modal-a11y');
         modal.style.display = 'none';
+        modal.style.zIndex = '9999';
 
         modal.innerHTML = `
             <div class="modal-card" style="max-width: 560px; width: 94%; padding: 22px 24px;">
@@ -101,10 +102,10 @@
                     <div>
                         <h3 id="titulo-modal-a11y" style="margin: 0; font-size: 1.15rem; color: var(--azul-900); display: flex; align-items: center; gap: 8px;">
                             <i class='bx bx-universal-access' style="font-size: 1.35rem; color: #0284c7;"></i>
-                            Centro de Accesibilidad y Comodidad
+                            Comodidad Visual y Accesibilidad Clínica
                         </h3>
                         <p style="margin: 3px 0 0; font-size: 0.82rem; color: var(--gris-600);">
-                            Personaliza la lectura, el contraste y el tamaño de los controles en toda la plataforma.
+                            Ajusta el tamaño de lectura, contraste y controles para jornadas clínicas prolongadas.
                         </p>
                     </div>
                     <button type="button" class="btn btn-secondary btn-sm" id="btn-cerrar-a11y" aria-label="Cerrar panel de accesibilidad">
@@ -121,17 +122,17 @@
                         <button type="button" class="btn btn-secondary btn-sm a11y-preset-btn" data-preset="adulto_mayor"
                             style="justify-content: flex-start; padding: 9px 11px; text-align: left;">
                             <i class='bx bx-glasses' style="font-size: 1.1rem; color: #0284c7;"></i>
-                            <span>Baja Visión / Mayor</span>
+                            <span>Lectura Amplia / Visión</span>
                         </button>
                         <button type="button" class="btn btn-secondary btn-sm a11y-preset-btn" data-preset="motricidad"
                             style="justify-content: flex-start; padding: 9px 11px; text-align: left;">
                             <i class='bx bx-pointer' style="font-size: 1.1rem; color: #10b981;"></i>
-                            <span>Motricidad / Teclado</span>
+                            <span>Botones Grandes / Teclado</span>
                         </button>
                         <button type="button" class="btn btn-secondary btn-sm a11y-preset-btn" data-preset="auditivo"
                             style="justify-content: flex-start; padding: 9px 11px; text-align: left;">
                             <i class='bx bx-captions' style="font-size: 1.1rem; color: #f59e0b;"></i>
-                            <span>Apoyo Auditivo</span>
+                            <span>Apoyo Visual / Texto</span>
                         </button>
                     </div>
                 </div>
@@ -141,7 +142,7 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                         <div>
                             <strong style="display: block; font-size: 0.88rem; color: var(--azul-900);">Tamaño de Texto</strong>
-                            <span style="font-size: 0.77rem; color: var(--gris-600);">Escala tipográfica en tablas, fichas y formularios</span>
+                            <span style="font-size: 0.77rem; color: var(--gris-600);">Escala fichas clínicas, reportes EVA y pautas</span>
                         </div>
                         <div style="display: flex; gap: 6px;" id="grupo-tamano-texto-a11y">
                             <button type="button" class="btn btn-secondary btn-sm" data-size="normal">Normal</button>
@@ -155,16 +156,16 @@
                 <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px;">
                     <label style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 11px; border: 1px solid var(--gris-200); cursor: pointer;">
                         <div>
-                            <strong style="display: block; font-size: 0.88rem; color: var(--azul-900);">Alto Contraste y Foco Reforzado</strong>
-                            <span style="font-size: 0.77rem; color: var(--gris-600);">Bordes más nítidos y anillo de foco visible al tabular</span>
+                            <strong style="display: block; font-size: 0.88rem; color: var(--azul-900);">Alto Contraste y Foco Nítido</strong>
+                            <span style="font-size: 0.77rem; color: var(--gris-600);">Reduce fatiga ocular y resalta bordes y cuadros</span>
                         </div>
                         <input type="checkbox" id="chk-a11y-contraste">
                     </label>
 
                     <label style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 11px; border: 1px solid var(--gris-200); cursor: pointer;">
                         <div>
-                            <strong style="display: block; font-size: 0.88rem; color: var(--azul-900);">Botones y Áreas Táctiles Amplias</strong>
-                            <span style="font-size: 0.77rem; color: var(--gris-600);">Aumenta el espaciado y altura de botones para facilitar el clic</span>
+                            <strong style="display: block; font-size: 0.88rem; color: var(--azul-900);">Botones y Áreas de Clic Amplias</strong>
+                            <span style="font-size: 0.77rem; color: var(--gris-600);">Aumenta el tamaño de botones y selectores</span>
                         </div>
                         <input type="checkbox" id="chk-a11y-targets">
                     </label>
@@ -172,17 +173,9 @@
                     <label style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 11px; border: 1px solid var(--gris-200); cursor: pointer;">
                         <div>
                             <strong style="display: block; font-size: 0.88rem; color: var(--azul-900);">Reducir Animaciones</strong>
-                            <span style="font-size: 0.77rem; color: var(--gris-600);">Evita transiciones y desplazamientos automáticos</span>
+                            <span style="font-size: 0.77rem; color: var(--gris-600);">Evita transiciones y movimientos en pantalla</span>
                         </div>
                         <input type="checkbox" id="chk-a11y-motion">
-                    </label>
-
-                    <label style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 11px; border: 1px solid var(--gris-200); cursor: pointer;">
-                        <div>
-                            <strong style="display: block; font-size: 0.88rem; color: var(--azul-900);">Apoyo Escrito y Alertas Visuales</strong>
-                            <span style="font-size: 0.77rem; color: var(--gris-600);">Refuerza etiquetas textuales junto a íconos y videos</span>
-                        </div>
-                        <input type="checkbox" id="chk-a11y-captions">
                     </label>
                 </div>
 
@@ -191,7 +184,7 @@
                         <i class='bx bx-reset'></i> Restablecer
                     </button>
                     <button type="button" class="btn btn-primary btn-sm" id="btn-listo-a11y">
-                        <i class='bx bx-check'></i> Listo
+                        <i class='bx bx-check'></i> Guardar y Cerrar
                     </button>
                 </div>
             </div>
@@ -204,7 +197,6 @@
             document.getElementById('chk-a11y-contraste').checked = prefs.altoContraste;
             document.getElementById('chk-a11y-targets').checked = prefs.botonesGrandes;
             document.getElementById('chk-a11y-motion').checked = prefs.reducirMovimiento;
-            document.getElementById('chk-a11y-captions').checked = prefs.guiaMultimedia;
 
             document.querySelectorAll('#grupo-tamano-texto-a11y button').forEach(btn => {
                 const activo = btn.getAttribute('data-size') === prefs.tamanoTexto;
@@ -226,17 +218,16 @@
         document.getElementById('chk-a11y-contraste').addEventListener('change', (e) => actualizar({ altoContraste: e.target.checked }));
         document.getElementById('chk-a11y-targets').addEventListener('change', (e) => actualizar({ botonesGrandes: e.target.checked }));
         document.getElementById('chk-a11y-motion').addEventListener('change', (e) => actualizar({ reducirMovimiento: e.target.checked }));
-        document.getElementById('chk-a11y-captions').addEventListener('change', (e) => actualizar({ guiaMultimedia: e.target.checked }));
 
         document.querySelectorAll('.a11y-preset-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const preset = btn.getAttribute('data-preset');
                 if (preset === 'adulto_mayor') {
-                    actualizar({ tamanoTexto: 'grande', altoContraste: true, botonesGrandes: true, reducirMovimiento: false, guiaMultimedia: true });
+                    actualizar({ tamanoTexto: 'grande', altoContraste: true, botonesGrandes: true, reducirMovimiento: false });
                 } else if (preset === 'motricidad') {
-                    actualizar({ tamanoTexto: 'normal', altoContraste: true, botonesGrandes: true, reducirMovimiento: true, guiaMultimedia: true });
+                    actualizar({ tamanoTexto: 'normal', altoContraste: true, botonesGrandes: true, reducirMovimiento: true });
                 } else if (preset === 'auditivo') {
-                    actualizar({ tamanoTexto: 'grande', altoContraste: false, botonesGrandes: false, reducirMovimiento: false, guiaMultimedia: true });
+                    actualizar({ tamanoTexto: 'grande', altoContraste: false, botonesGrandes: false, reducirMovimiento: false });
                 }
             });
         });
@@ -258,62 +249,120 @@
         };
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        const prefs = cargarPrefs();
-        aplicarPrefsAlDocumento(prefs);
-        mejorarSemanticaDOM();
-        crearModalAccesibilidad();
-    });
-}
-)();
-function insertarBotonAccesoDirecto() {
-        const topbar = document.querySelector('.topbar');
-        if (!topbar) return;
+    function crearDockFlotanteLateral() {
+        if (document.getElementById('kc-a11y-dock')) return;
 
-        // Si ya está montado dentro de la topbar, no hace nada
-        if (topbar.querySelector('#btn-abrir-a11y-global')) return;
+        const dock = document.createElement('div');
+        dock.id = 'kc-a11y-dock';
+        dock.style.cssText = `
+            position: fixed;
+            right: 0;
+            top: 52%;
+            transform: translateY(-50%);
+            z-index: 9500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        `;
 
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.id = 'btn-abrir-a11y-global';
-        btn.className = 'btn btn-secondary btn-sm';
-        btn.setAttribute('aria-label', 'Abrir Centro de Accesibilidad y Comodidad (Alt + A)');
-        btn.setAttribute('title', 'Accesibilidad y Comodidad (Alt + A)');
-        btn.innerHTML = `<i class='bx bx-universal-access' style="font-size: 1.15rem; color: #0284c7;"></i> <span>Accesibilidad</span>`;
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
+        const tipCerrado = localStorage.getItem(TIP_DISMISSED_KEY) === 'true';
+
+        dock.innerHTML = `
+            <div id="kc-a11y-callout" style="
+                display: ${tipCerrado ? 'none' : 'flex'};
+                align-items: center;
+                gap: 10px;
+                background: #0f172a;
+                color: #f8fafc;
+                border: 1px solid #38bdf8;
+                border-radius: 12px;
+                padding: 10px 12px;
+                box-shadow: 0 10px 25px rgba(2, 6, 23, 0.35);
+                max-width: 245px;
+                font-size: 0.79rem;
+                line-height: 1.35;
+            ">
+                <div style="cursor: pointer;" id="kc-a11y-callout-text">
+                    <strong style="display: block; color: #38bdf8; font-size: 0.81rem; margin-bottom: 2px;">
+                        ¿Cansancio visual o letra pequeña?
+                    </strong>
+                    <span>Configura contraste y tamaño de lectura aquí.</span>
+                </div>
+                <button type="button" id="kc-a11y-close-tip" aria-label="Ocultar aviso" style="
+                    background: transparent;
+                    border: none;
+                    color: #94a3b8;
+                    cursor: pointer;
+                    font-size: 1.15rem;
+                    padding: 2px;
+                    line-height: 1;
+                ">&times;</button>
+            </div>
+
+            <button type="button" id="kc-a11y-tab-btn"
+                aria-label="Abrir ajustes de accesibilidad y comodidad visual (Alt + A)"
+                title="Accesibilidad y Comodidad Visual (Alt + A)"
+                style="
+                    background: linear-gradient(135deg, #0284c7, #0369a1);
+                    color: #ffffff;
+                    border: 1px solid rgba(255,255,255,0.22);
+                    border-right: none;
+                    border-radius: 14px 0 0 14px;
+                    padding: 12px 10px;
+                    cursor: pointer;
+                    box-shadow: -4px 6px 18px rgba(2, 132, 199, 0.35);
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 4px;
+                ">
+                <i class='bx bx-universal-access' style="font-size: 1.45rem;"></i>
+                <span style="font-size: 0.68rem; font-weight: 800; letter-spacing: 0.03em;">VISTA</span>
+            </button>
+        `;
+
+        document.body.appendChild(dock);
+
+        const abrir = () => {
             if (window.abrirCentroAccesibilidad) window.abrirCentroAccesibilidad();
-        });
+        };
 
-        // Busca el contenedor derecho donde está el botón de tema o .user-tag
-        const userTag = topbar.querySelector('.user-tag');
-        if (userTag && userTag.parentElement) {
-            userTag.parentElement.insertBefore(btn, userTag);
-        } else {
-            topbar.appendChild(btn);
+        document.getElementById('kc-a11y-tab-btn').addEventListener('click', abrir);
+        const calloutText = document.getElementById('kc-a11y-callout-text');
+        if (calloutText) calloutText.addEventListener('click', abrir);
+
+        const closeTip = document.getElementById('kc-a11y-close-tip');
+        if (closeTip) {
+            closeTip.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.getElementById('kc-a11y-callout').style.display = 'none';
+                try { localStorage.setItem(TIP_DISMISSED_KEY, 'true'); } catch {}
+            });
         }
     }
 
     aplicarPrefsAlDocumento(cargarPrefs());
 
-    const iniciarCentroAccesibilidad = () => {
+    const init = () => {
         crearModalAccesibilidad();
-        insertarBotonAccesoDirecto();
+        crearDockFlotanteLateral();
         mejorarSemanticaDOM();
-
-        const topbar = document.querySelector('.topbar');
-        if (topbar) {
-            const obs = new MutationObserver(() => {
-                if (!topbar.querySelector('#btn-abrir-a11y-global')) {
-                    insertarBotonAccesoDirecto();
-                }
-            });
-            obs.observe(topbar, { childList: true, subtree: true });
-        }
     };
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', iniciarCentroAccesibilidad);
+        document.addEventListener('DOMContentLoaded', init);
     } else {
-        iniciarCentroAccesibilidad();
+        init();
     }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.altKey && e.key.toLowerCase() === 'a') {
+            e.preventDefault();
+            if (window.abrirCentroAccesibilidad) window.abrirCentroAccesibilidad();
+        }
+        if (e.key === 'Escape') {
+            const m = document.getElementById('modal-accesibilidad-kc');
+            if (m && m.style.display === 'flex') m.style.display = 'none';
+        }
+    });
+})();

@@ -206,7 +206,9 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 (function cargarScriptAccesibilidad() {
     if (document.querySelector('script[src*="accesibilidad.js"]')) return;
+    const scriptActual = document.currentScript || document.querySelector('script[src*="layout.js"]');
+    const base = scriptActual ? scriptActual.src.replace(/layout\.js(\?.*)?$/, '') : '/js/';
     const s = document.createElement('script');
-    s.src = '/js/accesibilidad.js';
+    s.src = base + 'accesibilidad.js?v=2';
     document.body.appendChild(s);
 })();
