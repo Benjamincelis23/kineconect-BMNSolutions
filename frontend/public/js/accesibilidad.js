@@ -258,51 +258,77 @@
         };
     }
 
-    function insertarBotonAccesoDirecto() {
-        if (document.getElementById('btn-abrir-a11y-global')) return;
-
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.id = 'btn-abrir-a11y-global';
-        btn.className = 'btn btn-secondary btn-sm';
-        btn.setAttribute('aria-label', 'Abrir Centro de Accesibilidad y Comodidad (Alt + A)');
-        btn.setAttribute('title', 'Accesibilidad y Comodidad (Alt + A)');
-        btn.innerHTML = `<i class='bx bx-universal-access' style="font-size: 1.15rem; color: #0284c7;"></i> <span>Accesibilidad</span>`;
-        btn.addEventListener('click', () => window.abrirCentroAccesibilidad && window.abrirCentroAccesibilidad());
-
+    document.addEventListener('DOMContentLoaded', () => {
+        const prefs = cargarPrefs();
+        aplicarPrefsAlDocumento(prefs);
+        mejorarSemanticaDOM();
+        crearModalAccesibilidad();
+    });
+}
+)();
+function insertarBotonAccesoDirecto() {
         const topbar = document.querySelector('.topbar');
+
+        // Si existe la topbar, nos aseguramos de que el botón esté adentro y activo
         if (topbar) {
+            const flotante = document.getElementById('btn-abrir-a11y-flotante');
+            if (flotante) flotante.remove();
+
+            if (topbar.querySelector('#btn-abrir-a11y-global')) return;
+
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.id = 'btn-abrir-a11y-global';
+            btn.className = 'btn btn-secondary btn-sm';
+            btn.setAttribute('aria-label', 'Abrir Centro de Accesibilidad y Comodidad (Alt + A)');
+            btn.setAttribute('title', 'Accesibilidad y Comodidad (Alt + A)');
+            btn.innerHTML = `<i class='bx bx-universal-access' style="font-size: 1.15rem; color: #0284c7;"></i> <span>Accesibilidad</span>`;
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (window.abrirCentroAccesibilidad) window.abrirCentroAccesibilidad();
+            });
+
             const userTag = topbar.querySelector('.user-tag');
             if (userTag && userTag.parentElement) {
                 userTag.parentElement.insertBefore(btn, userTag);
-                return;
+            } else {
+                topbar.appendChild(btn);
             }
-            topbar.appendChild(btn);
             return;
         }
 
-        // Fallback en pantalla de Login (index.html)
-        btn.style.cssText = 'position: fixed; top: 16px; right: 16px; z-index: 900;';
-        document.body.appendChild(btn);
+        // Fallback solo si no hay .topbar (ej. pantalla de login index.html)
+        if (document.getElementById('btn-abrir-a11y-flotante')) return;
+        const btnFloat = document.createElement('button');
+        btnFloat.type = 'button';
+        btnFloat.id = 'btn-abrir-a11y-flotante';
+        btnFloat.className = 'btn btn-secondary btn-sm';
+        btnFloat.style.cssText = 'position: fixed; top: 16px; right: 16px; z-index: 900;';
+        btnFloat.setAttribute('aria-label', 'Abrir Centro de Accesibilidad y Comodidad (Alt + A)');
+        btnFloat.innerHTML = `<i class='bx bx-universal-access' style="font-size: 1.15rem; color: #0284c7;"></i> <span>Accesibilidad</span>`;
+        btnFloat.addEventListener('click', () => {
+            if (window.abrirCentroAccesibilidad) window.abrirCentroAccesibilidad();
+        });
+        document.body.appendChild(btnFloat);
     }
 
-    // Aplicar de inmediato antes del render completo
+    // Aplicar preferencias antes del render
     aplicarPrefsAlDocumento(cargarPrefs());
 
-    document.addEventListener('DOMContentLoaded', () => {
+    const iniciarCentroAccesibilidad = () => {
         crearModalAccesibilidad();
         insertarBotonAccesoDirecto();
         mejorarSemanticaDOM();
-    });
 
-    document.addEventListener('keydown', (e) => {
-        if (e.altKey && e.key.toLowerCase() === 'a') {
-            e.preventDefault();
-            window.abrirCentroAccesibilidad && window.abrirCentroAccesibilidad();
-        }
-        if (e.key === 'Escape') {
-            const m = document.getElementById('modal-accesibilidad-kc');
-            if (m && m.style.display === 'flex') m.style.display = 'none';
-        }
-    });
-})();
+        // Vigila si layout.js redibuja la .topbar tras cargar el perfil del usuario
+        const topbarObserver = new MutationObserver(() => {
+            insertarBotonAccesoDirecto();
+        });
+        topbarObserver.observe(document.body, { childList: true, subtree: true });
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarCentroAccesibilidad);
+    } else {
+        iniciarCentroAccesibilidad();
+    }
